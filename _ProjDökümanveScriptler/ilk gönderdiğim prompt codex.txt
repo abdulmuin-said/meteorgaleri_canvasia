@@ -1,0 +1,1163 @@
+Microsoft Windows [Version 10.0.26200.8037]
+(c) Microsoft Corporation. Tüm hakları saklıdır.
+
+C:\E-İhracat Projesi>codex
+╭─────────────────────────────────────────────╮
+│ >_ OpenAI Codex (v0.114.0)                  │
+│                                             │
+│ model:     gpt-5.4 xhigh   /model to change │
+│ directory: C:\E-İhracat Projesi             │
+╰─────────────────────────────────────────────╯
+
+  Tip: New Use /fast to enable our fastest inference at 2X plan usage.
+› merhaba projeyi bi analiz et bakalım sonra değişiklikler yapacağız
+
+
+• Projeyi genel yapısı, teknoloji seçimi ve riskli alanları görmek için önce dosya ağacını, git durumunu ve temel yapılandırma dosyalarını okuyacağım.
+  Ardından kısa bir mimari özeti ve değişiklik yaparken dikkat etmemiz gereken noktaları çıkaracağım.
+
+• Running Get-ChildItem -Force
+
+• Running git status --short
+
+• Ran git status --short
+  └ fatal: not a git repository (or any of the parent directories): .git
+
+• Ran Get-ChildItem -Force
+  └
+
+    … +20 lines
+
+
+
+• Ran rg --files
+  └ VeriCekme\çekilen_veriler\3-muhtesem-ala-at-kanvas-tablo-2.webp
+    VeriCekme\çekilen_veriler\acan-sumbullere-konan-kelebek-temali-kanvas-tablo-1.webp
+    … +11287 lines
+    KanvasProje.Web\wwwroot\img\products\3-parca-orkide-cicekli-pudra-bebe-pembesi-acik-kanvas-tablo-ana.webp
+    KanvasPr
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• İlk taramada bunun tek bir uygulama değil, aynı klasörde duran birkaç çalışma alanı olduğunu gördüm: ASP.NET Core çözümü, Flutter admin mobil uygulaması
+  ve veri toplama/dönüştürme scriptleri aynı repo benzeri yapıda tutuluyor. Şimdi asıl çalışma alanı olan .sln ve web katmanını açıp bağımlılıkları, katman
+  sınırlarını ve deploy kalıntılarını netleştiriyorum.
+
+• Running rg --files KanvasProje.Web -g Program.cs -g appsettings*.json -g *.cshtml -g *.cs -g *.json
+
+• Running rg --files canvasia_admin_mobile -g pubspec.yaml -g lib/** -g android/app/build.gradle.kts -g android/app/build.gradle -g ios/Runner/Info.plist
+
+• Running rg --files -g *.csproj -g *.fsproj -g *.vbproj
+
+• Ran rg --files KanvasProje.Web -g Program.cs -g appsettings*.json -g *.cshtml -g *.cs -g *.json
+    … +123 lines
+    KanvasProje.Web\Views\Profil\Siparislerim.cshtml
+    KanvasProje.Web\Views\Shared\Components\CategoryMenu\Default.cshtml
+
+• Ran rg --files canvasia_admin_mobile -g pubspec.yaml -g lib/** -g android/app/build.gradle.kts -g android/app/build.gradle -g ios/Runner/Info.plist
+  └ canvasia_admin_mobile\pubspec.yaml
+
+• Ran rg --files -g *.csproj -g *.fsproj -g *.vbproj
+  └ KanvasProje.Core\KanvasProje.Core.csproj
+    KanvasProje.Service\KanvasProje.Service.csproj
+    KanvasProje.Data\KanvasProje.Data.csproj
+    KanvasProje.Web\KanvasProje.Web.csproj
+
+• Ran Get-Content KanvasProje.sln
+  └
+    Microsoft Visual Studio Solution File, Format Version 12.00
+    … +72 lines
+        EndGlobalSection
+    EndGlobal
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Çözüm dört katmanlı klasik bir ASP.NET Core yapısı gibi duruyor; ayrıca web projesi içinde canlıya ait olabilecek secrets.json, Firebase hesabı ve
+  publish-linux çıktıları da tutulmuş. Şimdi bootstrap, veri erişimi ve servis katmanını okuyup bunun ne kadar düzenli ayrıldığını ve hangi noktaların
+  değişikliklerde bizi zorlayacağını çıkarıyorum.
+
+• Updated Plan
+  └ Analizi kod tabanı sınırlarına göre ilerletiyorum; önce web uygulamasının çalışma biçimini, sonra veri/servis katmanını, son olarak yardımcı projeleri
+    ve riskleri özetleyeceğim.
+    □ Web projesinin başlangıç noktası, konfigürasyon ve controller yapısını incele
+    □ Core/Data/Service katmanlarını ve entity/repository ilişkisini incele
+    □ Mobil uygulama ve veri işleme scriptlerini tarayıp genel risk/iyileştirme özetini çıkar
+
+• Running Get-Content KanvasProje.Web\Program.cs
+
+• Running Get-Content KanvasProje.Web\KanvasProje.Web.csproj
+
+• Running Get-Content KanvasProje.Service\Services\Service.cs
+
+• Running Get-Content KanvasProje.Data\Repositories\GenericRepository.cs
+
+• Running Get-Content KanvasProje.Data\Repositories\UnitOfWork.cs
+
+• Ran Get-Content KanvasProje.Web\Program.cs
+  └ using KanvasProje.Data;
+    using Microsoft.EntityFrameworkCore;
+    … +218 lines
+
+    app.Run();
+
+
+    … +23 lines
+
+    </Project>
+
+• Ran Get-Content KanvasProje.Service\Services\Service.cs
+  └ using System.Linq.Expressions;
+    using KanvasProje.Core.Interfaces;
+    … +50 lines
+        }
+    }
+
+• Ran Get-Content KanvasProje.Data\Repositories\GenericRepository.cs
+  └ using System.Linq.Expressions;
+    using KanvasProje.Core.Interfaces;
+    … +48 lines
+        }
+    }
+
+• Ran Get-Content KanvasProje.Data\Repositories\UnitOfWork.cs
+  └ using KanvasProje.Core.Interfaces;
+
+    … +20 lines
+        }
+    }
+
+• Ran Get-Content KanvasProje.Data\KanvasDbContext.cs
+  └ using KanvasProje.Core.Varliklar;
+    using Microsoft.AspNetCore.Identity.EntityFrameworkCore; // Bu KÃ¼tÃ¼phane Åart
+    … +48 lines
+        }
+    }
+
+• Running Get-Content KanvasProje.Web\appsettings.json
+
+• Running rg -n "class .*Controller|IActionResult|Task<IActionResult>|\[Authorize|\[Area\(" KanvasProje.Web\Controllers
+  │ KanvasProje.Web\Areas\Admin\Controllers
+
+• Running Get-Content KanvasProje.Web\Services\IyzicoPaymentService.cs
+
+• Running rg --files canvasia_admin_mobile\lib
+
+• Running Get-Content canvasia_admin_mobile\pubspec.yaml
+
+• Ran rg --files canvasia_admin_mobile\lib
+  └ canvasia_admin_mobile\lib\widgets\custom_loader.dart
+    canvasia_admin_mobile\lib\config.dart
+    … +11 lines
+    canvasia_admin_mobile\lib\models\dashboard_model.dart
+    canvasia_admin_mobile\lib\models\notification_model.dart
+
+• Ran rg -n "class .*Controller|IActionResult|Task<IActionResult>|\[Authorize|\[Area\(" KanvasProje.Web\Controllers KanvasProje.Web\Areas\Admin\Controllers
+  └ KanvasProje.Web\Controllers\AdminApiController.cs:10:    [Authorize(Roles = "Admin")]
+    KanvasProje.Web\Controllers\AdminApiController.cs:11:    public class AdminApiController : ControllerBase
+    … +166 lines
+    KanvasProje.Web\Areas\Admin\Controllers\ZiyaretciController.cs:48:        public async Task<IActionResult> Indir()
+    KanvasProje.Web\Areas\Admin\Controllers\ZiyaretciController.cs:93:        public async Task<IActionResult> Temizle()
+  └ {
+      "Logging": {
+    … +22 lines
+      }
+    }
+
+• Ran Get-Content KanvasProje.Web\Services\AbandonedCartService.cs
+  └ using Microsoft.Extensions.Hosting;
+    using Microsoft.Extensions.DependencyInjection;
+    … +117 lines
+        }
+    }
+
+• Ran Get-Content KanvasProje.Web\Services\IyzicoPaymentService.cs
+  └ using System;
+    using System.Collections.Generic;
+    … +125 lines
+        }
+    }
+
+• Ran Get-Content canvasia_admin_mobile\pubspec.yaml
+  └ name: canvasia_admin
+    description: Canvasia E-Ticaret Admin Paneli Mobil UygulamasÄ±
+    … +61 lines
+      adaptive_icon_foreground: "assets/icon.png"
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Kritik bir bulgu çıktı: appsettings.json içinde admin giriş bilgisi ve SMTP app password düz metin tutuluyor; ayrıca bunların deploy çıktısına da
+  kopyalanmış olma ihtimali yüksek. Şimdi bunu teyit edip kalan katmanları okuyorum; sonrasında sana “mimari durum + teknik borç + ilk müdahale öncelikleri”
+  olarak toparlayacağım.
+
+• Running rg --files KanvasProje.Core KanvasProje.Service KanvasProje.Data -g *.cs
+
+• Running Get-Content KanvasProje.Service\SepetService.cs
+
+• Running rg -n "AdminSettings|EmailSettings|Password|ApiKey|SecretKey|firebase-service-account|secrets.json" KanvasProje.Web
+
+• Running Get-Content KanvasProje.Web\Services\SmtpEmailService.cs
+
+• Ran rg --files KanvasProje.Core KanvasProje.Service KanvasProje.Data -g *.cs
+  └ KanvasProje.Data\Repositories\UnitOfWork.cs
+    KanvasProje.Data\Repositories\GenericRepository.cs
+    … +93 lines
+    KanvasProje.Core\Interfaces\IGenericRepository.cs
+    KanvasProje.Core\Interfaces\IEmailService.cs
+
+• Running Get-Content canvasia_admin_mobile\lib\config.dart
+
+• Ran Get-Content KanvasProje.Service\SepetService.cs
+  └ using KanvasProje.Core.Interfaces;
+    using KanvasProje.Core.Varliklar;
+    … +254 lines
+        }
+    }
+  └ using System.Net;
+    using System.Net.Mail;
+    … +147 lines
+        }
+    }
+
+• Ran Get-Content canvasia_admin_mobile\lib\config.dart
+  └ /// Canvasia Admin Mobil Uygulama â€” Merkezi Ayarlar
+    class AppConfig {
+    … +12 lines
+      static const String firebaseTopic = 'admin_bildirimleri';
+    }
+
+• Ran Get-Content KanvasProje.Web\Services\FirebaseService.cs
+  └ using FirebaseAdmin;
+    using FirebaseAdmin.Messaging;
+    … +60 lines
+        }
+    }
+
+• Ran rg -n "AdminSettings|EmailSettings|Password|ApiKey|SecretKey|firebase-service-account|secrets.json" KanvasProje.Web
+  └ KanvasProje.Web\appsettings.json:10:  "AdminSettings": {
+    KanvasProje.Web\appsettings.json:12:    "Password": "Admin123!"
+    … +3473 lines
+    AACiE,UAAU,CAACF,OAAO,CAAC7C,QAAQ,CAAC,CAAA;AAEnD,IAAA,OAAO6P,QAAQ,EAAE;AACfD,MAAAA,OAAO,CAACnL,IAAI,CAACoL,QAAQ,CAAC,CAAA;MACtBA,QAAQ,GAAGA,QAAQ,CAAC9
+    M,UAAU,CAACF,OAAO,CAAC7C,QAAQ,CAAC,CAAA;AAClD,KAAA;AAEA,IAAA,OAAO4P,OAAO,CAAA;GACf;AAEDE,EAAAA,IAAIA,CAAChR,OAA
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Mimari taraf netleşiyor: controller’lar büyük ölçüde doğrudan DbContext ile çalışıyor, generic service/repository katmanı ise var ama merkezi kullanımda
+  değil. Bu yüzden ileride değişiklik yaparken “katmanlı mimari var” gibi görünse de pratikte davranışın önemli kısmı web projesinde ve controller
+  seviyesinde.
+
+• Running Get-Content KanvasProje.Web\Data\DbSeeder.cs
+
+• Running Get-Content KanvasProje.Web\Controllers\AdminApiController.cs
+
+• Running Get-Content KanvasProje.Web\Controllers\UrunController.cs
+
+• Running Get-Content KanvasProje.Web\Controllers\SiparisController.cs
+
+• Running Get-Content canvasia_admin_mobile\lib\main.dart
+
+• Ran Get-Content KanvasProje.Web\Data\DbSeeder.cs
+  └ using Microsoft.AspNetCore.Identity;
+    using KanvasProje.Core.Varliklar;
+    … +53 lines
+        }
+    }
+
+    import 'package:flutter/material.dart';
+    … +26 lines
+      );
+    }
+
+• Ran Get-Content KanvasProje.Web\Controllers\SiparisController.cs
+  └ using Microsoft.AspNetCore.Identity;
+    using Microsoft.AspNetCore.Mvc;
+    … +339 lines
+        }
+    }
+
+• Ran Get-Content KanvasProje.Web\Controllers\AdminApiController.cs
+  └ using Microsoft.AspNetCore.Mvc;
+    using KanvasProje.Data;
+    … +81 lines
+        }
+    }
+
+• Ran Get-Content KanvasProje.Web\Controllers\UrunController.cs
+  └ using Microsoft.AspNetCore.Mvc;
+    using Microsoft.AspNetCore.Mvc.Rendering;
+    … +283 lines
+        }
+    }
+
+• Ran Get-Content canvasia_admin_mobile\lib\services\dashboard_service.dart
+  └ import 'dart:convert';
+    import 'package:http/http.dart' as http;
+    … +23 lines
+      }
+    }
+
+• Running Get-Content resim_düzeltici\resim_duzeltici.py
+
+• Running rg --files -g *Test* -g *Tests*
+
+• Running dotnet build KanvasProje.sln
+
+• Running Get-Content canvasia_admin_mobile\lib\app.dart
+
+• Ran rg --files -g *Test* -g *Tests*
+  └ canvasia_admin_mobile\ios\RunnerTests\RunnerTests.swift
+    dizini PATH değişkeninize ekleyin.
+    … +14 lines
+       at Microsoft.DotNet.Cli.Program.ProcessArgs(String[] args, TimeSpan startupTime)
+       at Microsoft.DotNet.Cli.Program.Main(String[] args)
+
+• Ran Get-Content resim_düzeltici\resim_duzeltici.py
+  └ import json
+    import os
+    … +101 lines
+    print(f"1. Resimler '{hedef_klasor}' klasÃ¶rÃ¼ne indirildi.")
+    print(f"2. '{sql_dosyasi}' dosyasÄ± oluÅŸturuldu. Bu dosyayÄ± PgAdmin'de Ã§alÄ±ÅŸtÄ±r.")
+
+• Ran Get-Content canvasia_admin_mobile\lib\app.dart
+  └ import 'package:flutter/material.dart';
+    import 'package:canvasia_admin/screens/main_screen.dart';
+    … +17 lines
+      }
+    }
+
+• Ran Get-Content VeriCekme\scraper.py
+  └ import requests
+    from bs4 import BeautifulSoup
+    … +168 lines
+
+    print(f"\nğŸ‰ Ä°ÅLEM BÄ°TTÄ°! Veriler '{CIKTI_DOSYASI}' dosyasÄ±na kaydedildi.")
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Kod tabanını çalıştırılabilirlik açısından da yokluyorum. dotnet build ilk denemede sandbox altında DOTNET_CLI_HOME izin problemi yüzünden patladı; şimdi
+  çalışma dizinine yönlendirip tekrar deneyeceğim, böylece gerçekten derleniyor mu göreceğiz.
+
+• Running Get-Content KanvasProje.Core\Varliklar\Siparis.cs
+
+• Running Get-Content canvasia_admin_mobile\lib\screens\webview_screen.dart
+
+• Running Get-Content canvasia_admin_mobile\lib\screens\main_screen.dart
+
+• Running Get-Content KanvasProje.Core\Varliklar\Urun.cs
+
+• Running Get-Content KanvasProje.Core\Varliklar\AppUser.cs
+
+• Ran Get-Content canvasia_admin_mobile\lib\screens\main_screen.dart
+  └ import 'package:flutter/material.dart';
+    import 'package:provider/provider.dart';
+    … +77 lines
+      }
+    }
+
+• Ran Get-Content canvasia_admin_mobile\lib\screens\webview_screen.dart
+  └ import 'dart:async';
+    import 'package:flutter/material.dart';
+    … +170 lines
+      }
+    }
+
+    using System.Collections.Generic;
+    … +38 lines
+        }
+    }
+
+• Ran Get-Content KanvasProje.Core\Varliklar\Urun.cs
+  └ using System.Collections.Generic;
+
+    … +25 lines
+        }
+    }
+
+• Ran Get-Content KanvasProje.Core\Varliklar\AppUser.cs
+  └ using Microsoft.AspNetCore.Identity;
+
+    … +14 lines
+        }
+    }
+
+• Ran $env:DOTNET_CLI_HOME='C:\E-İhracat Projesi\.dotnet_home'
+  │ $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE='1'
+  │ dotnet build KanvasProje.sln
+  └ 'C:\E-İhracat Projesi\.dotnet_home\.dotnet\tools' dizini PATH ortam değişkenine eklenemedi. 'dotnet tool install' ile yüklenen araçları kullanmak için
+    bu dizini PATH değişkeninize ekleyin.
+    … +27 lines
+    Kullanılabilir komutları görmek için 'dotnet --help' komutunu kullanın veya şu adresi ziyaret edin: https://aka.ms/dotnet-cli
+    --------------------------------------------------------------------------------------
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Derleme çıktısı ilginç: proje derlenmiş gibi mesaj veriyor ama CLI ilk kullanım PATH ayarı nedeniyle exit code 1 dönüyor. Bunu
+  DOTNET_ADD_GLOBAL_TOOLS_TO_PATH=0 ile bastırıp bir kez daha doğruluyorum; kullanıcıya “derlenmedi” diye yanlış bir sonuç vermek istemiyorum.
+
+• Running $env:DOTNET_CLI_HOME='C:\E-İhracat Projesi\.dotnet_home'
+  │ $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE='1'
+  │ $env:DOTNET_ADD_GLOBAL_TOOLS_TO_PATH='0'
+  │ … +2 lines
+
+• Running Get-Content canvasia_admin_mobile\lib\services\notification_service.dart
+
+• Running Get-Content KanvasProje.Core\Varliklar\BaseEntity.cs
+
+• Running Get-Content KanvasProje.Web\appsettings.Development.json
+
+• Running Get-Content KanvasProje.Web\secrets.json
+
+• Ran Get-Content canvasia_admin_mobile\lib\services\notification_service.dart
+  └ import 'package:firebase_messaging/firebase_messaging.dart';
+    import 'package:flutter/material.dart';
+    … +160 lines
+      }
+    }
+
+• Ran Get-Content KanvasProje.Web\secrets.json
+  └ {
+        "ConnectionStrings": {
+    … +8 lines
+        }
+    }
+
+• Ran Get-Content KanvasProje.Core\Varliklar\BaseEntity.cs
+    … +14 lines
+        }
+    }
+
+• Ran Get-Content KanvasProje.Web\appsettings.Development.json
+  └ {
+      "Logging": {
+    … +9 lines
+      }
+    }
+
+• Ran Get-Content KanvasProje.Core\Interfaces\ISepetService.cs
+  └ using KanvasProje.Core.Varliklar;
+
+    … +51 lines
+        }
+    }
+
+• Ran $env:DOTNET_CLI_HOME='C:\E-İhracat Projesi\.dotnet_home'
+  │ $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE='1'
+  │ $env:DOTNET_ADD_GLOBAL_TOOLS_TO_PATH='0'
+  │ … +2 lines
+  └
+    Oluşturma BAŞARISIZ OLDU.
+    … +2 lines
+
+    Geçen Süre 00:00:02.12
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Derleme kök sebebi hâlâ görünmüyor; MSBuild “0 hata, 0 uyarı” deyip yine başarısız dönüyor. Bunun gerçek nedenini logdan alıyorum, çünkü bu tip çıkışlar
+  genelde yol/encoding ya da SDK davranışı kaynaklı oluyor.
+
+• Running $env:DOTNET_CLI_HOME='C:\E-İhracat Projesi\.dotnet_home'
+  │ … +2 lines
+
+• Running Get-Content resim_düzeltici\yorum_pro.py
+
+• Running Get-Content canvasia_admin_mobile\lib\screens\dashboard_screen.dart
+
+• Ran Get-Content resim_düzeltici\yorum_pro.py
+  └ import json
+    import random
+    … +167 lines
+    print(f"ğŸ“ Toplam {toplam_yorum} adet, birbirinden farklÄ±, doÄŸal gÃ¶rÃ¼nÃ¼mlÃ¼ yorum oluÅŸturuldu.")
+    print(f"ğŸ“‚ '{sql_dosyasi}' dosyasÄ±nÄ± PgAdmin'de Ã§alÄ±ÅŸtÄ±rabilirsin.")
+
+• Ran Get-Content canvasia_admin_mobile\lib\screens\dashboard_screen.dart
+  └ import 'package:flutter/material.dart';
+    import 'package:canvasia_admin/services/dashboard_service.dart';
+    … +218 lines
+      }
+    }
+
+• Ran Get-Content VeriCekme\json_to_xml.py
+  └ import json
+    import os
+    … +101 lines
+    # Ã‡alÄ±ÅŸtÄ±r
+    json_to_xml()
+
+• Ran $env:DOTNET_CLI_HOME='C:\E-İhracat Projesi\.dotnet_home'
+  │ $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE='1'
+  │ $env:DOTNET_ADD_GLOBAL_TOOLS_TO_PATH='0'
+  │ … +2 lines
+  └ (no output)
+
+• Running Get-Content build-diagnostic.log -Tail 120
+
+• Running Get-Content KanvasProje.Web\Services\SeoService.cs
+
+• Ran Get-Content build-diagnostic.log -Tail 120
+  └                            MinimumNETVersion = 8.0
+                           10.0.17763.0
+    … +116 lines
+
+    Geçen Süre 00:00:02.69
+
+• Ran Get-Content KanvasProje.Web\Services\SeoService.cs
+  └ using System.Text.Json;
+    using KanvasProje.Core.Varliklar;
+    … +116 lines
+        }
+    }
+
+• Ran Get-Content KanvasProje.Web\Controllers\HesapController.cs
+  └ using Microsoft.AspNetCore.Identity;
+    using Microsoft.AspNetCore.Mvc;
+    … +306 lines
+        }
+    }
+
+• Ran Select-String -Path build-diagnostic.log -Pattern ": error ","Build FAILED","Exception","MSB","NETSDK" | Select-Object -First 80
+  └
+    build-diagnostic.log:1:C:\Program Files\dotnet\sdk\10.0.103\MSBuild.dll -nologo --property:NuGetInteractive=false --res
+    … +142 lines
+
+
+
+• Running Get-Content KanvasProje.Data\KanvasProje.Data.csproj
+
+• Running Get-Content build-diagnostic.log | Select-Object -Index (450..485)
+
+• Ran Get-Content KanvasProje.Data\KanvasProje.Data.csproj
+  └ <Project Sdk="Microsoft.NET.Sdk">
+
+    … +17 lines
+
+    </Project>
+
+• Ran Get-Content KanvasProje.Core\KanvasProje.Core.csproj
+  └ <Project Sdk="Microsoft.NET.Sdk">
+
+    … +9 lines
+
+    </Project>
+
+• Ran Get-Content KanvasProje.Service\KanvasProje.Service.csproj
+  └ <Project Sdk="Microsoft.NET.Sdk">
+
+    … +10 lines
+
+    </Project>
+
+• Ran Get-Content build-diagnostic.log | Select-Object -Index (450..485)
+  └                    "Platform" özelliği genel bir özelliktir ve değiştirilemez.
+                       "Configuration" özelliği genel bir özelliktir ve değiştirilemez.
+    … +41 lines
+                       C:\Program Files\dotnet\sdk\10.0.103\Microsoft.Common.CurrentVersion.targets(175,5): message : Özellik yeniden ataması:
+    $(_DebugSymbolsProduced)="true" (önceki değer: "false") konum: C:\Program Files\dotnet\sdk\10.0.103\Microsoft.Common.CurrentVersion.targets (175,5)
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Çözüm bazında restore aşaması düşüyor ama proje kaynaklı mı ortam kaynaklı mı ayrıştırmak için tek projeyi deniyorum. Eğer tek proje derlenirse sorun
+  çözüm/restore katmanında; o zaman bunu rapora ayrı yazacağım.
+
+• Running $env:DOTNET_CLI_HOME='C:\E-İhracat Projesi\.dotnet_home'
+  │ $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE='1'
+  │ $env:DOTNET_ADD_GLOBAL_TOOLS_TO_PATH='0'
+  │ … +2 lines
+
+• Running $env:DOTNET_CLI_HOME='C:\E-İhracat Projesi\.dotnet_home'
+  │ $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE='1'
+  │ $env:DOTNET_ADD_GLOBAL_TOOLS_TO_PATH='0'
+  │ … +2 lines
+
+• Running Get-Content KanvasProje.Web\firebase-service-account.json -TotalCount 40
+
+• Running Get-Content KanvasProje.Web\Areas\Admin\Controllers\UrunController.cs
+
+• Ran Get-Content KanvasProje.Web\firebase-service-account.json -TotalCount 40
+  └ {
+      "type": "service_account",
+    … +23 lines
+      "universe_domain": "googleapis.com"
+    }
+
+        }
+    }
+
+• Ran Get-Content KanvasProje.Web\Properties\launchSettings.json
+  └ {
+      "$schema": "https://json.schemastore.org/launchsettings.json",
+    … +19 lines
+      }
+    }
+
+• Ran $env:DOTNET_CLI_HOME='C:\E-İhracat Projesi\.dotnet_home'
+  │ $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE='1'
+  │ $env:DOTNET_ADD_GLOBAL_TOOLS_TO_PATH='0'
+  │ … +2 lines
+  └   Geri yüklenecek projeler belirleniyor...
+
+    … +3 lines
+
+    Geçen Süre 00:00:11.58
+
+• Ran $env:DOTNET_CLI_HOME='C:\E-İhracat Projesi\.dotnet_home'
+  │ $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE='1'
+  │ $env:DOTNET_ADD_GLOBAL_TOOLS_TO_PATH='0'
+  │ … +2 lines
+  └   Geri yüklenecek projeler belirleniyor...
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Analiz tamamlanmaya yakın. Son bir turda kritik bulgular için satır numaralarını topluyorum; böylece değişikliklere geçtiğimizde doğrudan hangi dosyalara
+  gireceğimiz net olacak.
+
+• Running rg -n "AdminSettings|EmailSettings|Iyzico|Password|BaseUrl|dashboardApiUrl" KanvasProje.Web\appsettings.json
+  │ KanvasProje.Web\appsettings.Development.json KanvasProje.Web\secrets.json canvasia_admin_mobile\lib\config.dart
+  │ canvasia_admin_mobile\lib\services\dashboard_service.dart
+
+• Running rg -n "GEÇİCİ BYPASS|Test Siparişi|Durum = 1|Basarili|IyzicoOdemeBaslat|return RedirectToAction\(\"Basarili\"|CallbackUrl|PaymentStatus ==
+  │ \"SUCCESS\"" KanvasProje.Web\Controllers\SiparisController.cs
+
+• Running rg -n "publish-linux|Class1|build\\|RunnerTests|generate|TODO|FIX:" KanvasProje.Web KanvasProje.Data KanvasProje.Service canvasia_admin_mobile
+
+• Running rg -n "Migrate\(|VerileriYukle|AdminSettings:Email|AdminSettings:Password|CreateAsync\(newAdmin|AddToRoleAsync" KanvasProje.Web\Program.cs
+  │ KanvasProje.Web\Data\DbSeeder.cs
+
+• Running rg -n "firebase-service-account|GoogleCredential.FromFile|private_key|client_email|project_id" KanvasProje.Web\Services\FirebaseService.cs
+  │ KanvasProje.Web\firebase-service-account.json
+
+• Ran rg -n "AdminSettings|EmailSettings|Iyzico|Password|BaseUrl|dashboardApiUrl" KanvasProje.Web\appsettings.json
+  │ KanvasProje.Web\appsettings.Development.json KanvasProje.Web\secrets.json canvasia_admin_mobile\lib\config.dart
+  │ canvasia_admin_mobile\lib\services\dashboard_service.dart
+  └ KanvasProje.Web\appsettings.Development.json:8:  "Iyzico": {
+    KanvasProje.Web\appsettings.Development.json:11:    "BaseUrl": "https://sandbox-api.iyzipay.com"
+    … +9 lines
+    KanvasProje.Web\appsettings.json:21:  "Iyzico": {
+    KanvasProje.Web\appsettings.json:24:    "BaseUrl": "https://sandbox-api.iyzipay.com"
+
+• Ran rg -n "GEÇİCİ BYPASS|Test Siparişi|Durum = 1|Basarili|IyzicoOdemeBaslat|return RedirectToAction\(\"Basarili\"|CallbackUrl|PaymentStatus ==
+  │ \"SUCCESS\"" KanvasProje.Web\Controllers\SiparisController.cs
+  └ KanvasProje.Web\Controllers\SiparisController.cs:205:            // --- GEÇİCİ BYPASS (Iyzico Test Süreci) ---
+    KanvasProje.Web\Controllers\SiparisController.cs:207:            siparis.Durum = 1; // Ödendi/Onaylandı
+    rg: \SUCCESS": Dosya adı, dizin adı veya birim etiketi sözdizimi hatalı. (os error 123)
+
+• Ran rg -n "Migrate\(|VerileriYukle|AdminSettings:Email|AdminSettings:Password|CreateAsync\(newAdmin|AddToRoleAsync" KanvasProje.Web\Program.cs
+  │ KanvasProje.Web\Data\DbSeeder.cs
+  └ KanvasProje.Web\Data\DbSeeder.cs:9:        public static async Task VerileriYukle(IApplicationBuilder app)
+    KanvasProje.Web\Data\DbSeeder.cs:27:                var adminEmail = configuration["AdminSettings:Email"];
+    … +3 lines
+    KanvasProje.Web\Program.cs:209:        context.Database.Migrate();
+    KanvasProje.Web\Program.cs:212:        KanvasProje.Web.Data.DbSeeder.VerileriYukle(app).Wait();
+
+• Ran rg -n "firebase-service-account|GoogleCredential.FromFile|private_key|client_email|project_id" KanvasProje.Web\Services\FirebaseService.cs
+  │ KanvasProje.Web\firebase-service-account.json
+  └ KanvasProje.Web\firebase-service-account.json:3:  "project_id": "canvasia-bildirim",
+    KanvasProje.Web\firebase-service-account.json:4:  "private_key_id": "54a8c36fe1c4c3d6b47ce70ee59da63da70c33fe",
+    … +17 lines
+    KanvasProje.Web\Services\FirebaseService.cs:22:                string jsonPath = Path.Combine(_env.ContentRootPath, "firebase-service-account.json");
+    KanvasProje.Web\Services\FirebaseService.cs:26:                    Credential = GoogleCredential.FromFile(jsonPath)
+
+• Ran rg -n "\[Authorize\(Roles = \"Admin\"\)\]|dashboard-stats|test-notification|Topic = \"admin_bildirimleri\"|subscribeToTopic|Authorization|TODO:
+  │ Backend'de API key/token" KanvasProje.Web\Controllers\AdminApiController.cs KanvasProje.Web\Services\FirebaseService.cs
+  │ canvasia_admin_mobile\lib\services\notification_service.dart canvasia_admin_mobile\lib\services\dashboard_service.dart
+  └ rg: regex parse error:
+        (?:\[Authorize\(Roles = " Admin\\)\]|dashboard-stats|test-notification|Topic)
+                                                                                    ^
+    error: unopened group
+
+• Ran rg -n "publish-linux|Class1|build\\|RunnerTests|generate|TODO|FIX:" KanvasProje.Web KanvasProje.Data KanvasProje.Service canvasia_admin_mobile
+  └ KanvasProje.Service\Class1.cs:3:public class Class1
+    ,CAAA;AAC/B,IAAA,IAAI,IAAI,CAACylB,aAAa,CAACD,SAAS,CAAC,EAAE;AACjC,MAAA,OAAA;AACF,KAAA;;AAEA;AACA,IAAA,MAAME,MAAM,GAAG,IAAI,CAACC,cAAc,EAAE,CAAA;IAEpC,
+    MAAMvV,SAAS,GAAGsV,MAAM,GACtB5rB,YAAY,CAACyC,OAAO,CAACmpB,MAAM,EAAEta,YAAU,EAAE;AAAEhQ,MAAAA,aAAa,EAAEoqB,SAA
+
+• Running rg -n -F "subscribeToTopic" canvasia_admin_mobile\lib\services\notification_service.dart
+
+• Running rg -n -F "Topic = \"admin_bildirimleri\"" KanvasProje.Web\Services\FirebaseService.cs
+
+• Running rg -n -F "TODO: Backend'de API key/token doğrulama eklendiğinde buraya header ekle" canvasia_admin_mobile\lib\services\dashboard_service.dart
+
+• Running rg -n -F "[Authorize(Roles = \"Admin\")]" KanvasProje.Web\Controllers\AdminApiController.cs
+
+• Running rg -n -F "dashboard-stats" KanvasProje.Web\Controllers\AdminApiController.cs canvasia_admin_mobile\lib\config.dart
+
+• Ran rg -n -F "subscribeToTopic" canvasia_admin_mobile\lib\services\notification_service.dart
+  └ 71:    await FirebaseMessaging.instance.subscribeToTopic(AppConfig.firebaseTopic);
+
+• Ran rg -n -F "TODO: Backend'de API key/token doğrulama eklendiğinde buraya header ekle" canvasia_admin_mobile\lib\services\dashboard_service.dart
+  └ 11:        // TODO: Backend'de API key/token doğrulama eklendiğinde buraya header ekle
+
+• Ran rg -n -F "test-notification" KanvasProje.Web\Controllers\AdminApiController.cs
+  └ 58:// Test Linki: https://www.canvasia.com.tr/api/admin/test-notification
+    59:        [HttpGet("test-notification")]
+
+• Ran rg -n -F "Topic = \"admin_bildirimleri\"" KanvasProje.Web\Services\FirebaseService.cs
+  └ (no output)
+
+• Ran rg -n -F "[Authorize(Roles = \"Admin\")]" KanvasProje.Web\Controllers\AdminApiController.cs
+  └ (no output)
+
+• Ran rg -n -F "dashboard-stats" KanvasProje.Web\Controllers\AdminApiController.cs canvasia_admin_mobile\lib\config.dart
+  └ canvasia_admin_mobile\lib\config.dart:6:  static const String dashboardApiUrl = '$baseUrl/api/admin/dashboard-stats';
+    KanvasProje.Web\Controllers\AdminApiController.cs:20:        [HttpGet("dashboard-stats")]
+
+• Running rg -n "publish-linux|Class1" KanvasProje.Web KanvasProje.Data KanvasProje.Service
+
+• Running Get-ChildItem KanvasProje.Web\publish-linux | Select-Object -First 8
+
+• Running rg -n "Authorize" KanvasProje.Web\Controllers\AdminApiController.cs
+
+• Running Get-Content KanvasProje.Data\Class1.cs
+
+• Ran rg -n "Authorize" KanvasProje.Web\Controllers\AdminApiController.cs
+  └ 10:    [Authorize(Roles = "Admin")]
+
+• Ran rg -n "admin_bildirimleri" KanvasProje.Web\Services\FirebaseService.cs canvasia_admin_mobile\lib\config.dart
+  └ canvasia_admin_mobile\lib\config.dart:15:  static const String firebaseTopic = 'admin_bildirimleri';
+    KanvasProje.Web\Services\FirebaseService.cs:38:                    Topic = "admin_bildirimleri",
+
+• Ran Get-Content KanvasProje.Service\Class1.cs
+  └ namespace KanvasProje.Service;
+
+    … +2 lines
+
+    }
+
+• Ran Get-Content KanvasProje.Data\Class1.cs
+  └ namespace KanvasProje.Data;
+
+    … +2 lines
+
+    }
+
+• Ran Get-ChildItem KanvasProje.Web\publish-linux | Select-Object -First 8
+    … +13 lines
+
+
+
+• Ran rg -n "publish-linux|Class1" KanvasProje.Web KanvasProje.Data KanvasProje.Service
+  └ KanvasProje.Service\Class1.cs:3:public class Class1
+    KanvasProje.Data\Class1.cs:3:public class Class1
+
+• Running Get-Content canvasia_admin_mobile\lib\screens\dashboard_screen.dart | Select-Object -First 120
+
+• Running rg -n "_FilterRestoreGraphProjectInputItems|BAŞARISIZ OLDU|MSB4276" build-diagnostic.log
+
+• Ran rg -n "_FilterRestoreGraphProjectInputItems|BAŞARISIZ OLDU|MSB4276" build-diagnostic.log
+  └ 239:11:16:33.132     1>"C:\E-İhracat Projesi\KanvasProje.sln" projesinin "C:\Program Files\dotnet\sdk\10.0.103\NuGet.targets" dosyasındaki
+    "_LoadRestoreGraphEntryPoints: (TargetId:5)" hedefi ("_FilterRestoreGraphProjectInputItems" hedefi buna bağımlı):
+    … +13 lines
+    6205:     2574 ms  _FilterRestoreGraphProjectInputItems       1 çağrı
+    6213:Oluşturma BAŞARISIZ OLDU.
+
+    import 'package:canvasia_admin/services/dashboard_service.dart';
+    … +116 lines
+                                ),
+                              ],
+
+• Ran Get-ChildItem canvasia_admin_mobile -Force | Select-Object Name,LastWriteTime
+  └
+    Name                          LastWriteTime
+    … +22 lines
+
+
+
+• Running rg -n "partial class|TODO|FIX:" KanvasProje.Web\Controllers KanvasProje.Web\Areas\Admin\Controllers canvasia_admin_mobile\lib
+
+• Running Get-Content KanvasProje.Web\Controllers\HomeController.cs
+
+• Ran rg --files canvasia_admin_mobile\test
+  └ canvasia_admin_mobile\test\widget_test.dart
+
+• Ran rg -n "partial class|TODO|FIX:" KanvasProje.Web\Controllers KanvasProje.Web\Areas\Admin\Controllers canvasia_admin_mobile\lib
+  └ canvasia_admin_mobile\lib\services\dashboard_service.dart:11:        // TODO: Backend'de API key/token doğrulama eklendiğinde buraya header ekle
+    canvasia_admin_mobile\lib\services\notification_service.dart:123:      // FIX: fromJson zaten String alıp decode ediyor, json.decode kaldırıldı
+    … +5 lines
+    canvasia_admin_mobile\lib\screens\dashboard_screen.dart:67:              // FIX: RefreshIndicator eklendi (pull-to-refresh)
+    canvasia_admin_mobile\lib\screens\webview_screen.dart:145:    // 4. Başarılı Ekran — FIX: onPopInvokedWithResult (deprecated onPopInvoked yerine)
+
+• Ran Get-Content KanvasProje.Web\Controllers\HomeController.cs
+  └ using Microsoft.AspNetCore.Mvc;
+    using KanvasProje.Web.Models;
+    … +174 lines
+        }
+    }
+
+• Running Get-Content canvasia_admin_mobile\test\widget_test.dart
+
+• Running Get-Content KanvasProje.Web\Views\Shared\_Layout.cshtml | Select-Object -First 120
+
+• Ran Get-Content KanvasProje.Web\ViewComponents\CategoryMenu.cs
+  └ using Microsoft.AspNetCore.Mvc;
+    using KanvasProje.Data;
+    … +103 lines
+        }
+    }
+
+• Ran Get-Content canvasia_admin_mobile\test\widget_test.dart
+  └ import 'package:flutter_test/flutter_test.dart';
+
+    … +5 lines
+      });
+    }
+
+• Ran Get-Content KanvasProje.Web\Views\Shared\_Layout.cshtml | Select-Object -First 120
+  └ @using Microsoft.AspNetCore.Identity
+    @using KanvasProje.Web.Extensions
+    … +116 lines
+                <div class="ticker-item"><i class="fas fa-shield-alt"></i> %100 Güvenli Alışveriş</div>
+            </div>
+
+• Updated Plan
+  └ Temel katmanlar, yardımcı projeler ve operasyonel riskler incelendi. Sonuçları özetleyip sonraki değişiklikler için önceliklendirilmiş bir başlangıç
+    listesi çıkarıyorum.
+    ✔ Web projesinin başlangıç noktası, konfigürasyon ve controller yapısını incele
+    ✔ Core/Data/Service katmanlarını ve entity/repository ilişkisini incele
+    ✔ Mobil uygulama ve veri işleme scriptlerini tarayıp genel risk/iyileştirme özetini çıkar
+
+─ Worked for 2m 55s ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Projeyi taradım. Ana omurga bir ASP.NET Core MVC + EF Core + PostgreSQL + Identity e-ticaret uygulaması; çözüm dört projeden oluşuyor: Core, Data,
+  Service, Web. Bunun yanında aynı klasörde bir Flutter admin uygulaması, veri çekme/dönüştürme Python scriptleri, yayın çıktıları ve büyük medya/SQL
+  dosyaları da tutuluyor. Pratikte iş mantığının büyük kısmı web katmanında; servis/repository katmanı var ama controller’lar sıkça doğrudan DbContext
+  kullanıyor.
+
+  Kritik Durum
+    Program.cs#L209) ve [DbSeeder.cs](C:/E-İhracat Projesi/KanvasProje.Web/Data/DbSeeder.cs#L27). Küçük ekipte pratik olabilir ama prod için kontrolsüz.
+  - Mobil dashboard tarafı mimari olarak problemli. API admin yetkisi istiyor [AdminApiController.cs](C:/E-İhracat Projesi/KanvasProje.Web/Controllers/
+    AdminApiController.cs#L10), endpoint burada [AdminApiController.cs](C:/E-İhracat Projesi/KanvasProje.Web/Controllers/AdminApiController.cs#L20), ama
+    Flutter istemcisi header/token göndermiyor ve bunu TODO olarak bırakmış [dashboard_service.dart](C:/E-İhracat Projesi/canvasia_admin_mobile/lib/
+    services/dashboard_service.dart#L11). Yani dashboard ekranı ya 401 alıyor ya da tasarım henüz tamamlanmamış.
+  - Repo temiz değil; deploy çıktıları ve build artefaktları kaynakla beraber tutuluyor. [publish-linux](C:/E-İhracat Projesi/KanvasProje.Web/publish-
+    linux), Flutter build/, büyük resim klasörleri, DB yedeği ve placeholder dosyalar [Class1.cs](C:/E-İhracat Projesi/KanvasProje.Service/Class1.cs) /
+    [Class1.cs](C:/E-İhracat Projesi/KanvasProje.Data/Class1.cs) mevcut. Bu bakım maliyetini artırıyor.
+
+  Mimari Notlar
+
+  - Web tarafı iş görüyor ama katman sınırları tutarsız. Generic repository/service mevcut, buna rağmen birçok controller doğrudan _context ile sorgu
+    yapıyor; bu yüzden değişikliklerde esas temas noktası KanvasProje.Web.
+  - Flutter uygulaması tam native admin değil; büyük ölçüde WebView üstüne kurulmuş, yanında ayrı dashboard API ve FCM bildirimleri var. Yani mobil taraf
+    aslında “panel kabuğu + bildirim istemcisi”.
+  - Python tarafı ayrı bir veri üretim hattı gibi: scraping, JSON/XML üretimi, resim indirme ve SQL üretimi. Bu klasörler ürün veri operasyonu için
+    kullanılıyor, ana web uygulamasından bağımsız.
+
+  Doğrulama
+
+  - Backend için ayrı bir test projesi yok; Flutter tarafındaki test de placeholder seviyesinde [widget_test.dart](C:/E-İhracat Projesi/
+    canvasia_admin_mobile/test/widget_test.dart#L1).
+  - dotnet build doğrulamasını tam netleştiremedim. Çözüm restore aşamasında workload SDK resolver tarafında düşüyor; log burada: [build-diagnostic.log](C:/
+    E-İhracat Projesi/build-diagnostic.log#L303), [build-diagnostic.log](C:/E-İhracat Projesi/build-diagnostic.log#L459), [build-diagnostic.log](C:/E-
+    İhracat Projesi/build-diagnostic.log#L6183). Bu doğrudan kod hatası da olabilir, ortam/SDK sorunu da olabilir.
+
+  Değişikliklere geçerken en mantıklı sıra şu: önce secret cleanup ve ödeme bypass kaldırma, sonra mobil dashboard auth modelini netleştirme, sonra feature
+  işlerine girme. Hazırsan ilk olarak bu üç başlıktan birini ele alayım.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+› şimdi ben bu canvasia e-ticaret sitesini kendime yapıyordum içerisinde ürün satmak için ama sonra talep çıktı ve satmaya karar verdim .
+  bu projeyi düzenlemem ve bana göre olan kısımları kaldırıp müşterinin isteklerine göre değiştireceğiz .
+  ve daha sonra da müşterinin bizden istediklerini ben sıraladım onları ekleyeceğiz .
+  şimdi sirsıyla başlıyoruz .
+  site domaini şuan da canvasia.com.tr ve ben cloudflare kullanıyorum .
+  hadi şimdi ise gerekli değişikliklere gelelim .
+  Aşağıya sana **bu proje için eklenmesi gereken tüm özellikleri**, yazılım geliştirme tarafında kullanabileceğin şekilde **modül modül ve en ince detayına
+  kadar maddeler halinde** yazıyorum. Bunu direkt backlog, görev listesi ya da teknik şartname gibi kullanabilirsin.
+
+  ---
+
+  # 1. Genel sistem mimarisi
+
+  * ASP.NET Core MVC katmanlı yapı
+  * Entity katmanı
+  * Service katmanı
+  * Repository katmanı
+  * Admin panel katmanı
+  * Frontend vitrini
+  * API katmanı gerekiyorsa ayrı servis yapısı
+  * PostgreSQL veritabanı
+  * Docker ile container yapısı
+  * Nginx reverse proxy
+  * SSL yapılandırması
+  * Production ve development environment ayrımı
+  * Hata loglama sistemi
+  * Global exception handling
+  * Config yönetimi
+  * Ortam bazlı ayar dosyaları
+  * Medya dosyaları için ayrı klasör yapısı
+  * Yedekleme planı
+  * Cron/background job altyapısı
+  * Cache altyapısı
+  * Güvenlik middleware’leri
+  * Audit log altyapısı
+
+  ---
+
+  # 2. Kullanıcı rolleri ve yetkilendirme
+
+  * Süper admin rolü
+  * Yönetici rolü
+  * Sipariş yöneticisi
+  * Ürün yöneticisi
+  * İçerik yöneticisi
+  * Kargo yöneticisi
+  * Sadece görüntüleyici rolü
+  * Rol bazlı sayfa erişim kontrolü
+  * Rol bazlı işlem yetkisi
+  * Yetkisiz işlem loglama
+  * Admin giriş logları
+  * Son giriş tarihi gösterimi
+  * Şifre yenileme sistemi
+  * Güçlü şifre politikası
+  * Oturum süresi yönetimi
+  * Çoklu giriş kontrolü
+  * İki aşamalı doğrulama opsiyonu
+  * IP bazlı admin güvenliği opsiyonu
+
+  ---
+
+  # 3. Admin panel dashboard
+
+  * Toplam sipariş sayısı
+  * Bugünkü siparişler
+  * Bekleyen siparişler
+  * Kargoya hazır siparişler
+  * Kargoya verilen siparişler
+  * İptal/iade siparişleri
+  * Toplam ciro
+  * Günlük ciro
+  * Haftalık ciro
+  * Aylık ciro
+  * En çok satan ürünler
+  * En çok görüntülenen ürünler
+  * Düşük stoklu ürünler
+  * Son eklenen ürünler
+  * Son müşteri yorumları
+  * Okunmamış iletişim talepleri
+  * Kargo bekleyen sipariş özeti
+  * Trafik/analitik alanı
+  * Hızlı işlem butonları
+  * Kısa yol menüleri
+  * Sistem uyarıları
+  * Hata/eksik veri uyarıları
+
+  ---
+
+  # 4. Ana site yönetimi
+
+  * Site adı yönetimi
+  * Marka adı yönetimi
+  * Logo yükleme
+  * Favicon yükleme
+  * Header ayarları
+  * Footer ayarları
+  * İletişim bilgileri
+  * WhatsApp numarası
+  * Sosyal medya linkleri
+  * E-posta adresleri
+  * Mağaza adresi
+  * Çalışma saatleri
+  * Sabit üst bar mesajı
+  * Kampanya duyuru barı
+  * Site bakım modu
+  * Analitik kod alanları
+  * Meta genel ayarları
+  * Varsayılan SEO ayarları
+  * Varsayılan sosyal paylaşım görseli
+  * Cookie metni
+  * KVKK ve kullanım koşulları sayfaları
+
+  ---
+
+  # 5. Ana sayfa modülleri
+
+  * Hero banner alanı
+  * Ana başlık
+  * Alt başlık
+  * CTA butonları
+  * Banner görseli/video alanı
+  * Çoklu slider desteği
+  * Öne çıkan kategoriler alanı
+  * En çok satan ürünler alanı
+  * Yeni ürünler alanı
+  * Kampanyalı ürünler alanı
+  * Koleksiyon alanı
+  * Oda bazlı keşif alanı
+  * Üretim süreci tanıtım bloğu
+  * Malzeme kalite bloğu
+  * Güven unsurları bloğu
+  * Müşteri yorumları bloğu
+  * Gerçek müşteri ev fotoğrafları bloğu
+  * Sosyal medya bloğu
+  * Marka hikayesi kısa alanı
+  * SSS alanı
+  * Blog yazıları alanı
+  * Newsletter alanı
+  * WhatsApp iletişim çağrısı
+  * Dinamik sıralanabilir blok sistemi
+  * Admin’den blok aç/kapat
+  * Her blok için ayrı başlık, açıklama, görsel yönetimi
+
+  ---
+
+  # 6. Menü ve navigasyon sistemi
+
+  * Üst menü yönetimi
+  * Alt menü yönetimi
+  * Çok seviyeli menü
+  * Mega menu desteği
+  * Menü sıralama
+  * Menü ikon/görsel desteği
+  * Kategori bazlı otomatik menü üretimi
+  * Mobil menü optimizasyonu
+  * Arama kutusu
+  * Hızlı kategori erişimi
+  * Breadcrumb sistemi
+  * Arama önerileri
+  * Trend aramalar alanı
+
+  ---
+
+  # 7. Kategori sistemi
+
+  * Ana kategori oluşturma
+  * Alt kategori oluşturma
+  * İstenirse üçüncü seviye kategori
+  * Kategori sıralama
+  * Kategori aktif/pasif durumu
+  * Kategori görseli
+  * Kategori bannerı
+  * Kategori açıklaması
+  * Kategori kısa açıklaması
+  * Kategori SEO title
+  * Kategori SEO description
+  * Kategori URL slug
+  * Kategoriye özel üst metin
+  * Kategoriye özel alt metin
+  * Kategoriye özel filtreler
+  * Kategoriye özel ürün sıralama tipi
+  * Kategoriye özel kampanya etiketi
+  * Kategori bazlı içerik blokları
+
+  ---
+
+  # 8. Ürün temel veri yapısı
+
+  * Ürün adı
+  * Kısa ürün adı opsiyonu
+  * Ürün kodu / SKU
+  * Barkod opsiyonu
+  * Marka alanı
+  * Ana kategori
+  * Alt kategori
+  * Çoklu kategori atama opsiyonu
+  * Etiketler
+  * Kısa açıklama
+  * Uzun açıklama
+  * Teknik özellikler
+  * Malzeme bilgisi
+  * Baskı bilgisi
+  * Bakım talimatı
+  * Paketleme bilgisi
+  * Üretim süresi
+  * Kargoya veriliş süresi
+  * Tahmini teslim süresi
+  * Stok durumu
+  * Ana fiyat
+  * İndirimli fiyat
+  * Maliyet alanı
+  * KDV durumu
+  * Aktif/pasif
+  * Öne çıkan ürün işareti
+  * Yeni ürün işareti
+  * Kampanyalı ürün işareti
+  * Ana sayfada göster işareti
+  * Sıralama değeri
+  * Görüntülenme sayısı
+  * Satış sayısı
+  * Favorilenme sayısı
+  * Min sipariş adedi
+  * Max sipariş adedi opsiyonu
+
+  ---
+
+  # 9. Gelişmiş ürün varyasyon sistemi
+
+  * Ölçü varyasyonu
+  * Çerçeve seçeneği
+  * Çerçeve rengi
+  * Çerçeve kalınlığı
+  * Çerçeve tipi
+  * Malzeme türü
+  * Yön seçeneği
+  * Parça sayısı
+  * Özel tasarım notu alanı
+  * Kişiselleştirme metni
+  * Varyasyon bazlı fiyat farkı
+  * Varyasyon bazlı stok
+  * Varyasyon bazlı SKU
+  * Varyasyon bazlı görsel
+  * Varyasyon bazlı üretim süresi
+  * Varyasyon bazlı ağırlık/desi
+  * Varyasyon bazlı aktif/pasif
+  * Bağımlı varyasyon sistemi
+  * Alt varyasyon sistemi
+  * Ölçüye göre uygun çerçeve seçenekleri
+  * Ölçüye göre fiyat dinamik değişimi
+  * Çoklu varyasyon kombinasyon desteği
+  * Varyasyon sıralama
+  * Varsayılan varyasyon seçimi
+  * Tükendiğinde gizleme opsiyonu
+  * Tükendiğinde ön sipariş opsiyonu
+
+  ---
+
+  # 10. Ürün özellik alanları sistemi
+
+  * Dinamik özellik tanımlama
+  * Ürün tipine göre farklı özellik setleri
+  * Kanvas için özel alanlar
+  * Ayna için özel alanlar
+  * Halı için özel alanlar
+  * Cam tablo için özel alanlar
+  * Duvar kağıdı için özel alanlar
+  * Sehpa/mobilya için özel alanlar
+  * Ürün tipi seçildiğinde uygun alanların açılması
+  * Filtreye yansıtılabilir özellikler
+  * Ürün detay sayfasında göster/gizle
+  * Teknik tablo görünümü
+  * Admin’den özellik seti tanımlama
+
+  ---
+   şuan sana bunları atıyorum ve daha sonra da ise diğer kalan kısımları atacağım hadi ne gerekiyorsa yapalım ve bu projeyi satılabilir hale getirelim bu
+  benim ilk yazılım projem ve ilk kazandığım para .

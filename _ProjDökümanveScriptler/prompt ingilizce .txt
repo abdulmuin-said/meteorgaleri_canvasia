@@ -1,0 +1,831 @@
+You are a senior full-stack software engineer and product-minded e-commerce architect.
+
+Your task is to take over my existing e-commerce project and systematically improve it into a premium, mobile-first, production-ready platform for decorative home products.
+
+Tech stack:
+- ASP.NET Core MVC
+- PostgreSQL
+- Docker
+- Existing admin panel + storefront already exists
+- The project currently works partially, but many modules are incomplete, weak, or missing
+
+Your working style must be:
+1. First inspect and understand the existing codebase
+2. Identify current architecture, entities, services, controllers, views, database structure, admin panel structure, and design system
+3. Then create a step-by-step execution plan
+4. Then begin implementing features one by one
+5. Do not just describe what should be done — actually make the code changes
+6. Keep all changes production-oriented, clean, modular, and scalable
+7. Preserve existing working functionality unless refactoring is necessary
+8. When refactoring, do it carefully and consistently across backend, frontend, database, and admin panel
+9. Always keep mobile responsiveness as a top priority
+10. Improve both functionality and visual quality
+11. After each completed task, summarize:
+   - what you changed
+   - which files you changed
+   - what remains next
+12. If something is missing in the codebase, create it properly
+13. If database migration is needed, generate it
+14. If a model/entity structure is weak, redesign it correctly
+15. If UI is weak, redesign it into a premium modern look
+16. Avoid shortcuts, hacks, and temporary fixes unless explicitly necessary
+17. Always favor maintainable and extensible code
+
+The business goal:
+This is not a basic website. It must become a professional, conversion-focused, premium-looking decorative e-commerce platform for products such as:
+- canvas wall art
+- glass wall art
+- wallpaper
+- glass cutting boards
+- mirrors
+- printed rugs
+- wooden decorative items
+- side table / furniture accessories
+- lightbox
+- posters
+and future new product types
+
+Design expectations:
+- premium, clean, elegant, modern look
+- inspired by brands like Zara Home / H&M Home style
+- lots of whitespace
+- strong typography hierarchy
+- high-quality image presentation
+- simple but luxurious visual feel
+- mobile-first responsive layout
+- fast-loading pages
+- product pages designed for conversion
+- category pages designed for exploration and filtering
+- admin panel should be practical and clean
+
+Important:
+Mobile compatibility is extremely important.
+Every page, component, modal, card, table, form, filter, image gallery, header, footer, and checkout step must be designed and tested for mobile responsiveness.
+Do not treat mobile as secondary.
+Use a mobile-first mindset.
+
+Now implement the project according to the following roadmap and requirements.
+
+==================================================
+PHASE 1 — ANALYZE THE CURRENT PROJECT
+==================================================
+
+Start by analyzing the existing codebase and tell me:
+
+- current project folder structure
+- current architecture quality
+- existing modules
+- missing modules
+- weak database design areas
+- weak admin panel areas
+- weak storefront areas
+- design weaknesses
+- mobile responsiveness weaknesses
+- security weaknesses
+- performance weaknesses
+
+Then propose a practical implementation order.
+After that, immediately start implementing.
+
+==================================================
+PHASE 2 — CORE ARCHITECTURE AND FOUNDATION
+==================================================
+
+Improve or create the following if needed:
+
+- layered architecture consistency
+- clean separation of controllers/services/repositories/viewmodels
+- entity relationships cleanup
+- DTO / ViewModel improvements
+- validation structure
+- error handling
+- logging
+- environment configuration
+- modular settings management
+- file/media management structure
+- migration structure
+- audit log readiness
+- caching readiness
+- security middleware readiness
+
+==================================================
+PHASE 3 — ADMIN AUTH, ROLES, AND SECURITY
+==================================================
+
+Implement or improve:
+
+- admin login flow
+- role-based authorization
+- roles:
+  - super admin
+  - admin
+  - order manager
+  - product manager
+  - content manager
+  - shipping manager
+  - read-only manager
+- permission checks
+- session management
+- password reset
+- strong password rules
+- login logs
+- admin activity logs
+- unauthorized access protection
+- optional 2FA-ready structure if practical
+
+==================================================
+PHASE 4 — ADMIN DASHBOARD
+==================================================
+
+Create/improve a useful admin dashboard showing:
+
+- total orders
+- pending orders
+- orders in production
+- shipped orders
+- canceled/returned orders
+- daily / weekly / monthly revenue
+- best-selling products
+- low-stock products
+- latest orders
+- latest customers
+- latest reviews
+- contact/support requests
+- quick action buttons
+- system warnings
+- missing data warnings
+
+Make dashboard cards, layout, and charts responsive for mobile/tablet too.
+
+==================================================
+PHASE 5 — SITE SETTINGS AND GLOBAL MANAGEMENT
+==================================================
+
+Implement admin management for:
+
+- site name
+- brand name
+- logo
+- favicon
+- header settings
+- footer settings
+- contact details
+- whatsapp number
+- social media links
+- top campaign bar
+- SEO defaults
+- analytics scripts area
+- cookie text
+- maintenance mode
+- policy page settings
+
+==================================================
+PHASE 6 — HOMEPAGE BUILDER / MODULAR HOMEPAGE
+==================================================
+
+Build a homepage system with manageable sections:
+
+- hero banner / slider
+- headline + subheadline + CTA
+- featured categories
+- best sellers
+- new arrivals
+- campaign products
+- collection section
+- room inspiration section
+- quality/material section
+- production process section
+- trust section
+- customer reviews section
+- real home photos section
+- social media section
+- brand story short section
+- FAQ block
+- blog block
+- newsletter block
+- whatsapp CTA block
+
+Requirements:
+- sections should be manageable from admin
+- reorderable if practical
+- enable/disable per section
+- premium design
+- mobile-first layout
+
+==================================================
+PHASE 7 — MENU, NAVIGATION, HEADER, FOOTER
+==================================================
+
+Implement/improve:
+
+- multi-level menu
+- category-based navigation
+- mega menu if suitable
+- mobile menu
+- sticky header
+- search bar
+- search suggestions
+- footer columns
+- social links
+- quick links
+- policy links
+- whatsapp shortcut
+
+Make header/footer elegant and highly usable on mobile.
+
+==================================================
+PHASE 8 — CATEGORY SYSTEM
+==================================================
+
+Implement a robust category system:
+
+- main categories
+- subcategories
+- optional third-level categories
+- category sort order
+- category active/passive
+- category image
+- category banner
+- category short description
+- category long description
+- category SEO fields
+- category slug
+- category-specific filter setup
+- category-specific content blocks
+
+Also improve category pages visually:
+- premium listing layout
+- filter sidebar / mobile drawer filters
+- clean product grids
+- good spacing and typography
+- mobile optimization
+
+==================================================
+PHASE 9 — PRODUCT DATA MODEL
+==================================================
+
+Create or improve a strong product model with:
+
+- name
+- short name optional
+- SKU
+- barcode optional
+- brand
+- main category
+- subcategory
+- tags
+- short description
+- long description
+- technical details
+- material info
+- print info
+- care instructions
+- packaging info
+- production time
+- shipping dispatch time
+- estimated delivery info
+- stock status
+- base price
+- discounted price
+- cost field optional
+- VAT/tax field if needed
+- active/passive
+- featured/new/campaign flags
+- homepage visibility
+- sort order
+- view count
+- sales count
+- favorite count
+- min/max purchase qty
+
+==================================================
+PHASE 10 — ADVANCED VARIATION SYSTEM
+==================================================
+
+This is critical.
+
+Implement a flexible variation engine for products such as:
+- size
+- frame option
+- frame color
+- frame thickness
+- frame type
+- material type
+- orientation
+- piece count
+- personalization note
+- custom text input
+
+Requirements:
+- variation-based price difference
+- variation-based stock
+- variation-based SKU
+- variation-based image
+- variation-based dispatch time
+- variation-based weight/dimensions
+- active/passive per variation
+- dependent variations
+- nested/sub variations
+- size-dependent available frame options
+- strong admin UI for editing variation combinations
+- beautiful storefront variation selector UI
+- mobile-friendly variation UX
+
+==================================================
+PHASE 11 — PRODUCT TYPE DYNAMIC ATTRIBUTES
+==================================================
+
+Because this store sells many different product types, implement a flexible attribute system.
+
+Need product-type-based dynamic attributes for:
+- canvas art
+- glass wall art
+- wallpaper
+- mirror
+- rug
+- glass cutting board
+- wooden decor
+- furniture accessories
+- lightbox
+- poster
+
+Requirements:
+- create attribute groups by product type
+- assign attributes to product types
+- allow showing these on product detail pages
+- allow using them in filters if needed
+- make this extensible for future product types
+- do not hardcode everything in an unscalable way
+
+==================================================
+PHASE 12 — PRODUCT MEDIA SYSTEM
+==================================================
+
+Implement/improve:
+
+- main image
+- gallery images
+- variation-specific images
+- product video upload or URL
+- production video
+- close-up material images
+- lifestyle/mockup images
+- image alt text
+- image ordering
+- optimized image handling
+- responsive media rendering
+
+Product gallery UI must be premium and mobile-friendly.
+
+==================================================
+PHASE 13 — MOCKUP / LIFESTYLE PRESENTATION
+==================================================
+
+Implement support for:
+
+- living room mockups
+- bedroom mockups
+- office mockups
+- children room mockups
+- corridor mockups
+- kitchen/dining mockups
+- user-submitted real-life photos (if feasible structure-wise)
+
+Need:
+- admin management
+- product association
+- category association if useful
+- polished storefront presentation
+
+==================================================
+PHASE 14 — PRODUCT DETAIL PAGE REDESIGN
+==================================================
+
+Redesign product detail pages to be premium and conversion-focused.
+
+Must include:
+- large image/video gallery
+- clean title block
+- short persuasive summary
+- price display
+- discount display
+- variation selectors
+- stock state
+- dispatch time
+- shipping info
+- add to cart
+- buy now
+- whatsapp ask button
+- favorite button
+- trust badges
+- material section
+- size/technical section
+- care section
+- FAQ section
+- reviews section
+- related products
+- similar products
+- recently viewed products
+- sticky mobile add-to-cart area
+
+Design must feel premium and work flawlessly on mobile.
+
+==================================================
+PHASE 15 — SEARCH, FILTER, SORT
+==================================================
+
+Implement/improve:
+
+- product search
+- SKU search
+- tag search
+- category search
+- autocomplete suggestions
+- typo tolerance if feasible
+- filtering by:
+  - price
+  - size
+  - color
+  - theme
+  - material
+  - frame
+  - room type
+  - campaign
+  - stock availability
+- sorting by:
+  - newest
+  - price ascending/descending
+  - popularity
+  - best selling
+
+Mobile filter UX is very important.
+
+==================================================
+PHASE 16 — CART
+==================================================
+
+Implement/improve:
+
+- add to cart
+- variation-aware cart lines
+- qty update
+- remove item
+- subtotal
+- shipping estimate
+- discount code
+- free shipping threshold messaging
+- recommended products
+- stock validation
+- guest cart
+- logged-in cart
+- cart merge
+- cart persistence
+
+Make cart highly usable on mobile.
+
+==================================================
+PHASE 17 — CHECKOUT
+==================================================
+
+Implement/improve:
+
+- guest checkout
+- member checkout
+- billing address
+- shipping address
+- multiple address support
+- city/district selection if needed
+- shipping method selection
+- payment method selection
+- order note
+- legal agreement checkboxes
+- coupon support
+- final summary
+- failure handling
+- success page
+
+Checkout should be simple, elegant, and mobile-first.
+
+==================================================
+PHASE 18 — PAYMENT
+==================================================
+
+Implement/improve iyzico integration:
+
+- one-shot payment
+- installment if available
+- 3D secure
+- success/failure handling
+- payment logs
+- retry handling
+- mapping payment result to order
+
+Also prepare optional support structure for:
+- bank transfer
+- cash on delivery if needed
+
+==================================================
+PHASE 19 — SHIPPING
+==================================================
+
+Implement a strong shipping system:
+
+- shipping providers management
+- shipping profile management
+- product-based shipping profile
+- category-based shipping profile if useful
+- weight/dimensions fields
+- flat shipping
+- city/region-based logic if needed
+- free shipping threshold
+- dispatch time display
+- shipping tracking number
+- tracking URL
+- order state sync with shipping flow
+- shipping notification mails
+
+==================================================
+PHASE 20 — ORDER MANAGEMENT
+==================================================
+
+Implement/improve order management in admin:
+
+- order list
+- order detail page
+- customer info
+- address info
+- order items
+- variation info
+- payment info
+- shipping info
+- internal note
+- order timeline
+- status transitions:
+  - pending payment
+  - paid
+  - in production
+  - preparing
+  - shipped
+  - delivered
+  - canceled
+  - returned
+- filters
+- export to excel if practical
+- printable packing slip / order sheet if practical
+
+==================================================
+PHASE 21 — CUSTOMER ACCOUNT
+==================================================
+
+Implement/improve:
+
+- register
+- login
+- password reset
+- profile edit
+- address management
+- order history
+- order details
+- shipment tracking
+- favorites
+- review writing
+- notification preferences
+
+==================================================
+PHASE 22 — REVIEWS AND SOCIAL PROOF
+==================================================
+
+Implement/improve:
+
+- star ratings
+- text reviews
+- photo reviews
+- verified purchase badge
+- admin approval
+- featured reviews
+- average rating display
+- homepage reviews block
+- product page reviews section
+- optional admin reply to reviews
+
+==================================================
+PHASE 23 — CONTENT MANAGEMENT PAGES
+==================================================
+
+Implement admin-manageable pages:
+
+- about us
+- brand story
+- production process
+- material quality
+- FAQ
+- contact
+- shipping & delivery
+- return & exchange
+- privacy policy
+- distance sales agreement / terms if needed
+- blog system
+
+Need rich content management and premium page templates.
+
+==================================================
+PHASE 24 — SALES BOOSTER MODULES
+==================================================
+
+Implement/improve:
+
+- coupon system
+- campaign system
+- category-specific discounts
+- product-specific discounts
+- cart-value discounts
+- free shipping campaigns
+- first-order discounts
+- popup campaign box
+- exit intent popup if suitable
+- whatsapp popup
+- newsletter popup
+- related product recommendations
+- cross-sell / upsell sections
+- recently viewed products
+
+==================================================
+PHASE 25 — EMAIL AND NOTIFICATION AUTOMATIONS
+==================================================
+
+Implement/improve:
+
+- order received mail
+- payment received mail
+- production started mail
+- shipped mail
+- delivered mail
+- review request mail
+- abandoned cart mail structure if practical
+- welcome mail
+- password reset mail
+- admin new order notification
+- admin new review notification
+- contact form notification
+
+==================================================
+PHASE 26 — CONTACT AND SUPPORT
+==================================================
+
+Implement/improve:
+
+- contact form
+- product question form
+- order-related support form
+- admin inbox/support list
+- status handling for support requests
+- whatsapp quick contact
+- FAQ integration
+
+==================================================
+PHASE 27 — SEO
+==================================================
+
+Implement/improve:
+
+- SEO-friendly URLs
+- meta title
+- meta description
+- canonical
+- open graph
+- twitter card
+- XML sitemap
+- robots.txt
+- product schema
+- review schema
+- FAQ schema
+- breadcrumb schema
+- blog SEO
+- category SEO
+- product SEO
+- image alt text
+- redirect support if practical
+
+Also ensure rendered HTML is SEO-friendly.
+
+==================================================
+PHASE 28 — PERFORMANCE
+==================================================
+
+Improve:
+
+- query optimization
+- pagination
+- indexing
+- image optimization
+- lazy loading
+- CSS/JS minification where appropriate
+- response compression
+- caching
+- better loading for large product counts
+- storefront performance
+- mobile performance
+- Core Web Vitals mindset
+
+==================================================
+PHASE 29 — SECURITY
+==================================================
+
+Review and improve:
+
+- SQL injection protection
+- XSS protection
+- CSRF protection
+- file upload security
+- secure auth/session handling
+- permission checks
+- secure error handling
+- activity logging
+- environment secret handling
+
+==================================================
+PHASE 30 — REPORTING
+==================================================
+
+Implement/improve reports:
+
+- daily sales
+- weekly sales
+- monthly sales
+- product sales
+- category sales
+- best sellers
+- weak sellers
+- canceled/returned order stats
+- coupon usage stats
+- new customer stats
+
+==================================================
+PHASE 31 — FUTURE-READY ARCHITECTURE
+==================================================
+
+Make the project extendable for:
+- future multi-language support
+- future multi-currency support
+- future country-based pricing
+- future country-based shipping
+- future marketplace integrations
+- future mobile app/API usage
+
+Do not necessarily build all global features now unless needed, but keep architecture ready.
+
+==================================================
+IMPORTANT VISUAL / UX REQUIREMENTS
+==================================================
+
+While implementing, always improve the visual system:
+- spacing
+- typography
+- cards
+- forms
+- buttons
+- badges
+- banners
+- product grids
+- filters
+- modals
+- admin tables
+- empty states
+- loading states
+- validation messages
+- success/error alerts
+
+Make everything:
+- premium
+- clean
+- modern
+- consistent
+- responsive
+- mobile-first
+
+==================================================
+EXECUTION METHOD
+==================================================
+
+Your execution method must be:
+
+1. Analyze current state
+2. List high-priority tasks
+3. Start implementing immediately
+4. Work in logical batches
+5. After each batch:
+   - summarize completed work
+   - list changed files
+   - list next batch
+6. Continue until the project becomes significantly more complete
+
+Do not stop after analysis.
+Do not just make a plan.
+Actually start coding and modifying the project.
+
+Start now with:
+- full codebase analysis
+- architecture review
+- feature gap review
+- design/mobile review
+- then immediately begin Phase 1 and continue into implementation

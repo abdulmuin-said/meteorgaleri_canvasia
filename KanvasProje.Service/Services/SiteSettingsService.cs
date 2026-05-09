@@ -1,0 +1,189 @@
+using System.Text.Json;
+using KanvasProje.Core.Models;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Caching.Memory;
+
+namespace KanvasProje.Service.Services
+{
+    public interface ISiteSettingsService
+    {
+        SiteAyarlari GetSettings();
+        void SaveSettings(SiteAyarlari settings);
+        string BuildAbsoluteUrl(string? path);
+    }
+
+    public class SiteSettingsService : ISiteSettingsService
+    {
+        private const string CacheKey = "site-settings";
+
+        private readonly IWebHostEnvironment _env;
+        private readonly IMemoryCache _cache;
+        private readonly JsonSerializerOptions _serializerOptions = new()
+        {
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+
+        private string SettingsPath => Path.Combine(_env.ContentRootPath, "App_Data", "site-settings.json");
+
+        public SiteSettingsService(IWebHostEnvironment env, IMemoryCache cache)
+        {
+            _env = env;
+            _cache = cache;
+        }
+
+        public SiteAyarlari GetSettings()
+        {
+            return _cache.GetOrCreate(CacheKey, entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
+                return LoadSettings();
+            })!;
+        }
+
+        public void SaveSettings(SiteAyarlari settings)
+        {
+            var normalized = NormalizeSettings(settings);
+            var directory = Path.GetDirectoryName(SettingsPath)!;
+
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            var json = JsonSerializer.Serialize(normalized, _serializerOptions);
+            File.WriteAllText(SettingsPath, json);
+            _cache.Remove(CacheKey);
+        }
+
+        public string BuildAbsoluteUrl(string? path)
+        {
+            var baseUrl = NormalizeBaseUrl(GetSettings().BaseUrl);
+
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return baseUrl;
+            }
+
+            if (Uri.TryCreate(path, UriKind.Absolute, out var absoluteUri))
+            {
+                return absoluteUri.ToString();
+            }
+
+            var relativePath = path.Trim();
+            if (relativePath.StartsWith("~"))
+            {
+                relativePath = relativePath[1..];
+            }
+
+            return $"{baseUrl}/{relativePath.TrimStart('/')}";
+        }
+
+        private SiteAyarlari LoadSettings()
+        {
+            if (!File.Exists(SettingsPath))
+            {
+                return NormalizeSettings(new SiteAyarlari());
+            }
+
+            try
+            {
+                var json = File.ReadAllText(SettingsPath);
+                var settings = JsonSerializer.Deserialize<SiteAyarlari>(json);
+                return NormalizeSettings(settings ?? new SiteAyarlari());
+            }
+            catch
+            {
+                return NormalizeSettings(new SiteAyarlari());
+            }
+        }
+
+        private static SiteAyarlari NormalizeSettings(SiteAyarlari settings)
+        {
+            settings.SiteAdi = string.IsNullOrWhiteSpace(settings.SiteAdi) ? "Canvasia" : settings.SiteAdi.Trim();
+            settings.MarkaAdi = string.IsNullOrWhiteSpace(settings.MarkaAdi) ? settings.SiteAdi : settings.MarkaAdi.Trim();
+            settings.SiteBasligi = string.IsNullOrWhiteSpace(settings.SiteBasligi) ? $"{settings.MarkaAdi} - Online Dekorasyon Mağazası" : settings.SiteBasligi.Trim();
+            settings.SiteAciklamasi = string.IsNullOrWhiteSpace(settings.SiteAciklamasi)
+                ? "Duvar dekorasyonu ve yaşam alanları için premium ürünler."
+                : settings.SiteAciklamasi.Trim();
+            settings.SiteLogoUrl = string.IsNullOrWhiteSpace(settings.SiteLogoUrl) ? "/logo_svg.svg" : settings.SiteLogoUrl.Trim();
+            settings.FaviconUrl = string.IsNullOrWhiteSpace(settings.FaviconUrl) ? "/favicon.ico" : settings.FaviconUrl.Trim();
+            settings.BaseUrl = NormalizeBaseUrl(settings.BaseUrl);
+            settings.TemaRengi = string.IsNullOrWhiteSpace(settings.TemaRengi) ? "#313511" : settings.TemaRengi.Trim();
+            settings.UstBarMesaji = settings.UstBarMesaji?.Trim() ?? string.Empty;
+            settings.KampanyaMesaji = settings.KampanyaMesaji?.Trim() ?? string.Empty;
+            settings.FooterAciklamasi = string.IsNullOrWhiteSpace(settings.FooterAciklamasi)
+                ? settings.SiteAciklamasi
+                : settings.FooterAciklamasi.Trim();
+
+            settings.Telefon = settings.Telefon?.Trim() ?? string.Empty;
+            settings.Email = settings.Email?.Trim() ?? string.Empty;
+            settings.Adres = settings.Adres?.Trim() ?? string.Empty;
+            settings.WhatsappNumarasi = settings.WhatsappNumarasi?.Trim() ?? string.Empty;
+            settings.CalismaSaatleri = settings.CalismaSaatleri?.Trim() ?? string.Empty;
+
+            settings.InstagramUrl = settings.InstagramUrl?.Trim() ?? string.Empty;
+            settings.FacebookUrl = settings.FacebookUrl?.Trim() ?? string.Empty;
+            settings.TwitterUrl = settings.TwitterUrl?.Trim() ?? string.Empty;
+            settings.YoutubeUrl = settings.YoutubeUrl?.Trim() ?? string.Empty;
+            settings.TiktokUrl = settings.TiktokUrl?.Trim() ?? string.Empty;
+            settings.PinterestUrl = settings.PinterestUrl?.Trim() ?? string.Empty;
+
+            settings.ParaBirimi = string.IsNullOrWhiteSpace(settings.ParaBirimi) ? "TL" : settings.ParaBirimi.Trim();
+            settings.KargoBedeli = Math.Max(0, settings.KargoBedeli);
+            settings.UcretsizKargoLimiti = Math.Max(0, settings.UcretsizKargoLimiti);
+            settings.StokUyariLimiti = Math.Max(0, settings.StokUyariLimiti);
+            settings.KargoFirmasi = string.IsNullOrWhiteSpace(settings.KargoFirmasi) ? "Aras Kargo" : settings.KargoFirmasi.Trim();
+            settings.KargoTakipUrl = settings.KargoTakipUrl?.Trim() ?? string.Empty;
+            settings.SiparisTeslimSuresiGun = settings.SiparisTeslimSuresiGun <= 0 ? 5 : settings.SiparisTeslimSuresiGun;
+            settings.IadeHakkiGun = settings.IadeHakkiGun <= 0 ? 14 : settings.IadeHakkiGun;
+
+            settings.MetaTitle = string.IsNullOrWhiteSpace(settings.MetaTitle)
+                ? $"{settings.MarkaAdi} - Premium Dekorasyon Ürünleri, Kanvas Tablo ve Duvar Sanatı"
+                : settings.MetaTitle.Trim();
+            settings.MetaDescription = string.IsNullOrWhiteSpace(settings.MetaDescription)
+                ? $"{settings.MarkaAdi}; kanvas tablo, cam tablo, duvar dekorasyonu ve yaşam alanlarına özel premium dekorasyon ürünleri sunar."
+                : settings.MetaDescription.Trim();
+            settings.MetaKeywords = string.IsNullOrWhiteSpace(settings.MetaKeywords)
+                ? "kanvas tablo, cam tablo, duvar dekorasyonu, duvar sanatı, tablo, dekorasyon ürünleri, Canvasia"
+                : settings.MetaKeywords.Trim();
+            settings.GoogleAnalyticsId = settings.GoogleAnalyticsId?.Trim() ?? string.Empty;
+            settings.FacebookPixelId = settings.FacebookPixelId?.Trim() ?? string.Empty;
+            settings.VarsayilanSosyalPaylasimGorseliUrl = string.IsNullOrWhiteSpace(settings.VarsayilanSosyalPaylasimGorseliUrl)
+                ? "/EmailTemplates/canvasia-logo.png"
+                : settings.VarsayilanSosyalPaylasimGorseliUrl.Trim();
+            settings.CookieMetni = string.IsNullOrWhiteSpace(settings.CookieMetni)
+                ? "Deneyiminizi iyileştirmek, sepetinizi korumak ve site trafiğini analiz etmek için çerezler kullanıyoruz."
+                : settings.CookieMetni.Trim();
+
+            settings.BildirimAliciEmail = settings.BildirimAliciEmail?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(settings.BildirimAliciEmail) ||
+                settings.BildirimAliciEmail.Equals("admin@canvasia.com", StringComparison.OrdinalIgnoreCase))
+            {
+                settings.BildirimAliciEmail = "canvasia.com.tr@gmail.com";
+            }
+            settings.BakimModuMesaji = string.IsNullOrWhiteSpace(settings.BakimModuMesaji)
+                ? "Size daha iyi bir alışveriş deneyimi sunmak için kısa bir bakım çalışması yapıyoruz. Çok yakında premium dekorasyon ürünlerimizle yeniden yayında olacağız."
+                : settings.BakimModuMesaji.Trim();
+
+            return settings;
+        }
+
+        private static string NormalizeBaseUrl(string? baseUrl)
+        {
+            if (string.IsNullOrWhiteSpace(baseUrl))
+            {
+                return "https://www.canvasia.com.tr";
+            }
+
+            var value = baseUrl.Trim().TrimEnd('/');
+            if (!value.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                !value.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                value = "https://" + value;
+            }
+
+            return value;
+        }
+    }
+}

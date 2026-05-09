@@ -1,0 +1,315 @@
+@using KanvasProje.Core.Varliklar
+@model IEnumerable<Urun>
+@inject KanvasProje.Data.KanvasDbContext DbContext
+
+@{
+    ViewData["Title"] = "Ürün Yönetimi";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+
+    var currentSearch = ViewBag.CurrentSearch as string ?? string.Empty;
+    int? currentKategori = ViewBag.CurrentKategori as int?;
+    var currentPage = ViewBag.Page as int? ?? 1;
+    var pageSize = ViewBag.PageSize as int? ?? 20;
+    var totalPages = ViewBag.TotalPages as int? ?? 1;
+    var totalCount = ViewBag.TotalCount as int? ?? Model.Count();
+    var pageSizeOptions = ViewBag.PageSizeOptions as int[] ?? new[] { 20, 50, 100 };
+    var kategoriler = DbContext.Kategoriler.OrderBy(x => x.Sira).ThenBy(x => x.Ad).ToList();
+
+    string BuildUrl(int? pageValue = null, int? pageSizeValue = null)
+    {
+        var query = new List<string>();
+        if (!string.IsNullOrWhiteSpace(currentSearch)) query.Add($"search={Uri.EscapeDataString(currentSearch)}");
+        if (currentKategori.HasValue) query.Add($"kategoriId={currentKategori.Value}");
+        query.Add($"page={pageValue ?? currentPage}");
+        query.Add($"pageSize={pageSizeValue ?? pageSize}");
+        return "/Admin/Urun?" + string.Join("&", query);
+    }
+}
+
+<div class="container-fluid ca-fade-in">
+    <form id="bulkProductDeleteForm" method="post" action="/Admin/Urun/TopluSil" class="d-none">
+        @Html.AntiForgeryToken()
+        <div id="bulkProductDeleteInputs"></div>
+    </form>
+
+    <div class="ca-page-header">
+        <div>
+            <h1 class="ca-page-title">Ürün Kataloğu</h1>
+            <p class="ca-page-subtitle">Ürünleri sayfalı, hızlı ve görsel yükü düşük bir yönetim ekranından takip edin.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="/Admin/Urun/UrunExcelExport" class="ca-btn ca-btn-outline">
+                <i class="fas fa-file-export"></i> Tüm Ürünler XLSX
+            </a>
+            <a href="/Admin/Urun/Excel" class="ca-btn ca-btn-excel">
+                <i class="fas fa-file-excel"></i> Excel İşlemleri
+            </a>
+            <a href="/Admin/Urun/Ekle" class="ca-btn ca-btn-primary">
+                <i class="fas fa-plus"></i> Yeni Ürün
+            </a>
+        </div>
+    </div>
+
+    <div class="ca-card mb-4">
+        <form method="get" action="/Admin/Urun">
+            <div class="ca-filter-bar">
+                <div class="ca-input-icon-group" style="flex:1; max-width:360px;">
+                    <i class="fas fa-search ca-icon-left"></i>
+                    <input type="text" name="search" value="@currentSearch" class="ca-input" placeholder="Başlık, SKU, barkod veya ID ara">
+                </div>
+                <select name="kategoriId" class="ca-select" style="max-width:240px;" onchange="this.form.submit()">
+                    <option value="">Tüm Kategoriler</option>
+                    @foreach (var kat in kategoriler)
+                    {
+                        if (currentKategori == kat.Id)
+                        {
+                            <option value="@kat.Id" selected>@kat.Ad</option>
+                        }
+                        else
+                        {
+                            <option value="@kat.Id">@kat.Ad</option>
+                        }
+                    }
+                </select>
+                <select name="pageSize" class="ca-select" style="max-width:110px;" onchange="this.form.submit()">
+                    @foreach (var option in pageSizeOptions)
+                    {
+                        if (option == pageSize)
+                        {
+                            <option value="@option" selected>@option</option>
+                        }
+                        else
+                        {
+                            <option value="@option">@option</option>
+                        }
+                    }
+                </select>
+                <input type="hidden" name="page" value="1" />
+                <button type="submit" class="ca-btn ca-btn-primary ca-btn-sm"><i class="fas fa-search"></i></button>
+                <button id="bulkProductDeleteButton"
+                        type="submit"
+                        form="bulkProductDeleteForm"
+                        class="ca-btn ca-btn-sm"
+                        style="background:#b42318; color:#fff; border-radius:999px;"
+                        disabled
+                        onclick="return confirm('Seçili ürünler arşive alınsın mı?')">
+                    <i class="fas fa-trash"></i> Seçili Ürünleri Sil
+                </button>
+                <span id="selectedProductCount" class="small text-muted">Seçili ürün yok.</span>
+                <span class="ca-filter-count">Toplam <strong>@totalCount</strong> ürün</span>
+            </div>
+        </form>
+    </div>
+
+    <div class="ca-card">
+        <div class="ca-table-wrapper">
+            <table class="ca-table">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Görsel</th>
+                        <th>Ürün</th>
+                        <th>Kategori</th>
+                        <th>Fiyat</th>
+                        <th>Yayın Durumu</th>
+                        <th class="text-end">İşlemler</th>
+                        <th class="text-center pe-4" style="width:54px;">
+                            <input id="selectAllProducts" type="checkbox" class="form-check-input" title="Bu sayfadaki ürünleri seç">
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="7">
+                                <div class="ca-empty">
+                                    <i class="fas fa-box-open"></i>
+                                    <p>Listeleyecek ürün bulunamadı.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var item in Model)
+                        {
+                            var detailUrl = "/Urun/Detay/" + (string.IsNullOrWhiteSpace(item.Slug) ? item.Id.ToString() : item.Slug + "-" + item.Id);
+                            <tr>
+                                <td class="ps-4" width="84">
+                                    <img src="@item.AnaGorselUrl"
+                                         class="ca-thumb"
+                                         alt="@item.Baslik"
+                                         loading="lazy"
+                                         decoding="async"
+                                         onerror="this.onerror=null; this.src='https://placehold.co/80x80/f1f5f9/94a3b8?text=Yok'; this.style.border='2px dashed var(--ca-border)';">
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column gap-1">
+                                        <span class="ca-fw-bold">@item.Baslik</span>
+                                        <small class="ca-text-muted">SKU: @(string.IsNullOrWhiteSpace(item.SKU) ? "-" : item.SKU)</small>
+                                        <div class="d-flex gap-1 flex-wrap">
+                                            @if (item.OneCikanMi)
+                                            {
+                                                <span class="badge text-bg-warning">Öne Çıkan</span>
+                                            }
+                                            @if (item.YeniUrunMu)
+                                            {
+                                                <span class="badge text-bg-success">Yeni</span>
+                                            }
+                                            @if (item.KampanyaliMi)
+                                            {
+                                                <span class="badge text-bg-danger">Kampanya</span>
+                                            }
+                                            @if (item.AnaSayfadaGoster)
+                                            {
+                                                <span class="badge text-bg-primary">Ana Sayfa</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>@(item.Kategori?.Ad ?? "Kategori yok")</div>
+                                    <small class="ca-text-muted">Marka: @(string.IsNullOrWhiteSpace(item.Marka) ? "-" : item.Marka)</small>
+                                </td>
+                                <td>
+                                    <div class="ca-fw-bold">@item.EtkinFiyat.ToString("N2") TL</div>
+                                    @if (item.IndirimVarMi)
+                                    {
+                                        <small class="text-decoration-line-through text-muted">@item.Fiyat.ToString("N2") TL</small>
+                                    }
+                                </td>
+                                <td>
+                                    <div>
+                                        @if (item.AktifMi && !item.SilindiMi)
+                                        {
+                                            <span class="ca-badge ca-badge-success"><i class="fas fa-check-circle"></i> Yayında</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="ca-badge ca-badge-danger"><i class="fas fa-times-circle"></i> Pasif</span>
+                                        }
+                                    </div>
+                                    <small class="ca-text-muted">Durum: @item.StokDurumu</small>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-inline-flex gap-1">
+                                        <a href="@detailUrl" target="_blank" class="ca-btn-icon view" title="Sitede Görüntüle">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                        <a href="/Admin/Urun/Duzenle/@item.Id" class="ca-btn-icon edit" title="Düzenle">
+                                            <i class="fas fa-pen"></i>
+                                        </a>
+                                        <form action="/Admin/Urun/Sil" method="post" class="d-inline" onsubmit="return confirm('Bu ürün arşive alınsın mı?')">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="ca-btn-icon delete" title="Sil">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                                <td class="text-center pe-4">
+                                    <input type="checkbox"
+                                           class="form-check-input product-select"
+                                           value="@item.Id"
+                                           aria-label="@item.Baslik ürününü seç">
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="ca-card-footer d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <small class="ca-text-muted">Sayfa @currentPage / @Math.Max(totalPages, 1) - Bu sayfada @Model.Count() ürün gösteriliyor.</small>
+            @if (totalPages > 1)
+            {
+                <div class="ca-pagination p-0">
+                    @if (currentPage > 1)
+                    {
+                        <a href="@BuildUrl(currentPage - 1)" aria-label="Önceki"><i class="fas fa-chevron-left"></i></a>
+                    }
+                    @for (var p = Math.Max(1, currentPage - 2); p <= Math.Min(totalPages, currentPage + 2); p++)
+                    {
+                        if (p == currentPage)
+                        {
+                            <span class="active">@p</span>
+                        }
+                        else
+                        {
+                            <a href="@BuildUrl(p)">@p</a>
+                        }
+                    }
+                    @if (currentPage < totalPages)
+                    {
+                        <a href="@BuildUrl(currentPage + 1)" aria-label="Sonraki"><i class="fas fa-chevron-right"></i></a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const checkboxes = Array.from(document.querySelectorAll('.product-select'));
+        const selectAll = document.getElementById('selectAllProducts');
+        const bulkButton = document.getElementById('bulkProductDeleteButton');
+        const selectedText = document.getElementById('selectedProductCount');
+        const bulkForm = document.getElementById('bulkProductDeleteForm');
+        const hiddenInputs = document.getElementById('bulkProductDeleteInputs');
+
+        function selectedValues() {
+            return checkboxes.filter(x => x.checked).map(x => x.value);
+        }
+
+        function refreshBulkState() {
+            const values = selectedValues();
+            if (bulkButton) {
+                bulkButton.disabled = values.length === 0;
+            }
+            if (selectedText) {
+                selectedText.textContent = values.length === 0
+                    ? 'Seçili ürün yok.'
+                    : values.length + ' ürün seçildi.';
+            }
+            if (selectAll) {
+                selectAll.checked = values.length > 0 && values.length === checkboxes.length;
+                selectAll.indeterminate = values.length > 0 && values.length < checkboxes.length;
+            }
+        }
+
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                checkboxes.forEach(x => x.checked = selectAll.checked);
+                refreshBulkState();
+            });
+        }
+
+        checkboxes.forEach(function (checkbox) {
+            checkbox.addEventListener('change', refreshBulkState);
+        });
+
+        if (bulkForm) {
+            bulkForm.addEventListener('submit', function (event) {
+                const values = selectedValues();
+                if (values.length === 0) {
+                    event.preventDefault();
+                    return;
+                }
+
+                hiddenInputs.innerHTML = '';
+                values.forEach(function (id) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'urunIds';
+                    input.value = id;
+                    hiddenInputs.appendChild(input);
+                });
+            });
+        }
+
+        refreshBulkState();
+    });
+</script>

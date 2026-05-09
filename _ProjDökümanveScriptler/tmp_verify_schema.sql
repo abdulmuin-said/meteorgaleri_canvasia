@@ -1,0 +1,1 @@
+SELECT table_name, column_name FROM information_schema.columns WHERE table_name IN ('Kategoriler','Urunler','UrunSecenekleri','UrunOzellikTanimlari','UrunOzellikDegerleri') AND column_name IN ('KisaAciklama','ParentKategoriId','UrunTipi','AktifMi','VarsayilanMi') ORDER BY table_name, column_name;

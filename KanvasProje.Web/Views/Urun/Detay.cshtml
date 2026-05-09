@@ -1,0 +1,1122 @@
+@model KanvasProje.Core.Varliklar.Urun
+@using KanvasProje.Service.Helpers
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@inject KanvasProje.Service.Services.ISiteSettingsService SiteSettingsService
+@{
+    ViewData["Title"] = Model.Baslik;
+    var siteSettings = SiteSettingsService.GetSettings();
+    var brandName = string.IsNullOrWhiteSpace(siteSettings.MarkaAdi) ? siteSettings.SiteAdi : siteSettings.MarkaAdi;
+    var currencySymbol = string.IsNullOrWhiteSpace(siteSettings.ParaBirimi) ? "TL" : siteSettings.ParaBirimi;
+
+    // --- VARYANT VE FÃ„Â°YAT HESAPLAMA ---
+    var secenekler = ViewBag.Secenekler as List<KanvasProje.Core.Varliklar.UrunSecenek> ?? new List<KanvasProje.Core.Varliklar.UrunSecenek>();
+    var varsayilanSecenek = secenekler
+        .OrderByDescending(x => x.VarsayilanMi)
+        .ThenBy(x => x.Sira)
+        .ThenBy(x => x.SatisFiyati)
+        .FirstOrDefault(x => x.SatinAlinabilirMi)
+        ?? secenekler
+            .OrderByDescending(x => x.VarsayilanMi)
+            .ThenBy(x => x.Sira)
+            .ThenBy(x => x.SatisFiyati)
+            .FirstOrDefault();
+    decimal gosterilecekFiyat = varsayilanSecenek != null ? varsayilanSecenek.SatisFiyati : Model.EtkinFiyat;
+    decimal eskiFiyat = gosterilecekFiyat * 1.15m; // %15 indirim simÃƒÂ¼lasyonu
+
+    // --- YORUM VERÃ„Â°LERÃ„Â° ---
+    decimal? gosterilecekEskiFiyatEski = varsayilanSecenek == null && Model.IndirimVarMi ? Model.Fiyat : null;
+    decimal? gosterilecekEskiFiyat = varsayilanSecenek != null && Model.Fiyat > gosterilecekFiyat
+        ? Model.Fiyat
+        : gosterilecekEskiFiyatEski;
+    int? gosterilecekIndirimYuzdesi = gosterilecekEskiFiyat.HasValue && gosterilecekEskiFiyat.Value > gosterilecekFiyat
+        ? (int)Math.Round((1 - (gosterilecekFiyat / gosterilecekEskiFiyat.Value)) * 100)
+        : null;
+    int toplamStok = secenekler.Any() ? secenekler.Where(x => !x.SilindiMi && x.AktifMi).Sum(x => x.StokAdedi) : Model.ToplamStok;
+    bool stoktaVar = secenekler.Any()
+        ? secenekler.Any(x => x.SatinAlinabilirMi && (!x.TukeninceGizle || x.StokAdedi > 0 || x.OnSipariseAcikMi))
+        : Model.StoktaVarMi;
+    string stokDurumuMetni = varsayilanSecenek != null
+        ? (varsayilanSecenek.SatinAlinabilirMi ? "Siparişe özel hazırlanır" : (varsayilanSecenek.OnSipariseAcikMi ? "Ön siparişe açık" : "Satışa kapalı"))
+        : (stoktaVar
+            ? "Siparişe özel hazırlanır"
+            : "Satışa kapalı");
+    var stokIkonClass = stoktaVar
+        ? (stokDurumuMetni.Contains("sipari", StringComparison.OrdinalIgnoreCase) ? "fas fa-clock text-blue-600" : "fas fa-check-circle text-green-600")
+        : "fas fa-times-circle text-red-600";
+    int minSiparisAdedi = Model.MinSiparisAdedi > 0 ? Model.MinSiparisAdedi : 1;
+    int varsayilanMax = varsayilanSecenek?.StokAdedi > 0
+        ? varsayilanSecenek.StokAdedi
+        : (varsayilanSecenek?.OnSipariseAcikMi == true ? Math.Max(minSiparisAdedi, 25) : Math.Max(minSiparisAdedi, 10));
+    int maxSiparisAdedi = Model.MaxSiparisAdedi ?? varsayilanMax;
+    if (maxSiparisAdedi < minSiparisAdedi)
+    {
+        maxSiparisAdedi = minSiparisAdedi;
+    }
+
+    var rawVaryantMetni = varsayilanSecenek != null 
+        ? (string.IsNullOrWhiteSpace(varsayilanSecenek.VaryantBasligi) ? (varsayilanSecenek.Olcu ?? "Standart") : varsayilanSecenek.VaryantBasligi) 
+        : string.Empty;
+    var seciliVaryantMetni = string.Join(" / ", rawVaryantMetni.Split(new[] { " / " }, StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("Standart", StringComparison.OrdinalIgnoreCase) && !x.Contains("Bask", StringComparison.OrdinalIgnoreCase)));
+    if (string.IsNullOrWhiteSpace(seciliVaryantMetni) && !string.IsNullOrWhiteSpace(rawVaryantMetni)) seciliVaryantMetni = rawVaryantMetni.Split('/')[0].Trim();
+    var seciliVaryantDetayi = varsayilanSecenek?.VaryantOzeti ?? string.Empty;
+    int gosterilecekUretimSuresi = varsayilanSecenek?.UretimSuresiGun > 0
+        ? varsayilanSecenek.UretimSuresiGun
+        : Model.UretimSuresiGun;
+    int gosterilecekKargoSuresi = Model.KargoyaVerilisSuresiGun > 0 ? Model.KargoyaVerilisSuresiGun : 3;
+    int gosterilecekTeslimSuresi = Model.TahminiTeslimSuresiGun > 0
+        ? Model.TahminiTeslimSuresiGun
+        : siteSettings.SiparisTeslimSuresiGun;
+    int iadeSuresi = siteSettings.IadeHakkiGun > 0 ? siteSettings.IadeHakkiGun : 14;
+    bool cerceveSecimiGerekli = (Model.UrunTipi ?? string.Empty).Contains("kanvas", StringComparison.OrdinalIgnoreCase)
+        || (Model.Kategori?.Ad ?? string.Empty).Contains("kanvas", StringComparison.OrdinalIgnoreCase)
+        || (Model.Kategori?.ParentKategori?.Ad ?? string.Empty).Contains("kanvas", StringComparison.OrdinalIgnoreCase);
+    var cerceveModelleri = new[] { "Çerçevesiz", "Siyah", "Beyaz", "Gold", "Gümüş", "Meşe", "Ceviz" };
+
+    var teknikSatirlari = (Model.TeknikOzellikler ?? string.Empty)
+        .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+        .Select(x => x.Trim())
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .ToList();
+
+    var dinamikOzellikler = (Model.UrunOzellikleri ?? Enumerable.Empty<KanvasProje.Core.Varliklar.UrunOzellikDegeri>())
+        .Where(x =>
+            !x.SilindiMi &&
+            x.UrunOzellikTanimi != null &&
+            x.UrunOzellikTanimi.AktifMi &&
+            x.UrunOzellikTanimi.DetaySayfasindaGoster &&
+            !string.IsNullOrWhiteSpace(x.Deger))
+        .OrderBy(x => x.UrunOzellikTanimi.Sira)
+        .ThenBy(x => x.UrunOzellikTanimi.Ad)
+        .ToList();
+
+    var teknikTabloSatirlari = new List<(string Baslik, string Deger)>();
+    teknikTabloSatirlari.AddRange(dinamikOzellikler
+        .Where(x => x.UrunOzellikTanimi.TeknikTablodaGoster)
+        .Select(x => (x.UrunOzellikTanimi.Ad, x.DegerGosterimi)));
+
+    foreach (var satir in teknikSatirlari)
+    {
+        var ayiriciIndex = satir.IndexOf(':');
+        if (ayiriciIndex > 0 && ayiriciIndex < satir.Length - 1)
+        {
+            teknikTabloSatirlari.Add((satir[..ayiriciIndex].Trim(), satir[(ayiriciIndex + 1)..].Trim()));
+        }
+        else
+        {
+            teknikTabloSatirlari.Add(("Detay", satir));
+        }
+    }
+
+    var tumMedya = ViewBag.TumMedya as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
+    var galeriMedyalari = ViewBag.Galeri as List<KanvasProje.Core.Varliklar.UrunResim> ?? tumMedya.Where(x => !x.VideoMu).ToList();
+    var videoMedyalari = ViewBag.VideoMedyalari as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
+    var mockupMedyalari = ViewBag.MockupMedyalari as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
+    var yakinDetayMedyalari = ViewBag.YakinDetayMedyalari as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
+    var uretimMedyalari = ViewBag.UretimMedyalari as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
+    var kullanimMedyalari = ViewBag.KullanimMedyalari as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
+    var varsayilanMedya = galeriMedyalari
+        .OrderByDescending(x => x.VarsayilanMi)
+        .ThenBy(x => x.Sira)
+        .FirstOrDefault();
+    var varsayilanGaleriGorseli = !string.IsNullOrWhiteSpace(varsayilanSecenek?.GorselUrl)
+        ? varsayilanSecenek.GorselUrl
+        : (varsayilanMedya?.ResimYolu ?? Model.AnaGorselUrl);
+    var varsayilanGaleriAltMetni = !string.IsNullOrWhiteSpace(varsayilanMedya?.AltMetin)
+        ? varsayilanMedya.AltMetin
+        : Model.Baslik;
+    var varyantMedyaHaritasi = tumMedya
+        .Where(x => x.UrunSecenekId.HasValue && !x.VideoMu && !string.IsNullOrWhiteSpace(x.ResimYolu))
+        .GroupBy(x => x.UrunSecenekId!.Value)
+        .ToDictionary(
+            x => x.Key,
+            x => x.OrderByDescending(y => y.VarsayilanMi).ThenBy(y => y.Sira).Select(y => y.ResimYolu).First());
+    var mockupGruplari = mockupMedyalari
+        .GroupBy(x => x.MedyaAlani)
+        .OrderBy(x => UrunMedyaCatalog.GetAreaLabel(x.Key))
+        .ToList();
+    bool medyaVitriniVar = videoMedyalari.Any() || mockupMedyalari.Any() || yakinDetayMedyalari.Any() || uretimMedyalari.Any() || kullanimMedyalari.Any();
+
+    List<KanvasProje.Core.Varliklar.Yorum> yorumlar = ViewBag.Yorumlar ?? new List<KanvasProje.Core.Varliklar.Yorum>();
+    double ortalamaPuan = ViewBag.OrtalamaPuan != null ? (double)ViewBag.OrtalamaPuan : 0;
+    int yorumSayisi = ViewBag.YorumSayisi != null ? (int)ViewBag.YorumSayisi : 0;
+    
+    // YÃ„Â±ldÃ„Â±z Hesaplama
+    int tamYildiz = (int)ortalamaPuan;
+    bool yarimYildiz = (ortalamaPuan - tamYildiz) >= 0.5;
+    
+    // --- SCHEMA.ORG Ã„Â°Ãƒâ€¡Ã„Â°N URL VE GÃƒâ€“RSEL ---
+    var request = HttpContextAccessor.HttpContext?.Request;
+    string baseUrl = request != null ? SiteSettingsService.BuildAbsoluteUrl(string.Empty) : "";
+    string detaySlug = string.IsNullOrWhiteSpace(Model.Slug) ? Model.Id.ToString() : $"{Model.Slug}-{Model.Id}";
+    string productUrl = $"{baseUrl}/Urun/Detay/{detaySlug}";
+    var encodedProductUrl = Uri.EscapeDataString(productUrl);
+    var encodedProductTitle = Uri.EscapeDataString(Model.Baslik);
+    var schemaImagePath = !string.IsNullOrWhiteSpace(varsayilanMedya?.EtkinPosterYolu) ? varsayilanMedya.EtkinPosterYolu : varsayilanGaleriGorseli;
+    string productImage = schemaImagePath.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? schemaImagePath : $"{baseUrl}{schemaImagePath}";
+    var seoDescriptionSource = !string.IsNullOrWhiteSpace(Model.KisaAciklama) ? Model.KisaAciklama : Model.Aciklama;
+    var seoDescription = System.Text.RegularExpressions.Regex.Replace(seoDescriptionSource ?? string.Empty, "<.*?>", " ");
+    seoDescription = System.Net.WebUtility.HtmlDecode(seoDescription);
+    seoDescription = System.Text.RegularExpressions.Regex.Replace(seoDescription, @"\s+", " ").Trim();
+    if (seoDescription.Length > 155)
+    {
+        var cut = seoDescription[..155].Trim();
+        var lastSpace = cut.LastIndexOf(' ');
+        seoDescription = (lastSpace > 80 ? cut[..lastSpace] : cut).TrimEnd('.', ',', ';', ':') + "...";
+    }
+    if (string.IsNullOrWhiteSpace(seoDescription))
+    {
+        seoDescription = $"{Model.Baslik} siparişe özel hazırlanır. Güvenli ödeme, özenli paketleme ve Türkiye geneli kargo avantajıyla {brandName}.";
+    }
+
+    var keywordParts = new List<string?>
+    {
+        Model.Baslik,
+        Model.Kategori?.Ad,
+        Model.UrunTipi,
+        Model.Marka,
+        "dekorasyon",
+        "premium dekorasyon",
+        "siparişe özel üretim"
+    };
+    keywordParts.AddRange((Model.Etiketler ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+
+ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTitle : $"{Model.Baslik} | {brandName}";
+    ViewData["MetaDescription"] = !string.IsNullOrWhiteSpace(Model.SeoDescription) ? Model.SeoDescription : seoDescription;
+    ViewData["MetaKeywords"] = !string.IsNullOrWhiteSpace(Model.SeoKeywords) ? Model.SeoKeywords : string.Join(", ", keywordParts.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase));
+    ViewData["CanonicalUrl"] = productUrl;
+    ViewData["OgType"] = "product";
+    ViewData["OgImage"] = productImage;
+    
+    <!-- SCHEMA.ORG JSON-LD: Google Shopping Rich Snippets -->
+    var productSchema = SchemaGenerator.GenerateProductSchema(
+        Model, 
+        ortalamaPuan, 
+        yorumSayisi, 
+        productImage, 
+        productUrl,
+        brandName
+    );
+}
+
+
+<!-- Ã¢Å“Â¨ SCHEMA.ORG JSON-LD: Google Shopping Rich Snippets Ã¢Å“Â¨ -->
+<script type="application/ld+json">
+@Html.Raw(productSchema)
+</script>
+
+
+<!-- Mobile Lightbox -->
+<div id="mobileLightbox" class="fixed inset-0 z-50 hidden bg-black bg-opacity-95 items-center justify-center">
+    <button class="absolute top-4 right-4 text-white p-2" onclick="closeMobileLightbox()">
+        <i class="fas fa-times text-2xl"></i>
+    </button>
+    <div class="w-full h-full flex items-center justify-center overflow-hidden" id="lightboxImgContainer">
+        <img id="mobileLightboxImage" class="max-w-full max-h-full object-contain" src="" alt="" decoding="async">
+    </div>
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center gap-4 bg-black bg-opacity-50 text-white rounded-full px-4 py-2">
+        <button onclick="zoomOutMobile()"><i class="fas fa-search-minus"></i></button>
+        <span id="zoomLevel" class="text-sm">100%</span>
+        <button onclick="zoomInMobile()"><i class="fas fa-search-plus"></i></button>
+    </div>
+</div>
+
+<!-- Desktop Lightbox Modal -->
+<div class="fixed inset-0 z-50 hidden bg-black bg-opacity-95 items-center justify-center" id="desktopLightboxModal">
+    <button class="absolute top-4 right-4 text-white p-2" id="closeDesktopModalBtn">
+        <i class="fas fa-times text-2xl"></i>
+    </button>
+    <div class="absolute top-4 left-1/2 transform -translate-x-1/2 flex items-center gap-4 bg-black bg-opacity-50 text-white rounded-full px-4 py-2">
+        <button onclick="resetDesktopZoom()"><i class="fas fa-redo"></i></button>
+        <button onclick="zoomOutDesktop()"><i class="fas fa-search-minus"></i></button>
+        <button onclick="zoomInDesktop()"><i class="fas fa-search-plus"></i></button>
+    </div>
+    <div class="w-full h-full flex items-center justify-center overflow-hidden">
+        <img id="desktopLightboxImage" src="@varsayilanGaleriGorseli" class="max-w-full max-h-full object-contain transition-transform duration-200" alt="@varsayilanGaleriAltMetni" loading="lazy" decoding="async">
+    </div>
+</div>
+
+<!-- Yorum Yapma Modal -->
+<div class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 items-center justify-center" id="commentModal">
+    <div class="bg-white rounded-lg w-full max-w-md p-6 relative">
+        <button class="absolute top-4 right-4 text-gray-400 hover:text-black" id="closeCommentModalBtn"><i class="fas fa-times"></i></button>
+        <h5 class="font-serif text-2xl text-[#313511] mb-6">Ürünü Değerlendir</h5>
+        <form action="/Urun/YorumYap" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="UrunId" value="@Model.Id" />
+            
+            <div class="flex flex-row-reverse justify-center gap-2 mb-6">
+                <input type="radio" id="star5" name="Puan" value="5" class="hidden peer/5" />
+                <label for="star5" class="text-gray-300 peer-checked/5:text-[#b58735] hover:text-[#b58735] cursor-pointer text-2xl transition-colors"><i class="fas fa-star"></i></label>
+                
+                <input type="radio" id="star4" name="Puan" value="4" class="hidden peer/4" />
+                <label for="star4" class="text-gray-300 peer-checked/4:text-[#b58735] hover:text-[#b58735] cursor-pointer text-2xl transition-colors"><i class="fas fa-star"></i></label>
+                
+                <input type="radio" id="star3" name="Puan" value="3" class="hidden peer/3" />
+                <label for="star3" class="text-gray-300 peer-checked/3:text-[#b58735] hover:text-[#b58735] cursor-pointer text-2xl transition-colors"><i class="fas fa-star"></i></label>
+                
+                <input type="radio" id="star2" name="Puan" value="2" class="hidden peer/2" />
+                <label for="star2" class="text-gray-300 peer-checked/2:text-[#b58735] hover:text-[#b58735] cursor-pointer text-2xl transition-colors"><i class="fas fa-star"></i></label>
+                
+                <input type="radio" id="star1" name="Puan" value="1" class="hidden peer/1" checked />
+                <label for="star1" class="text-gray-300 peer-checked/1:text-[#b58735] hover:text-[#b58735] cursor-pointer text-2xl transition-colors"><i class="fas fa-star"></i></label>
+            </div>
+
+            @if (User.Identity?.IsAuthenticated != true)
+            {
+                <div class="mb-4">
+                    <label class="block text-xs uppercase tracking-widest text-[#1c1c18] font-medium mb-1.5">Adınız Soyadınız</label>
+                    <input type="text" name="AdSoyad" class="w-full border border-[#e5e2dc] rounded px-4 py-2 text-sm focus:ring-[#b58735] focus:border-[#b58735]" required>
+                </div>
+            }
+
+            <div class="mb-6">
+                <label class="block text-xs uppercase tracking-widest text-[#1c1c18] font-medium mb-1.5">Yorumunuz</label>
+                <textarea name="YorumMetni" class="w-full border border-[#e5e2dc] rounded px-4 py-2 text-sm focus:ring-[#b58735] focus:border-[#b58735]" rows="4" required></textarea>
+            </div>
+
+            <button type="submit" class="w-full bg-[#313511] text-white text-xs tracking-widest uppercase py-3 rounded hover:bg-[#1c2001] transition-colors">Yorumu Gönder</button>
+        </form>
+    </div>
+</div>
+
+<!-- Breadcrumb -->
+<div class="bg-[#f1ede7] border-b border-[#e5e2dc] py-3">
+    <div class="container mx-auto px-4 flex items-center gap-2 text-xs text-[#47473d]">
+        <a href="/" class="hover:text-[#313511] transition-colors">Ana Sayfa</a>
+        <span>/</span>
+        <a href="/Urun" class="hover:text-[#313511] transition-colors">Koleksiyon</a>
+        <span>/</span>
+        <span class="text-[#1c1c18] font-medium">@Model.Baslik</span>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-12">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+        
+        <!-- Left: Image Gallery -->
+        <div class="space-y-4">
+            <div class="relative bg-[#f1ede7] aspect-square rounded-lg overflow-hidden group cursor-zoom-in" onclick="openProductLightbox()">
+                                    <img id="mainProductImage" src="@varsayilanGaleriGorseli" data-default-src="@(varsayilanMedya?.ResimYolu ?? Model.AnaGorselUrl)" data-default-alt="@varsayilanGaleriAltMetni" data-product-name="@Model.Baslik" class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105" alt="@varsayilanGaleriAltMetni" decoding="async" fetchpriority="high">
+                
+                <button type="button" class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm w-10 h-10 rounded-full shadow-sm text-[#313511] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white z-10" onclick="navigateGallery('prev', event)">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button type="button" class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm w-10 h-10 rounded-full shadow-sm text-[#313511] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white z-10" onclick="navigateGallery('next', event)">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+
+                <div class="absolute bottom-4 right-4 bg-white/80 backdrop-blur-sm w-10 h-10 rounded-full shadow-sm text-[#313511] flex items-center justify-center z-10">
+                    <i class="fas fa-search-plus"></i>
+                </div>
+            </div>
+            
+            @if (galeriMedyalari.Any())
+            {
+                <div class="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                    @foreach (var resim in galeriMedyalari)
+                    {
+                        var altMetin = string.IsNullOrWhiteSpace(resim.AltMetin) ? Model.Baslik : resim.AltMetin;
+                        <button type="button" class="thumbnail-item flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded border-2 @(string.Equals(resim.ResimYolu, varsayilanGaleriGorseli, StringComparison.OrdinalIgnoreCase) ? "border-[#313511]" : "border-transparent") overflow-hidden transition-colors bg-[#fcf9f3]" data-image="@resim.ResimYolu" data-alt="@altMetin" onclick="changeProductImage(this.dataset.image, this, this.dataset.alt)">
+                                            <img src="@resim.EtkinPosterYolu" class="w-full h-full object-cover" alt="@altMetin" loading="lazy" decoding="async">
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Right: Product Info -->
+        <div class="flex flex-col">
+            <h1 class="font-serif text-3xl md:text-4xl lg:text-5xl text-[#313511] mb-4">@Model.Baslik</h1>
+            
+            <div class="flex items-center gap-4 mb-6">
+                <div class="flex text-[#b58735] text-sm">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        if (i <= tamYildiz) { <i class="fas fa-star"></i> }
+                        else if (i == tamYildiz + 1 && yarimYildiz) { <i class="fas fa-star-half-alt"></i> }
+                        else { <i class="far fa-star"></i> }
+                    }
+                </div>
+                <span class="text-xs text-[#47473d]">(@yorumSayisi değerlendirme)</span>
+            </div>
+
+            <div class="flex items-end gap-4 mb-6">
+                <span id="priceDisplay" class="font-sans text-2xl font-medium tracking-tight text-[#1c1c18]">@gosterilecekFiyat.ToString("N2") @currencySymbol</span>
+                @if (gosterilecekEskiFiyat.HasValue)
+                {
+                    <span id="oldPriceDisplay" class="text-lg text-[#47473d] line-through mb-1 font-sans">@gosterilecekEskiFiyat.Value.ToString("N2") @currencySymbol</span>
+                }
+                else
+                {
+                    <span id="oldPriceDisplay" class="text-lg text-[#47473d] line-through mb-1 hidden"></span>
+                }
+                @if (gosterilecekIndirimYuzdesi.HasValue)
+                {
+                    <span id="discountBadge" class="bg-[#b58735] text-white text-xs px-2 py-1 rounded mb-1">%@gosterilecekIndirimYuzdesi.Value İndirim</span>
+                }
+                else
+                {
+                    <span id="discountBadge" class="bg-[#b58735] text-white text-xs px-2 py-1 rounded mb-1 hidden"></span>
+                }
+            </div>
+
+            <div class="flex flex-wrap items-center gap-y-2 gap-x-6 text-xs text-[#47473d] mb-6 border-y border-[#e5e2dc] py-4">
+                <span id="stockStatusText" class="flex items-center gap-2"><i class="@stokIkonClass"></i> @stokDurumuMetni</span>
+                <span class="flex items-center gap-2"><i class="fas fa-truck text-[#a09e99]"></i> @gosterilecekKargoSuresi iş günü içinde kargo</span>
+                @if (gosterilecekUretimSuresi > 0)
+                {
+                    <span id="productionTimeText" class="flex items-center gap-2"><i class="fas fa-hammer text-[#a09e99]"></i> @gosterilecekUretimSuresi iş günü üretim</span>
+                }
+            </div>
+
+            <div id="variantSummaryText" class="text-sm text-[#47473d] mb-6 @(string.IsNullOrWhiteSpace(seciliVaryantMetni) ? "hidden" : "")">
+                <i class="fas fa-layer-group mr-1.5"></i>@seciliVaryantMetni
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.KisaAciklama))
+            {
+                <p class="text-sm text-[#47473d] mb-8 leading-relaxed">@Model.KisaAciklama</p>
+            }
+
+            <div class="mb-8 flex flex-wrap items-center gap-3 border-y border-[#e5e2dc] py-4">
+                <span class="mr-1 text-xs uppercase tracking-widest text-[#47473d]">Paylaş</span>
+                <a href="https://www.facebook.com/sharer/sharer.php?u=@encodedProductUrl" target="_blank" rel="noopener noreferrer" aria-label="Facebook'ta paylaş" class="flex h-9 w-9 items-center justify-center rounded-full border border-[#e5e2dc] bg-white text-[#313511] transition-colors hover:border-[#b58735] hover:text-[#b58735]">
+                    <i class="fab fa-facebook-f text-sm"></i>
+                </a>
+                <a href="@(string.IsNullOrWhiteSpace(siteSettings.InstagramUrl) ? "https://www.instagram.com/" : siteSettings.InstagramUrl)" target="_blank" rel="noopener noreferrer" aria-label="Instagram'da aç" class="flex h-9 w-9 items-center justify-center rounded-full border border-[#e5e2dc] bg-white text-[#313511] transition-colors hover:border-[#b58735] hover:text-[#b58735]">
+                    <i class="fab fa-instagram text-sm"></i>
+                </a>
+                <a href="https://wa.me/?text=@encodedProductTitle%20@encodedProductUrl" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp ile paylaş" class="flex h-9 w-9 items-center justify-center rounded-full border border-[#e5e2dc] bg-white text-[#313511] transition-colors hover:border-[#b58735] hover:text-[#b58735]">
+                    <i class="fab fa-whatsapp text-sm"></i>
+                </a>
+                <button type="button" onclick="copyProductLink(this)" data-url="@productUrl" class="flex h-9 items-center gap-2 rounded-full border border-[#e5e2dc] bg-white px-4 text-xs uppercase tracking-widest text-[#313511] transition-colors hover:border-[#b58735] hover:text-[#b58735]">
+                    <i class="fas fa-link text-xs"></i>
+                    Linki Kopyala
+                </button>
+            </div>
+
+            <div class="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div class="border border-[#e5e2dc] bg-white px-4 py-3">
+                    <p class="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#313511]"><i class="fas fa-industry text-[#b58735]"></i> Üretim</p>
+                    <p id="productionCardText" class="text-sm text-[#47473d]">@(gosterilecekUretimSuresi > 0 ? $"{gosterilecekUretimSuresi} iş günü" : "Siparişe özel hazırlanır")</p>
+                </div>
+                <div class="border border-[#e5e2dc] bg-white px-4 py-3">
+                    <p class="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#313511]"><i class="fas fa-box-open text-[#b58735]"></i> Paketleme</p>
+                    <p class="text-sm text-[#47473d]">Özenli ve korunaklı teslimat</p>
+                </div>
+                <div class="border border-[#e5e2dc] bg-white px-4 py-3">
+                    <p class="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#313511]"><i class="fas fa-route text-[#b58735]"></i> Teslimat</p>
+                    <p class="text-sm text-[#47473d]">Tahmini @gosterilecekTeslimSuresi iş günü</p>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.MalzemeBilgisi) || !string.IsNullOrWhiteSpace(Model.PaketlemeBilgisi))
+            {
+                <div class="mb-8 border-l-2 border-[#b58735] bg-[#f1ede7] px-5 py-4">
+                    @if (!string.IsNullOrWhiteSpace(Model.MalzemeBilgisi))
+                    {
+                        <p class="mb-2 text-sm text-[#1c1c18]"><span class="font-semibold">Malzeme:</span> @Model.MalzemeBilgisi</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.PaketlemeBilgisi))
+                    {
+                        <p class="text-sm text-[#47473d]"><span class="font-semibold text-[#1c1c18]">Paketleme:</span> @Model.PaketlemeBilgisi</p>
+                    }
+                </div>
+            }
+
+            @if (secenekler.Any())
+            {
+                <div class="mb-8">
+                    <label class="block text-xs uppercase tracking-widest text-[#1c1c18] font-medium mb-3">Ebat Seçiniz</label>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach (var varyant in secenekler)
+                        {
+                            var varyantSatinAlinabilir = varyant.SatinAlinabilirMi;
+                            var varyantOldPrice = Model.Fiyat > varyant.SatisFiyati ? Model.Fiyat : 0;
+                            var varyantMedyaUrl = !string.IsNullOrWhiteSpace(varyant.GorselUrl) ? varyant.GorselUrl : (varyantMedyaHaritasi.TryGetValue(varyant.Id, out var eslesen) ? eslesen : string.Empty);
+                            var rawVb = string.IsNullOrWhiteSpace(varyant.VaryantBasligi) ? varyant.Olcu : varyant.VaryantBasligi;
+                            var cleanVb = string.Join(" / ", rawVb.Split(new[] { " / " }, StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("Standart", StringComparison.OrdinalIgnoreCase) && !x.Contains("Bask", StringComparison.OrdinalIgnoreCase)));
+                            if (string.IsNullOrWhiteSpace(cleanVb)) cleanVb = rawVb.Split('/')[0].Trim();
+                            var varyantUretimSuresi = varyant.UretimSuresiGun > 0 ? varyant.UretimSuresiGun : Model.UretimSuresiGun;
+                            var checkedAttr = varyant.Id == varsayilanSecenek?.Id ? "checked" : null;
+                            var disabledAttr = !varyantSatinAlinabilir ? "disabled" : null;
+                            
+                            <label class="relative border border-[#e5e2dc] rounded px-4 py-2 cursor-pointer transition-colors hover:border-[#b58735] has-[:checked]:border-[#313511] has-[:checked]:bg-[#313511] has-[:checked]:text-white @(!varyantSatinAlinabilir ? "opacity-50 cursor-not-allowed" : "text-[#47473d]")">
+                                <input type="radio" id="variant-@varyant.Id" name="productVariant" value="@varyant.Id" class="variant-radio absolute opacity-0 w-0 h-0" checked="@checkedAttr" disabled="@disabledAttr" data-price="@varyant.SatisFiyati" data-oldprice="@(varyantOldPrice > 0 ? varyantOldPrice.ToString(System.Globalization.CultureInfo.InvariantCulture) : string.Empty)" data-stock="@varyant.StokAdedi" data-preorder="@varyant.OnSipariseAcikMi.ToString().ToLowerInvariant()" data-production="@varyantUretimSuresi" data-image="@varyantMedyaUrl" data-label="@cleanVb">
+                                <span class="text-sm font-medium">@cleanVb</span>
+                            </label>
+                        }
+                    </div>
+                </div>
+            }
+
+@if (cerceveSecimiGerekli)
+            {
+                <div id="frameSelectionBlock" class="mb-8">
+                    <label class="mb-3 block text-xs font-medium uppercase tracking-widest text-[#1c1c18]">Çerçeve Modeli Seçiniz</label>
+                    <div class="grid grid-cols-4 gap-3 sm:grid-cols-7">
+                        @{
+                            var cerceveMap = new Dictionary<string, (string image, string label)>
+                            {
+                                { "Çerçevesiz", ("/cercevesiz.png", "Çerçevesiz") },
+                                { "Siyah", ("/siyah çerçeve .png", "Siyah") },
+                                { "Beyaz", ("/beyaz çerçeve .png", "Beyaz") },
+                                { "Gold", ("/altın çerçeve.png", "Altın") },
+                                { "Gümüş", ("/gümüş çerçeve.png", "Gümüş") },
+                                { "Meşe", ("/naturel çerçeve.png", "Naturel") },
+                                { "Ceviz", ("/kahve çerçeve.png", "Ceviz") }
+                            }!;
+                        }
+                        @foreach (var cerceve in cerceveModelleri)
+                        {
+                            var map = cerceveMap.GetValueOrDefault(cerceve, (image: string.Empty, label: cerceve));
+                            <label class="group relative cursor-pointer rounded-lg border-2 border-[#e5e2dc] bg-white p-2 text-center transition-all hover:border-[#b58735] has-[:checked]:border-[#b58735] has-[:checked]:bg-[#f7f1e6] has-[:checked]:shadow-sm"
+                                   title="@map.label"
+                                   onclick="selectFrameOption(this, '@cerceve')">
+                                <input type="radio" name="CerceveModeli" value="@cerceve" class="frame-radio absolute h-0 w-0 opacity-0" />
+                                <div class="mb-1.5 flex h-16 items-center justify-center">
+                                    <img src="@map.image" alt="@map.label" class="max-h-full max-w-full object-contain" loading="lazy" onerror="this.style.display='none'" />
+                                </div>
+                                <span class="text-[11px] font-medium text-[#47473d] group-has-[:checked]:text-[#313511]">@map.label</span>
+                                <div class="absolute -top-1.5 -right-1.5 hidden h-4 w-4 items-center justify-center rounded-full bg-[#b58735] group-has-[:checked]:flex">
+                                    <svg class="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                </div>
+                            </label>
+                        }
+                    </div>
+                    <p id="frameSelectionError" class="mt-2 hidden text-xs font-medium text-red-600">Çerçeve modeli seçilmelidir.</p>
+                </div>
+            }
+
+            @if (stoktaVar)
+            {
+                <div class="flex items-end gap-4 mb-8">
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-[#1c1c18] font-medium mb-3">Adet</label>
+                        <div class="flex items-center border border-[#e5e2dc] rounded bg-white">
+                            <button type="button" class="w-10 h-12 flex items-center justify-center text-[#47473d] hover:bg-[#f1ede7] transition-colors" onclick="decreaseQuantity()">-</button>
+                            <input type="number" id="productQuantity" class="w-12 h-12 text-center text-sm border-none bg-transparent p-0 focus:ring-0 text-[#1c1c18] font-semibold" value="@minSiparisAdedi" min="@minSiparisAdedi" max="@maxSiparisAdedi" readonly>
+                            <button type="button" class="w-10 h-12 flex items-center justify-center text-[#47473d] hover:bg-[#f1ede7] transition-colors" onclick="increaseQuantity()">+</button>
+                        </div>
+                    </div>
+                    
+                    <form id="addToCartForm" method="post" action="/Sepet/Ekle" class="flex-1">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="UrunId" value="@Model.Id" />
+                        <input type="hidden" id="selectedVariantId" name="SecenekId" value="@varsayilanSecenek?.Id" />
+                        <input type="hidden" id="selectedQuantity" name="Adet" value="@minSiparisAdedi" />
+                        <input type="hidden" id="selectedFrameModel" name="CerceveModeli" value="" />
+
+                        <button type="button" id="ajaxSepetBtn" class="w-full h-12 bg-[#313511] text-white text-xs uppercase tracking-widest rounded hover:bg-[#1c2001] transition-colors flex items-center justify-center gap-2">
+                            <i class="fas fa-shopping-bag"></i> Sepete Ekle
+                        </button>
+                    </form>
+                    <button type="button" onclick="window.toggleFavori(this, @Model.Id)" class="group/btn h-12 w-12 flex-shrink-0 flex items-center justify-center border border-[#e5e2dc] rounded hover:border-[#b58735] transition-colors bg-white" title="Favorilere Ekle">
+                        <i class="far fa-heart text-[#47473d] group-hover/btn:text-red-500 transition-colors text-lg"></i>
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded text-sm mb-8">
+                    Bu ürün şu anda satın almaya uygun değil. Stok bilgisi güncellendiğinde tekrar deneyin.
+                </div>
+            }
+
+            <div class="grid grid-cols-3 gap-2 py-4 border-y border-[#e5e2dc]">
+                <div class="text-center">
+                    <i class="fas fa-shield-alt text-[#b58735] mb-2 text-lg"></i>
+                    <p class="text-xs text-[#1c1c18] font-semibold mb-1">Güvenli Ödeme</p>
+                    <p class="text-[10px] text-[#47473d]">256-bit SSL</p>
+                </div>
+                <div class="text-center">
+                    <i class="fas fa-truck text-[#b58735] mb-2 text-lg"></i>
+                    <p class="text-xs text-[#1c1c18] font-semibold mb-1">Ücretsiz Kargo</p>
+                    <p class="text-[10px] text-[#47473d]">@gosterilecekKargoSuresi iş günü</p>
+                </div>
+                <div class="text-center">
+                    <i class="fas fa-undo-alt text-[#b58735] mb-2 text-lg"></i>
+                    <p class="text-xs text-[#1c1c18] font-semibold mb-1">İade Garantisi</p>
+                    <p class="text-[10px] text-[#47473d]">@iadeSuresi gün içinde</p>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Tabs Section -->
+    <div class="mt-20 border-t border-[#e5e2dc] pt-12">
+        <div class="flex flex-col lg:flex-row gap-12">
+            
+            <!-- Left: Description and Specs -->
+            <div class="lg:w-2/3 space-y-12">
+                <div>
+                    <h2 class="font-serif text-2xl text-[#313511] mb-6 flex items-center gap-3">
+                        <i class="fas fa-file-alt text-[#b58735]"></i> Ürün Açıklaması
+                    </h2>
+                    <div class="prose prose-sm max-w-none text-[#47473d] leading-relaxed">
+                        @Html.Raw(Model.Aciklama ?? "Bu ürün için açıklama girilmemiştir.")
+                    </div>
+                </div>
+
+                @if (teknikTabloSatirlari.Any())
+                {
+                    <div>
+                        <h2 class="font-serif text-2xl text-[#313511] mb-6 flex items-center gap-3">
+                            <i class="fas fa-cogs text-[#b58735]"></i> Teknik Özellikler
+                        </h2>
+                        <div class="bg-white border border-[#e5e2dc] rounded-lg overflow-hidden">
+                            <table class="w-full text-sm text-left">
+                                <tbody class="divide-y divide-[#e5e2dc]">
+                                    @foreach (var satir in teknikTabloSatirlari)
+                                    {
+                                        <tr class="hover:bg-[#fcf9f3]">
+                                            <th class="px-6 py-4 font-semibold text-[#1c1c18] w-1/3 bg-[#f1ede7]">@satir.Baslik</th>
+                                            <td class="px-6 py-4 text-[#47473d]">@satir.Deger</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+                
+                @if (medyaVitriniVar)
+                {
+                    <div>
+                        <h2 class="font-serif text-2xl text-[#313511] mb-6 flex items-center gap-3">
+                            <i class="fas fa-photo-video text-[#b58735]"></i> Medya & Galeriler
+                        </h2>
+                        
+                        @if (videoMedyalari.Any())
+                        {
+                            <div class="mb-8">
+                                <h3 class="text-lg font-semibold text-[#1c1c18] mb-4">Video Anlatımı</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    @foreach (var medya in videoMedyalari)
+                                    {
+                                        <div class="bg-white border border-[#e5e2dc] rounded-lg overflow-hidden">
+                                            <div class="aspect-video bg-black relative">
+                                                @if (!string.IsNullOrWhiteSpace(ProductMediaEmbedHelper.GetEmbedUrl(medya.EtkinKaynak)))
+                                                {
+                                                    <iframe src="@ProductMediaEmbedHelper.GetEmbedUrl(medya.EtkinKaynak)" class="w-full h-full" title="@medya.Baslik" allowfullscreen></iframe>
+                                                }
+                                                else
+                                                {
+                                                    <video controls class="w-full h-full object-cover" poster="@medya.EtkinPosterYolu">
+                                                        <source src="@(string.IsNullOrWhiteSpace(medya.VideoUrl) ? medya.ResimYolu : medya.VideoUrl)" type="video/mp4" />
+                                                    </video>
+                                                }
+                                            </div>
+                                            <div class="p-4">
+                                                <h5 class="text-sm font-semibold text-[#1c1c18] mb-1">@medya.Baslik</h5>
+                                                <p class="text-xs text-[#47473d]">@UrunMedyaCatalog.GetAreaLabel(medya.MedyaAlani)</p>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @if (mockupGruplari.Any())
+                        {
+                            @foreach (var grup in mockupGruplari)
+                            {
+                                <div class="mb-8">
+                                    <h3 class="text-lg font-semibold text-[#1c1c18] mb-4">@UrunMedyaCatalog.GetAreaLabel(grup.Key)</h3>
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                        @foreach (var medya in grup)
+                                        {
+                                            <div class="rounded-lg overflow-hidden border border-[#e5e2dc] aspect-square">
+                                                <img src="@medya.EtkinKaynak" alt="@medya.AltMetin" class="w-full h-full object-cover" loading="lazy" decoding="async" />
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Right: Reviews -->
+            <div class="lg:w-1/3">
+                <h2 class="font-serif text-2xl text-[#313511] mb-6 flex items-center gap-3">
+                    <i class="fas fa-comments text-[#b58735]"></i> Yorumlar
+                </h2>
+                
+                @if (yorumlar != null && yorumlar.Count > 0)
+                {
+                    <div class="bg-white border border-[#e5e2dc] rounded-lg p-6 text-center mb-8">
+                        <h3 class="font-serif text-5xl text-[#313511] mb-2">@ortalamaPuan.ToString("0.0")</h3>
+                        <div class="text-[#b58735] mb-2">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                if (i <= tamYildiz) { <i class="fas fa-star"></i> }
+                                else if (i == tamYildiz + 1 && yarimYildiz) { <i class="fas fa-star-half-alt"></i> }
+                                else { <i class="far fa-star"></i> }
+                            }
+                        </div>
+                        <p class="text-sm text-[#47473d] mb-4">Toplam @yorumSayisi değerlendirme</p>
+                        <button class="w-full border border-[#313511] text-[#313511] text-xs tracking-widest uppercase py-2.5 rounded hover:bg-[#313511] hover:text-white transition-colors" id="openCommentModalBtn">
+                            Yorum Yap
+                        </button>
+                    </div>
+
+                    <div class="space-y-4">
+                        @foreach (var yorum in yorumlar.Take(3))
+                        {
+                            <div class="bg-white border border-[#e5e2dc] rounded-lg p-4">
+                                <div class="flex items-start justify-between mb-2">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-[#f1ede7] text-[#313511] flex items-center justify-center font-semibold text-sm">
+                                            @{
+                                                var names = yorum.AdSoyad.Split(' ');
+                                                string initials = "";
+                                                if (names.Length > 0) { initials += names[0][0]; }
+                                                if (names.Length > 1) { initials += names[names.Length - 1][0]; }
+                                                else if (names[0].Length > 1) { initials += names[0][1]; }
+                                            }
+                                            @initials
+                                        </div>
+                                        <div>
+                                            <h5 class="text-sm font-semibold text-[#1c1c18]">@yorum.AdSoyad</h5>
+                                            <div class="text-[#b58735] text-[10px]">
+                                                @for (int i = 0; i < yorum.Puan; i++) { <i class="fas fa-star"></i> }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span class="text-[10px] text-[#47473d]">@yorum.OlusturulmaTarihi.ToString("dd MMM yyyy")</span>
+                                </div>
+                                <p class="text-sm text-[#47473d] mt-2">@yorum.YorumMetni</p>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-12 bg-white border border-[#e5e2dc] rounded-lg">
+                        <i class="far fa-comments fa-3x text-[#e5e2dc] mb-4"></i>
+                        <h5 class="text-[#313511] font-semibold mb-2">Henüz yorum yapılmamış</h5>
+                        <p class="text-sm text-[#47473d] mb-6">Bu ürün için ilk yorumu siz yapın!</p>
+                        <button class="bg-[#313511] text-white text-xs tracking-widest uppercase px-6 py-2.5 rounded hover:bg-[#1c2001] transition-colors" id="openCommentModalBtnEmpty">
+                            İlk Yorumu Yap
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    var benzerUrunler = ViewBag.BenzerUrunler as List<KanvasProje.Core.DTOs.BenzerUrunDto>;
+}
+@if (benzerUrunler != null && benzerUrunler.Count > 0)
+{
+    <section class="py-16 bg-[#fafaf8]">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-center mb-10">
+                <hr class="w-1/4 border-[#e5e2dc] hidden md:block"/>
+                <h2 class="font-serif text-3xl mx-8 text-center text-[#313511]">Benzer Ürünler</h2>
+                <hr class="w-1/4 border-[#e5e2dc] hidden md:block"/>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+                @foreach (var item in benzerUrunler)
+                {
+                    decimal itemFiyat = item.IndirimliFiyat ?? item.Fiyat;
+                    decimal? bEskiFiyat = (item.IndirimliFiyat != null && item.IndirimliFiyat < item.Fiyat) ? item.Fiyat : null;
+                    string bProductUrl = !string.IsNullOrEmpty(item.Slug) ? $"/Urun/Detay/{item.Slug}-{item.Id}" : $"/Urun/Detay/{item.Id}";
+                    string gorsel = !string.IsNullOrEmpty(item.AnaGorselUrl) ? item.AnaGorselUrl : "/img/products/placeholder.webp";
+                    <a href="@bProductUrl" class="group block">
+                        <div class="relative overflow-hidden mb-3 aspect-square bg-[#f1ede7] rounded">
+                            <img alt="@item.Baslik" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="@gorsel" loading="lazy" decoding="async" />
+                        </div>
+                        <h3 class="text-xs font-semibold text-[#1c1c18] tracking-wide line-clamp-2 mb-1">@item.Baslik</h3>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-bold text-[#313511]">@itemFiyat.ToString("N2") TL</span>
+                            @if (bEskiFiyat != null)
+                            {
+                                <span class="text-xs text-[#999] line-through">@bEskiFiyat?.ToString("N2") TL</span>
+                            }
+                        </div>
+                    </a>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<script>
+const PRODUCT_CURRENCY = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(currencySymbol));
+
+// Modal event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    const desktopModal = document.getElementById('desktopLightboxModal');
+    const closeBtn = document.getElementById('closeDesktopModalBtn');
+    if (closeBtn && desktopModal) {
+        closeBtn.addEventListener('click', () => {
+            desktopModal.classList.add('hidden');
+            desktopModal.classList.remove('flex');
+        });
+    }
+
+    const commentModal = document.getElementById('commentModal');
+    if (commentModal) {
+        const openBtns = [document.getElementById('openCommentModalBtn'), document.getElementById('openCommentModalBtnEmpty')];
+        openBtns.forEach(btn => btn && btn.addEventListener('click', () => {
+            commentModal.classList.remove('hidden');
+            commentModal.classList.add('flex');
+        }));
+        
+        const closeCommentBtn = document.getElementById('closeCommentModalBtn');
+        if (closeCommentBtn) {
+            closeCommentBtn.addEventListener('click', () => {
+                commentModal.classList.add('hidden');
+                commentModal.classList.remove('flex');
+            });
+        }
+    }
+});
+
+let currentZoom = 1;
+
+function openProductLightbox() {
+    if (window.innerWidth >= 1024) {
+        document.getElementById('desktopLightboxModal').classList.remove('hidden');
+        document.getElementById('desktopLightboxModal').classList.add('flex');
+        resetDesktopZoom();
+    } else {
+        document.getElementById('mobileLightbox').classList.remove('hidden');
+        document.getElementById('mobileLightbox').classList.add('flex');
+        resetMobileZoom();
+    }
+}
+
+function closeMobileLightbox() {
+    document.getElementById('mobileLightbox').classList.add('hidden');
+    document.getElementById('mobileLightbox').classList.remove('flex');
+}
+
+function resetMobileZoom() {
+    currentZoom = 1;
+    updateMobileZoom();
+}
+
+function zoomInMobile() {
+    if (currentZoom < 3) { currentZoom += 0.5; updateMobileZoom(); }
+}
+
+function zoomOutMobile() {
+    if (currentZoom > 1) { currentZoom -= 0.5; updateMobileZoom(); }
+}
+
+function updateMobileZoom() {
+    const img = document.getElementById('mobileLightboxImage');
+    if (img) img.style.transform = `scale(${currentZoom})`;
+    const zl = document.getElementById('zoomLevel');
+    if (zl) zl.innerText = `${Math.round(currentZoom * 100)}%`;
+}
+
+function resetDesktopZoom() {
+    currentZoom = 1;
+    updateDesktopZoom();
+}
+
+function zoomInDesktop() {
+    if (currentZoom < 3) { currentZoom += 0.5; updateDesktopZoom(); }
+}
+
+function zoomOutDesktop() {
+    if (currentZoom > 1) { currentZoom -= 0.5; updateDesktopZoom(); }
+}
+
+function updateDesktopZoom() {
+    const img = document.getElementById('desktopLightboxImage');
+    if (img) {
+        img.style.transform = `scale(${currentZoom})`;
+    }
+}
+
+function changeProductImage(imageUrl, thumbnailElement, altText) {
+    const mainImage = document.getElementById('mainProductImage');
+    if (mainImage) {
+        mainImage.src = imageUrl;
+        if (altText) mainImage.alt = altText;
+    }
+    
+    const deskImg = document.getElementById('desktopLightboxImage');
+    if (deskImg) deskImg.src = imageUrl;
+    
+    const mobImg = document.getElementById('mobileLightboxImage');
+    if (mobImg) mobImg.src = imageUrl;
+    
+    document.querySelectorAll('.thumbnail-item').forEach(item => {
+        item.classList.remove('border-[#313511]');
+        item.classList.add('border-transparent');
+    });
+    if (thumbnailElement) {
+        thumbnailElement.classList.remove('border-transparent');
+        thumbnailElement.classList.add('border-[#313511]');
+        thumbnailElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+}
+
+document.querySelectorAll('.variant-radio').forEach(radio => {
+    radio.addEventListener('change', function() {
+        if (this.checked) {
+            const price = parseFloat(this.getAttribute('data-price')) || 0;
+            const oldPrice = parseFloat(this.getAttribute('data-oldprice')) || 0;
+            const imageUrl = this.getAttribute('data-image');
+            const label = this.getAttribute('data-label');
+            const isPreorder = this.getAttribute('data-preorder') === 'true';
+            const stock = parseInt(this.getAttribute('data-stock')) || 0;
+            const productionDays = parseInt(this.getAttribute('data-production')) || 0;
+            
+            const selectedVariantId = document.getElementById('selectedVariantId');
+            if (selectedVariantId) selectedVariantId.value = this.value;
+            
+            const priceDisplay = document.getElementById('priceDisplay');
+            if (priceDisplay) priceDisplay.innerHTML = `${price.toLocaleString('tr-TR', {minimumFractionDigits: 2})} ${PRODUCT_CURRENCY}`;
+            
+            const oldPriceDisplay = document.getElementById('oldPriceDisplay');
+            const discountBadge = document.getElementById('discountBadge');
+            
+            if (oldPrice > price) {
+                if (oldPriceDisplay) {
+                    oldPriceDisplay.innerHTML = `${oldPrice.toLocaleString('tr-TR', {minimumFractionDigits: 2})} ${PRODUCT_CURRENCY}`;
+                    oldPriceDisplay.classList.remove('hidden');
+                }
+                if (discountBadge) {
+                    const discount = Math.round((1 - (price / oldPrice)) * 100);
+                    discountBadge.innerHTML = `%${discount} İndirim`;
+                    discountBadge.classList.remove('hidden');
+                }
+            } else {
+                if (oldPriceDisplay) oldPriceDisplay.classList.add('hidden');
+                if (discountBadge) discountBadge.classList.add('hidden');
+            }
+            
+            if (imageUrl) {
+                changeProductImage(imageUrl, null, label);
+            }
+            
+            const variantSummary = document.getElementById('variantSummaryText');
+            if (variantSummary) {
+                variantSummary.innerHTML = `<i class="fas fa-layer-group mr-1.5"></i> ${label}`;
+                variantSummary.classList.remove('hidden');
+            }
+            
+            const stockStatusText = document.getElementById('stockStatusText');
+            if (stockStatusText) {
+                if (stock > 0) {
+                    stockStatusText.innerHTML = `<i class="fas fa-check-circle text-green-600"></i> Siparişe özel hazırlanır`;
+                } else if (isPreorder) {
+                    stockStatusText.innerHTML = `<i class="fas fa-clock text-blue-600"></i> Ön Siparişe Açık`;
+                } else {
+                    stockStatusText.innerHTML = `<i class="fas fa-times-circle text-red-600"></i> Satışa kapalı`;
+                }
+            }
+
+            const productionTimeText = document.getElementById('productionTimeText');
+            if (productionTimeText && productionDays > 0) {
+                productionTimeText.innerHTML = `<i class="fas fa-hammer text-[#a09e99]"></i> ${productionDays} iş günü üretim`;
+            }
+
+            const productionCardText = document.getElementById('productionCardText');
+            if (productionCardText && productionDays > 0) {
+                productionCardText.innerText = `${productionDays} iş günü`;
+            }
+            
+            const quantityInput = document.getElementById('productQuantity');
+            if (quantityInput) {
+                quantityInput.max = stock > 0 ? stock : (isPreorder ? 99 : 1);
+                const minQuantity = parseInt(quantityInput.getAttribute('min')) || 1;
+                quantityInput.value = minQuantity;
+                const selectedQuantity = document.getElementById('selectedQuantity');
+                if (selectedQuantity) selectedQuantity.value = minQuantity;
+            }
+        }
+    });
+});
+
+document.querySelectorAll('.frame-radio').forEach(radio => {
+    radio.addEventListener('change', function () {
+        const selectedFrameModel = document.getElementById('selectedFrameModel');
+        const frameSelectionError = document.getElementById('frameSelectionError');
+        const frameSelectionBlock = document.getElementById('frameSelectionBlock');
+
+        if (selectedFrameModel) selectedFrameModel.value = this.value;
+        frameSelectionError?.classList.add('hidden');
+        frameSelectionBlock?.classList.remove('ring-2', 'ring-red-400', 'ring-offset-2');
+    });
+});
+
+function increaseQuantity() {
+    const input = document.getElementById('productQuantity');
+    const selectedInput = document.getElementById('selectedQuantity');
+    if (!input) return;
+    
+    let max = parseInt(input.getAttribute('max')) || 99;
+    let val = parseInt(input.value) || 1;
+    if (val < max) {
+        input.value = val + 1;
+        if (selectedInput) selectedInput.value = val + 1;
+    }
+}
+
+function decreaseQuantity() {
+    const input = document.getElementById('productQuantity');
+    const selectedInput = document.getElementById('selectedQuantity');
+    if (!input) return;
+    
+    let min = parseInt(input.getAttribute('min')) || 1;
+    let val = parseInt(input.value) || 1;
+    if (val > min) {
+        input.value = val - 1;
+        if (selectedInput) selectedInput.value = val - 1;
+    }
+}
+
+const ajaxSepetBtn = document.getElementById('ajaxSepetBtn');
+if (ajaxSepetBtn) {
+    ajaxSepetBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        const form = document.getElementById('addToCartForm');
+        const formData = new FormData(form);
+        const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+        const frameSelectionBlock = document.getElementById('frameSelectionBlock');
+        const selectedFrame = document.querySelector('input[name="CerceveModeli"]:checked');
+
+        if (frameSelectionBlock && !selectedFrame) {
+            const frameSelectionError = document.getElementById('frameSelectionError');
+            frameSelectionError?.classList.remove('hidden');
+            frameSelectionBlock.classList.add('ring-2', 'ring-red-400', 'ring-offset-2');
+            frameSelectionBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            if (window.showToast) {
+                window.showToast('Çerçeve modeli seçilmelidir.', 'error');
+            } else {
+                alert('Çerçeve modeli seçilmelidir.');
+            }
+
+            return;
+        }
+        
+        let url = `/Sepet/Ekle?UrunId=${formData.get('UrunId')}&Adet=${formData.get('Adet')}`;
+        if (formData.get('SecenekId')) url += `&SecenekId=${formData.get('SecenekId')}`;
+        if (selectedFrame) url += `&CerceveModeli=${encodeURIComponent(selectedFrame.value)}`;
+        
+        const originalHtml = this.innerHTML;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ekleniyor...';
+        this.disabled = true;
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (window.showToast) {
+                    window.showToast('Ürün başarıyla sepetinize eklendi.', 'success');
+                }
+
+                setTimeout(function() {
+                    if (data.redirectUrl) {
+                        window.location.href = data.redirectUrl;
+                    } else {
+                        window.location.href = '/Sepet';
+                    }
+                }, 600);
+
+                const cartCounter = document.getElementById('cartItemCount');
+                if (cartCounter) {
+                    let current = parseInt(cartCounter.innerText) || 0;
+                    let added = parseInt(formData.get('Adet')) || 1;
+                    cartCounter.innerText = current + added;
+
+                    cartCounter.classList.add('scale-150');
+                    setTimeout(() => cartCounter.classList.remove('scale-150'), 300);
+                }
+
+                this.innerHTML = originalHtml;
+                this.disabled = false;
+            } else {
+                if (window.showToast) {
+                    window.showToast(data.message || 'Hata oluştu', 'error');
+                } else {
+                    alert(data.message || 'Hata oluştu');
+                }
+                this.innerHTML = originalHtml;
+                this.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            if (window.showToast) {
+                window.showToast('Bağlantı hatası oluştu.', 'error');
+            } else {
+                alert('Bağlantı hatası');
+            }
+            this.innerHTML = originalHtml;
+            this.disabled = false;
+        });
+    });
+}
+
+function navigateGallery(direction, event) {
+    if (event) event.stopPropagation();
+    
+    const thumbnails = Array.from(document.querySelectorAll('.thumbnail-item'));
+    if (thumbnails.length <= 1) return;
+    
+    const mainImage = document.getElementById('mainProductImage');
+    const currentSrc = mainImage.getAttribute('src');
+    
+    let currentIndex = thumbnails.findIndex(item => item.getAttribute('data-image') === currentSrc);
+    if (currentIndex === -1) currentIndex = 0;
+    
+    let nextIndex;
+    if (direction === 'next') {
+        nextIndex = (currentIndex + 1) % thumbnails.length;
+    } else {
+        nextIndex = (currentIndex - 1 + thumbnails.length) % thumbnails.length;
+    }
+    
+    const nextThumb = thumbnails[nextIndex];
+    if (nextThumb) {
+        nextThumb.click();
+    }
+}
+
+function copyProductLink(button) {
+    const url = button?.getAttribute('data-url') || window.location.href;
+    const originalHtml = button.innerHTML;
+
+    const markCopied = () => {
+        button.innerHTML = '<i class="fas fa-check text-xs"></i> Kopyalandı';
+        setTimeout(() => {
+            button.innerHTML = originalHtml;
+        }, 1800);
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url).then(markCopied).catch(() => {
+            window.prompt('Ürün bağlantısı', url);
+        });
+        return;
+    }
+
+    window.prompt('Ürün bağlantısı', url);
+}
+
+function selectFrameOption(label, value) {
+    document.querySelectorAll('input[name="CerceveModeli"]').forEach(r => r.checked = false);
+    const radio = label.querySelector('input[name="CerceveModeli"]');
+    if (radio) radio.checked = true;
+}
+</script>

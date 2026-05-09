@@ -1,0 +1,156 @@
+﻿@model KanvasProje.Core.Varliklar.Urun
+@using KanvasProje.Service.Helpers
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@inject KanvasProje.Service.Services.ISiteSettingsService SiteSettingsService
+@{
+    ViewData["Title"] = Model.Baslik;
+    var siteSettings = SiteSettingsService.GetSettings();
+    var brandName = string.IsNullOrWhiteSpace(siteSettings.MarkaAdi) ? siteSettings.SiteAdi : siteSettings.MarkaAdi;
+    var currencySymbol = string.IsNullOrWhiteSpace(siteSettings.ParaBirimi) ? "TL" : siteSettings.ParaBirimi;
+
+    // --- VARYANT VE FÃ„Â°YAT HESAPLAMA ---
+    var secenekler = ViewBag.Secenekler as List<KanvasProje.Core.Varliklar.UrunSecenek> ?? new List<KanvasProje.Core.Varliklar.UrunSecenek>();
+    var varsayilanSecenek = secenekler
+        .OrderByDescending(x => x.VarsayilanMi)
+        .ThenBy(x => x.Sira)
+        .ThenBy(x => x.SatisFiyati)
+        .FirstOrDefault(x => x.SatinAlinabilirMi)
+        ?? secenekler
+            .OrderByDescending(x => x.VarsayilanMi)
+            .ThenBy(x => x.Sira)
+            .ThenBy(x => x.SatisFiyati)
+            .FirstOrDefault();
+    decimal gosterilecekFiyat = varsayilanSecenek != null ? varsayilanSecenek.SatisFiyati : Model.EtkinFiyat;
+    decimal eskiFiyat = gosterilecekFiyat * 1.15m; // %15 indirim simÃƒÂ¼lasyonu
+
+    // --- YORUM VERÃ„Â°LERÃ„Â° ---
+    decimal? gosterilecekEskiFiyatEski = varsayilanSecenek == null && Model.IndirimVarMi ? Model.Fiyat : null;
+    decimal? gosterilecekEskiFiyat = varsayilanSecenek != null && Model.Fiyat > gosterilecekFiyat
+        ? Model.Fiyat
+        : gosterilecekEskiFiyatEski;
+    int? gosterilecekIndirimYuzdesi = gosterilecekEskiFiyat.HasValue && gosterilecekEskiFiyat.Value > gosterilecekFiyat
+        ? (int)Math.Round((1 - (gosterilecekFiyat / gosterilecekEskiFiyat.Value)) * 100)
+        : null;
+    int toplamStok = secenekler.Any() ? secenekler.Where(x => !x.SilindiMi && x.AktifMi).Sum(x => x.StokAdedi) : Model.ToplamStok;
+    bool stoktaVar = secenekler.Any()
+        ? secenekler.Any(x => x.SatinAlinabilirMi && (!x.TukeninceGizle || x.StokAdedi > 0 || x.OnSipariseAcikMi))
+        : Model.StoktaVarMi;
+    string stokDurumuMetni = varsayilanSecenek != null
+        ? (varsayilanSecenek.StokAdedi > 0 ? $"Stokta ({varsayilanSecenek.StokAdedi})" : (varsayilanSecenek.OnSipariseAcikMi ? "Ãƒâ€“n sipariÃ…Å¸e aÃƒÂ§Ã„Â±k" : "Stokta Yok"))
+        : (stoktaVar
+            ? (string.IsNullOrWhiteSpace(Model.StokDurumu) ? "Stokta" : Model.StokDurumu)
+            : "Stokta Yok");
+    int minSiparisAdedi = Model.MinSiparisAdedi > 0 ? Model.MinSiparisAdedi : 1;
+    int varsayilanMax = varsayilanSecenek?.StokAdedi > 0
+        ? varsayilanSecenek.StokAdedi
+        : (varsayilanSecenek?.OnSipariseAcikMi == true ? Math.Max(minSiparisAdedi, 25) : Math.Max(minSiparisAdedi, 10));
+    int maxSiparisAdedi = Model.MaxSiparisAdedi ?? varsayilanMax;
+    if (maxSiparisAdedi < minSiparisAdedi)
+    {
+        maxSiparisAdedi = minSiparisAdedi;
+    }
+
+    var rawVaryantMetni = varsayilanSecenek != null 
+        ? (string.IsNullOrWhiteSpace(varsayilanSecenek.VaryantBasligi) ? (varsayilanSecenek.Olcu ?? "Standart") : varsayilanSecenek.VaryantBasligi) 
+        : string.Empty;
+    var seciliVaryantMetni = string.Join(" / ", rawVaryantMetni.Split(new[] { " / " }, StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("Standart", StringComparison.OrdinalIgnoreCase) && !x.Contains("Bask", StringComparison.OrdinalIgnoreCase)));
+    if (string.IsNullOrWhiteSpace(seciliVaryantMetni) && !string.IsNullOrWhiteSpace(rawVaryantMetni)) seciliVaryantMetni = rawVaryantMetni.Split('/')[0].Trim();
+    var seciliVaryantDetayi = varsayilanSecenek?.VaryantOzeti ?? string.Empty;
+
+    var teknikSatirlari = (Model.TeknikOzellikler ?? string.Empty)
+        .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+        .Select(x => x.Trim())
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .ToList();
+
+    var dinamikOzellikler = (Model.UrunOzellikleri ?? Enumerable.Empty<KanvasProje.Core.Varliklar.UrunOzellikDegeri>())
+        .Where(x =>
+            !x.SilindiMi &&
+            x.UrunOzellikTanimi != null &&
+            x.UrunOzellikTanimi.AktifMi &&
+            x.UrunOzellikTanimi.DetaySayfasindaGoster &&
+            !string.IsNullOrWhiteSpace(x.Deger))
+        .OrderBy(x => x.UrunOzellikTanimi.Sira)
+        .ThenBy(x => x.UrunOzellikTanimi.Ad)
+        .ToList();
+
+    var teknikTabloSatirlari = new List<(string Baslik, string Deger)>();
+    teknikTabloSatirlari.AddRange(dinamikOzellikler
+        .Where(x => x.UrunOzellikTanimi.TeknikTablodaGoster)
+        .Select(x => (x.UrunOzellikTanimi.Ad, x.DegerGosterimi)));
+
+    foreach (var satir in teknikSatirlari)
+    {
+        var ayiriciIndex = satir.IndexOf(':');
+        if (ayiriciIndex > 0 && ayiriciIndex < satir.Length - 1)
+        {
+            teknikTabloSatirlari.Add((satir[..ayiriciIndex].Trim(), satir[(ayiriciIndex + 1)..].Trim()));
+        }
+        else
+        {
+            teknikTabloSatirlari.Add(("Detay", satir));
+        }
+    }
+
+    var tumMedya = ViewBag.TumMedya as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
+    var galeriMedyalari = ViewBag.Galeri as List<KanvasProje.Core.Varliklar.UrunResim> ?? tumMedya.Where(x => !x.VideoMu).ToList();
+    var videoMedyalari = ViewBag.VideoMedyalari as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
+    var mockupMedyalari = ViewBag.MockupMedyalari as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
+    var yakinDetayMedyalari = ViewBag.YakinDetayMedyalari as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
+    var uretimMedyalari = ViewBag.UretimMedyalari as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
+    var kullanimMedyalari = ViewBag.KullanimMedyalari as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
+    var varsayilanMedya = galeriMedyalari
+        .OrderByDescending(x => x.VarsayilanMi)
+        .ThenBy(x => x.Sira)
+        .FirstOrDefault();
+    var varsayilanGaleriGorseli = !string.IsNullOrWhiteSpace(varsayilanSecenek?.GorselUrl)
+        ? varsayilanSecenek.GorselUrl
+        : (varsayilanMedya?.ResimYolu ?? Model.AnaGorselUrl);
+    var varsayilanGaleriAltMetni = !string.IsNullOrWhiteSpace(varsayilanMedya?.AltMetin)
+        ? varsayilanMedya.AltMetin
+        : Model.Baslik;
+    var varyantMedyaHaritasi = tumMedya
+        .Where(x => x.UrunSecenekId.HasValue && !x.VideoMu && !string.IsNullOrWhiteSpace(x.ResimYolu))
+        .GroupBy(x => x.UrunSecenekId!.Value)
+        .ToDictionary(
+            x => x.Key,
+            x => x.OrderByDescending(y => y.VarsayilanMi).ThenBy(y => y.Sira).Select(y => y.ResimYolu).First());
+    var mockupGruplari = mockupMedyalari
+        .GroupBy(x => x.MedyaAlani)
+        .OrderBy(x => UrunMedyaCatalog.GetAreaLabel(x.Key))
+        .ToList();
+    bool medyaVitriniVar = videoMedyalari.Any() || mockupMedyalari.Any() || yakinDetayMedyalari.Any() || uretimMedyalari.Any() || kullanimMedyalari.Any();
+
+    List<KanvasProje.Core.Varliklar.Yorum> yorumlar = ViewBag.Yorumlar ?? new List<KanvasProje.Core.Varliklar.Yorum>();
+    double ortalamaPuan = ViewBag.OrtalamaPuan != null ? (double)ViewBag.OrtalamaPuan : 0;
+    int yorumSayisi = ViewBag.YorumSayisi != null ? (int)ViewBag.YorumSayisi : 0;
+    
+    // YÃ„Â±ldÃ„Â±z Hesaplama
+    int tamYildiz = (int)ortalamaPuan;
+    bool yarimYildiz = (ortalamaPuan - tamYildiz) >= 0.5;
+    
+    // --- SCHEMA.ORG Ã„Â°Ãƒâ€¡Ã„Â°N URL VE GÃƒâ€“RSEL ---
+    var request = HttpContextAccessor.HttpContext?.Request;
+    string baseUrl = request != null ? SiteSettingsService.BuildAbsoluteUrl(string.Empty) : "";
+    string detaySlug = string.IsNullOrWhiteSpace(Model.Slug) ? Model.Id.ToString() : $"{Model.Slug}-{Model.Id}";
+    string productUrl = $"{baseUrl}/Urun/Detay/{detaySlug}";
+    var schemaImagePath = !string.IsNullOrWhiteSpace(varsayilanMedya?.EtkinPosterYolu) ? varsayilanMedya.EtkinPosterYolu : varsayilanGaleriGorseli;
+    string productImage = schemaImagePath.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? schemaImagePath : $"{baseUrl}{schemaImagePath}";
+    
+    <!-- SCHEMA.ORG JSON-LD: Google Shopping Rich Snippets -->
+    var productSchema = SchemaGenerator.GenerateProductSchema(
+        Model, 
+        ortalamaPuan, 
+        yorumSayisi, 
+        productImage, 
+        productUrl,
+        brandName
+    );
+}
+
+
+<!-- Ã¢Å“Â¨ SCHEMA.ORG JSON-LD: Google Shopping Rich Snippets Ã¢Å“Â¨ -->
+<script type="application/ld+json">
+@Html.Raw(productSchema)
+</script>
+

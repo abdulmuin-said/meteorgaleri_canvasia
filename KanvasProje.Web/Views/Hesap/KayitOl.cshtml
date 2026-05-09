@@ -1,0 +1,98 @@
+@model KanvasProje.Web.Models.KayitViewModel
+@{
+    ViewData["Title"] = "Kayıt Ol";
+}
+
+<div class="min-h-[80vh] flex items-center justify-center py-16 px-4 bg-[#fcf9f3]">
+    <div class="w-full max-w-lg">
+        <!-- Logo / Başlık -->
+        <div class="text-center mb-10">
+            <a href="/" class="font-serif text-3xl tracking-widest text-[#313511]">CANVASİA</a>
+            <p class="text-xs text-[#47473d] mt-2 tracking-wide">Yeni hesap oluşturun</p>
+        </div>
+
+        <!-- Validation Hataları -->
+        <div asp-validation-summary="ModelOnly" class="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded mb-6 hidden [&:not(:empty)]:block"></div>
+
+        <!-- Form Kartı -->
+        <div class="bg-white border border-[#e5e2dc] rounded-lg p-8 shadow-sm">
+            <form asp-action="KayitOl" method="post" class="space-y-4">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label asp-for="AdSoyad" class="block text-xs font-medium text-[#1c1c18] tracking-wide mb-1.5 uppercase">Ad Soyad</label>
+                        <input asp-for="AdSoyad" placeholder="Adınız Soyadınız" autocomplete="name"
+                               class="w-full border border-[#e5e2dc] rounded px-4 py-3 text-sm focus:ring-1 focus:ring-[#b58735] focus:border-[#b58735] outline-none bg-[#fcf9f3]" />
+                        <span asp-validation-for="AdSoyad" class="text-red-600 text-xs mt-1 block"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Sehir" class="block text-xs font-medium text-[#1c1c18] tracking-wide mb-1.5 uppercase">Şehir</label>
+                        <select asp-for="Sehir" class="w-full border border-[#e5e2dc] rounded px-4 py-3 text-sm focus:ring-1 focus:ring-[#b58735] focus:border-[#b58735] outline-none bg-[#fcf9f3]">
+                            <option value="">Şehir seçin</option>
+                            <option>Adana</option><option>Adıyaman</option><option>Afyonkarahisar</option>
+                            <option>Ağrı</option><option>Aksaray</option><option>Amasya</option>
+                            <option>Ankara</option><option>Antalya</option><option>Ardahan</option>
+                            <option>Artvin</option><option>Aydın</option><option>Balıkesir</option>
+                            <option>Bartın</option><option>Batman</option><option>Bayburt</option>
+                            <option>Bilecik</option><option>Bingöl</option><option>Bitlis</option>
+                            <option>Bolu</option><option>Burdur</option><option>Bursa</option>
+                            <option>Çanakkale</option><option>Çankırı</option><option>Çorum</option>
+                            <option>Denizli</option><option>Diyarbakır</option><option>Düzce</option>
+                            <option>Edirne</option><option>Elazığ</option><option>Erzincan</option>
+                            <option>Erzurum</option><option>Eskişehir</option><option>Gaziantep</option>
+                            <option>Giresun</option><option>Gümüşhane</option><option>Hakkari</option>
+                            <option>Hatay</option><option>Iğdır</option><option>Isparta</option>
+                            <option>İstanbul</option><option>İzmir</option><option>Kahramanmaraş</option>
+                            <option>Karabük</option><option>Karaman</option><option>Kars</option>
+                            <option>Kastamonu</option><option>Kayseri</option><option>Kırıkkale</option>
+                            <option>Kırklareli</option><option>Kırşehir</option><option>Kilis</option>
+                            <option>Kocaeli</option><option>Konya</option><option>Kütahya</option>
+                            <option>Malatya</option><option>Manisa</option><option>Mardin</option>
+                            <option>Mersin</option><option>Muğla</option><option>Muş</option>
+                            <option>Nevşehir</option><option>Niğde</option><option>Ordu</option>
+                            <option>Osmaniye</option><option>Rize</option><option>Sakarya</option>
+                            <option>Samsun</option><option>Siirt</option><option>Sinop</option>
+                            <option>Sivas</option><option>Şanlıurfa</option><option>Şırnak</option>
+                            <option>Tekirdağ</option><option>Tokat</option><option>Trabzon</option>
+                            <option>Tunceli</option><option>Uşak</option><option>Van</option>
+                            <option>Yalova</option><option>Yozgat</option><option>Zonguldak</option>
+                        </select>
+                        <span asp-validation-for="Sehir" class="text-red-600 text-xs mt-1 block"></span>
+                    </div>
+                </div>
+
+                <div>
+                    <label asp-for="Eposta" class="block text-xs font-medium text-[#1c1c18] tracking-wide mb-1.5 uppercase">E-posta</label>
+                    <input asp-for="Eposta" type="email" placeholder="ornek@mail.com" autocomplete="email"
+                           class="w-full border border-[#e5e2dc] rounded px-4 py-3 text-sm focus:ring-1 focus:ring-[#b58735] focus:border-[#b58735] outline-none bg-[#fcf9f3]" />
+                    <span asp-validation-for="Eposta" class="text-red-600 text-xs mt-1 block"></span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label asp-for="Sifre" class="block text-xs font-medium text-[#1c1c18] tracking-wide mb-1.5 uppercase">Şifre</label>
+                        <input asp-for="Sifre" type="password" placeholder="En az 6 karakter" autocomplete="new-password"
+                               class="w-full border border-[#e5e2dc] rounded px-4 py-3 text-sm focus:ring-1 focus:ring-[#b58735] focus:border-[#b58735] outline-none bg-[#fcf9f3]" />
+                        <span asp-validation-for="Sifre" class="text-red-600 text-xs mt-1 block"></span>
+                    </div>
+                    <div>
+                        <label asp-for="SifreTekrar" class="block text-xs font-medium text-[#1c1c18] tracking-wide mb-1.5 uppercase">Şifre Tekrar</label>
+                        <input asp-for="SifreTekrar" type="password" placeholder="Şifrenizi tekrar girin" autocomplete="new-password"
+                               class="w-full border border-[#e5e2dc] rounded px-4 py-3 text-sm focus:ring-1 focus:ring-[#b58735] focus:border-[#b58735] outline-none bg-[#fcf9f3]" />
+                        <span asp-validation-for="SifreTekrar" class="text-red-600 text-xs mt-1 block"></span>
+                    </div>
+                </div>
+
+                <button type="submit"
+                        class="w-full bg-[#313511] text-white py-3 text-xs tracking-widest uppercase rounded hover:bg-[#1c2001] transition-colors font-medium mt-2">
+                    Üyelik Oluştur
+                </button>
+            </form>
+        </div>
+
+        <p class="text-center text-sm text-[#47473d] mt-6">
+            Zaten hesabınız var mı?
+            <a href="/Hesap/GirisYap" class="text-[#b58735] hover:underline font-medium">Giriş Yapın</a>
+        </p>
+    </div>
+</div>

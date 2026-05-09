@@ -1,0 +1,46 @@
+@{
+    ViewData["Title"] = "Güvenli Ödeme - Iyzico";
+    Layout = "_Layout";
+}
+
+<!-- Breadcrumb -->
+<div class="bg-[#f1ede7] border-b border-[#e5e2dc] py-4">
+    <div class="container mx-auto px-4 flex items-center justify-center gap-4 text-xs tracking-widest uppercase">
+        <span class="text-[#47473d] flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-[#e5e2dc] text-[#47473d] flex items-center justify-center font-bold">1</span> Sepet
+        </span>
+        <span class="text-[#e5e2dc]">/</span>
+        <span class="text-[#47473d] flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-[#e5e2dc] text-[#47473d] flex items-center justify-center font-bold">2</span> Teslimat
+        </span>
+        <span class="text-[#e5e2dc]">/</span>
+        <span class="text-[#313511] font-bold flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-[#313511] text-white flex items-center justify-center font-bold"><i class="fas fa-lock text-[10px]"></i></span> Ödeme Onayı
+        </span>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-16">
+    <div class="max-w-3xl mx-auto">
+        <div class="bg-white border border-[#e5e2dc] rounded-lg shadow-sm overflow-hidden">
+            <div class="border-b border-[#e5e2dc] bg-[#fcf9f3] py-5 px-6 flex items-center gap-3">
+                <i class="fas fa-lock text-[#313511] text-2xl"></i>
+                <div>
+                    <h1 class="font-serif text-2xl text-[#313511] m-0">Güvenli Ödeme</h1>
+                    <p class="text-xs text-[#47473d] mt-1">Kart bilgileriniz 256-bit SSL ile bankaya iletilir.</p>
+                </div>
+            </div>
+            
+            <div class="p-4 md:p-8">
+                <!-- Iyzico Ödeme Formu -->
+                <div id="iyzipay-checkout-form" class="responsive">
+                    @Html.Raw(ViewBag.IyzicoContent)
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-6 text-[#47473d] text-sm flex items-center justify-center gap-2">
+            <i class="fas fa-shield-alt text-[#b58735]"></i> Ödeme altyapısı <strong>Iyzico</strong> tarafından sağlanmaktadır.
+        </div>
+    </div>
+</div>

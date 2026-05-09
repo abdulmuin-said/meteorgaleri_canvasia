@@ -1,0 +1,858 @@
+Sen kıdemli bir full-stack yazılım mühendisi, e-ticaret mimarı ve ürün odaklı bir geliştiricisin.
+
+Görevin, mevcut e-ticaret projemi analiz edip eksik modülleri tamamlamak, tasarımı profesyonel hale getirmek, mobil uyumluluğu güçlendirmek ve projeyi production-ready seviyeye taşımaktır.
+
+Kullandığım teknoloji:
+- ASP.NET Core MVC
+- PostgreSQL
+- Docker
+
+Proje durumu:
+- Projede şu anda çalışan bir yapı var
+- Admin panel ve vitrin mevcut
+- Ancak birçok modül eksik, bazı ekranlar zayıf, bazı veri yapıları yetersiz, tasarım profesyonel değil ve mobil uyumluluk tam değil
+
+Çalışma şeklin şu olmalı:
+1. Önce tüm projeyi detaylı şekilde analiz et
+2. Mevcut klasör yapısını, mimariyi, entity’leri, service yapısını, controller’ları, view’ları, admin paneli, storefront yapısını ve veritabanı ilişkilerini incele
+3. Eksik, zayıf ve riskli alanları tespit et
+4. Sonra mantıklı bir geliştirme sırası çıkar
+5. Daha sonra onay beklemeden kodlamaya başla
+6. Sadece ne yapılacağını anlatma, gerçekten kodu değiştir ve geliştir
+7. Mevcut çalışan yerleri bozma, gerekiyorsa kontrollü refactor yap
+8. Backend, frontend, veritabanı ve admin panel tarafını birbiriyle uyumlu şekilde geliştir
+9. Temiz, modüler, sürdürülebilir ve genişletilebilir kod yaz
+10. Geçici, dağınık ve hack tarzı çözümlerden kaçın
+11. Her geliştirme adımından sonra şunu yaz:
+   - ne yaptın
+   - hangi dosyaları değiştirdin
+   - sıradaki adım ne
+12. Veritabanı migration gerekiyorsa oluştur
+
+13. Eksik model varsa oluştur14. Zayıf veri yapısı varsa doğru şekilde yeniden tasarla
+15. Tasarım zayıfsa premium ve modern hale getir
+16. Mobil uyumluluğu her aşamada öncelikli düşün
+Bu proje sıradan bir site değildir.
+
+Bu proje; dekorasyon ürünleri satan, premium görünümlü, satış odaklı, mobil uyumlu, profesyonel bir e-ticaret platformu olmalıdır.
+
+Satılacak ürün türleri:
+- kanvas tablo
+- cam tablo
+- duvar kağıdı
+- cam kesme tahtası
+- ayna
+- baskılı halı
+- ahşap dekorasyon ürünleri
+- sehpa / mobilya aksesuarları
+- lightbox
+- afiş
+- ve ileride eklenecek diğer ürünler
+
+Tasarım beklentisi:
+- sade ama premium görünüm
+- Zara Home / H&M Home tarzında modern yapı
+- bol beyaz alan
+- güçlü tipografi
+- kaliteli görsel sunumu
+- şık ürün kartları
+- güven veren kurumsal his
+- masaüstü ve mobilde profesyonel görünüm
+- mobil öncelikli tasarım yaklaşımı
+
+ÇOK ÖNEMLİ:
+Mobil uyumluluk bu projede kritik öneme sahip.
+Her sayfa, her component, her kart, her form, her tablo, her modal, her filtre alanı, her ürün galerisi, header, footer, sepet ve ödeme ekranları mobilde kusursuz çalışmalıdır.
+Mobil görünümü ikinci plana atma.
+Mobile-first mantığıyla ilerle.
+
+Ayrıca bu sitenin dili Türkçe olacaktır.
+Şunları dikkate al:
+- Site Türkiye pazarı için hazırlanacak
+- Vitrin dili Türkçe olacak
+- Admin panel dili Türkçe olacak
+- Ürün içerikleri Türkçe olacak
+- Sayfa başlıkları, butonlar, formlar ve kullanıcıya görünen tüm alanlar Türkçe olacak
+- SEO yapısı Türkçe içerik mantığına uygun kurulacak
+- URL yapısı Türkçe SEO mantığına uygun ama teknik olarak düzgün slug sistemine sahip olacak
+
+Şimdi aşağıdaki fazlara göre projeyi geliştir.
+
+==================================================
+1. FAZ — PROJEYİ ANALİZ ET
+==================================================
+
+Önce tüm kod tabanını incele ve bana şunları çıkar:
+
+- mevcut klasör yapısı
+- mevcut mimari durumu
+- mevcut modüller
+- eksik modüller
+- veritabanındaki zayıf alanlar
+- admin paneldeki eksik/zayıf alanlar
+- vitrindeki eksik/zayıf alanlar
+- tasarım problemleri
+- mobil uyumluluk problemleri
+- güvenlik açıkları / riskleri
+- performans sorunları
+
+Ardından en mantıklı geliştirme sırasını çıkar.
+Ama burada durma.
+Analizden sonra hemen kod yazmaya başla.
+
+==================================================
+2. FAZ — TEMEL MİMARİ VE ALTYAPI
+==================================================
+
+Gerekirse şu alanları düzelt veya kur:
+
+- katmanlı mimari düzeni
+- controller / service / repository ayrımı
+- entity ilişkileri
+- DTO / ViewModel yapıları
+- validation yapısı
+- global hata yönetimi
+- logging
+- environment ayarları
+- config yönetimi
+- medya/dosya yapısı
+- migration düzeni
+- audit log altyapısı
+- cache altyapısına uygun hazırlık
+- güvenlik altyapısı
+
+==================================================
+3. FAZ — ADMİN GİRİŞİ, ROLLER VE YETKİLER
+==================================================
+
+Şunları kur veya geliştir:
+
+- admin giriş sistemi
+- rol bazlı yetkilendirme
+- roller:
+  - süper admin
+  - admin
+  - sipariş yöneticisi
+  - ürün yöneticisi
+  - içerik yöneticisi
+  - kargo yöneticisi
+  - sadece görüntüleme
+- yetki kontrolleri
+- güçlü şifre politikası
+- şifre sıfırlama
+- oturum yönetimi
+- giriş logları
+- admin işlem logları
+- yetkisiz erişim koruması
+
+==================================================
+4. FAZ — ADMİN DASHBOARD
+==================================================
+
+Yönetim panelinde güçlü bir dashboard oluştur/geliştir:
+
+- toplam sipariş
+- bekleyen siparişler
+- üretimde olanlar
+- kargoya verilenler
+- iptal/iade olanlar
+- günlük / haftalık / aylık ciro
+- en çok satan ürünler
+- stokta az kalan ürünler
+- son siparişler
+- son müşteriler
+- son yorumlar
+- iletişim talepleri
+- hızlı işlem butonları
+- sistem uyarıları
+- eksik veri uyarıları
+
+Dashboard masaüstü ve mobilde düzgün görünmeli.
+
+==================================================
+5. FAZ — GENEL SİTE AYARLARI
+==================================================
+
+Admin panelden yönetilebilir hale getir:
+
+- site adı
+- marka adı
+- logo
+- favicon
+- header ayarları
+- footer ayarları
+- iletişim bilgileri
+- WhatsApp numarası
+- sosyal medya linkleri
+- üst kampanya barı
+- genel SEO ayarları
+- analytics script alanları
+- cookie metni
+- bakım modu
+- yasal sayfa ayarları
+
+==================================================
+6. FAZ — MODÜLER ANA SAYFA
+==================================================
+
+Ana sayfayı modüler yapıya çevir veya geliştir:
+
+- hero banner / slider
+- başlık + alt başlık + CTA
+- öne çıkan kategoriler
+- en çok satanlar
+- yeni ürünler
+- kampanyalı ürünler
+- koleksiyon alanı
+- oda bazlı keşif alanı
+- kalite / malzeme alanı
+- üretim süreci alanı
+- güven alanı
+- müşteri yorumları alanı
+- gerçek ev fotoğrafları alanı
+- sosyal medya alanı
+- kısa marka hikayesi alanı
+- SSS alanı
+- blog alanı
+- newsletter alanı
+- WhatsApp CTA alanı
+
+Gereksinimler:
+- bu alanlar admin panelden yönetilebilir olsun
+- mümkünse aç/kapat yapılabilsin
+- mümkünse sıralama değiştirilebilsin
+- tasarım premium olsun
+- mobil öncelikli olsun
+
+==================================================
+7. FAZ — MENÜ, HEADER, FOOTER, NAVİGASYON
+==================================================
+
+Şunları geliştir:
+
+- çok seviyeli menü
+- kategori bazlı navigasyon
+- gerekiyorsa mega menu
+- mobil menü
+- sticky header
+- arama kutusu
+- arama önerileri
+- footer kolonları
+- sosyal medya linkleri
+- hızlı linkler
+- yasal linkler
+- WhatsApp kısa erişim
+
+Header ve footer mobilde çok kullanışlı ve şık olmalı.
+
+==================================================
+8. FAZ — KATEGORİ SİSTEMİ
+==================================================
+
+Güçlü bir kategori sistemi kur:
+
+- ana kategoriler
+- alt kategoriler
+- gerekirse üçüncü seviye kategoriler
+- kategori sıralama
+- aktif/pasif
+- kategori görseli
+- kategori bannerı
+- kısa açıklama
+- uzun açıklama
+- SEO alanları
+- slug
+- kategoriye özel filtre yapısı
+- kategoriye özel içerik blokları
+
+Kategori sayfalarını da geliştir:
+- premium listeleme tasarımı
+- filtre sidebar
+- mobil filtre drawer yapısı
+- temiz ürün grid yapısı
+- iyi boşluk kullanımı
+- güçlü tipografi
+- mobil uyumluluk
+
+==================================================
+9. FAZ — ÜRÜN TEMEL VERİ MODELİ
+==================================================
+
+Ürün veri yapısını güçlendir:
+
+- ürün adı
+- kısa ad opsiyonu
+- SKU
+- barkod opsiyonu
+- marka
+- ana kategori
+- alt kategori
+- etiketler
+- kısa açıklama
+- uzun açıklama
+- teknik detaylar
+- malzeme bilgisi
+- baskı bilgisi
+- bakım talimatı
+- paketleme bilgisi
+- üretim süresi
+- kargoya veriliş süresi
+- tahmini teslimat bilgisi
+- stok durumu
+- ana fiyat
+- indirimli fiyat
+- maliyet alanı opsiyonel
+- vergi/KDV alanı gerekiyorsa
+- aktif/pasif
+- öne çıkan / yeni / kampanyalı işaretleri
+- ana sayfada göster
+- sıralama
+- görüntülenme sayısı
+- satış sayısı
+- favori sayısı
+- min/max satın alma adedi
+
+==================================================
+10. FAZ — GELİŞMİŞ VARYASYON SİSTEMİ
+==================================================
+
+Bu faz çok kritik.
+
+Şu varyasyonları destekleyen güçlü bir yapı kur:
+
+- ölçü
+- çerçeve seçeneği
+- çerçeve rengi
+- çerçeve kalınlığı
+- çerçeve tipi
+- malzeme türü
+- yön seçeneği
+- parça sayısı
+- kişiselleştirme notu
+- özel yazı alanı
+
+Şunlar desteklenmeli:
+- varyasyona göre fiyat farkı
+- varyasyona göre stok
+- varyasyona göre SKU
+- varyasyona göre görsel
+- varyasyona göre üretim süresi
+- varyasyona göre ağırlık / boyut
+- varyasyon bazlı aktif/pasif
+- bağımlı varyasyon
+- alt varyasyon
+- ölçüye göre uygun çerçeve seçenekleri
+- güçlü admin panel varyasyon ekranı
+- vitrinde modern varyasyon seçici
+- mobilde rahat seçim deneyimi
+
+==================================================
+11. FAZ — ÜRÜN TİPİNE GÖRE DİNAMİK ÖZELLİKLER
+==================================================
+
+Çünkü sitede çok farklı ürün tipleri olacak, dinamik özellik sistemi kur:
+
+Ürün tipleri:
+- kanvas tablo
+- cam tablo
+- duvar kağıdı
+- ayna
+- halı
+- cam kesme tahtası
+- ahşap dekorasyon
+- mobilya aksesuarı
+- lightbox
+- afiş
+
+Gerekenler:
+- ürün tipine göre özellik grubu oluşturma
+- ürün tipine özellik atama
+- ürün detay sayfasında gösterme
+- istenirse filtrelemede kullanma
+- ileride yeni ürün tipleri eklendiğinde genişletilebilir yapı
+
+Her şeyi sabit/hardcoded yazma. Genişleyebilir mimari kur.
+
+==================================================
+12. FAZ — ÜRÜN MEDYA SİSTEMİ
+==================================================
+
+Şunları kur/geliştir:
+
+- ana görsel
+- galeri görselleri
+- varyasyona özel görseller
+- ürün videosu
+- üretim videosu
+- yakın çekim detay görselleri
+- mockup / yaşam alanı görselleri
+- görsel alt text alanı
+- görsel sıralama
+- optimize görsel yönetimi
+- responsive medya yapısı
+
+Galeri premium ve mobil uyumlu olmalı.
+
+==================================================
+13. FAZ — MOCKUP / YAŞAM ALANI SUNUMU
+==================================================
+
+Şunlara destek ver:
+
+- salon mockup
+- yatak odası mockup
+- ofis mockup
+- çocuk odası mockup
+- koridor mockup
+- mutfak / yemek alanı mockup
+- mümkünse kullanıcıdan gelen gerçek yaşam fotoğrafları yapısı
+
+Gerekenler:
+- admin yönetimi
+- ürünle ilişkilendirme
+- kategoriyle ilişkilendirme gerekiyorsa
+- vitrinde şık sunum
+
+==================================================
+14. FAZ — ÜRÜN DETAY SAYFASI TASARIMI
+==================================================
+
+Ürün detay sayfasını premium ve satış odaklı şekilde yeniden tasarla:
+
+- büyük ürün galerisi
+- video alanı
+- temiz ürün başlık alanı
+- kısa ikna edici özet
+- fiyat alanı
+- indirim gösterimi
+- varyasyon seçiciler
+- stok durumu
+- üretim süresi
+- kargo bilgisi
+- sepete ekle
+- hemen al
+- WhatsApp ile sor
+- favorilere ekle
+- güven ikonları
+- malzeme bilgisi
+- teknik bilgiler
+- bakım bilgisi
+- SSS alanı
+- yorumlar alanı
+- ilgili ürünler
+- benzer ürünler
+- son görüntülenen ürünler
+- mobil sabit sepete ekle alanı
+
+Mobilde kusursuz çalışmalı.
+
+==================================================
+15. FAZ — ARAMA, FİLTRELEME, SIRALAMA
+==================================================
+
+Şunları geliştir:
+
+- ürün adıyla arama
+- SKU ile arama
+- etiket ile arama
+- kategori ile arama
+- otomatik öneriler
+- mümkünse yazım hatası toleransı
+- filtreler:
+  - fiyat
+  - ölçü
+  - renk
+  - tema
+  - malzeme
+  - çerçeve
+  - oda tipi
+  - kampanya
+  - stok durumu
+- sıralamalar:
+  - en yeniler
+  - fiyat artan/azalan
+  - popülerlik
+  - çok satanlar
+
+Mobil filtre deneyimi çok iyi olmalı.
+
+==================================================
+16. FAZ — SEPET
+==================================================
+
+Şunları geliştir:
+
+- sepete ekleme
+- varyasyonlu ürün desteği
+- adet artırma/azaltma
+- ürün silme
+- ara toplam
+- kargo tahmini
+- indirim kodu
+- ücretsiz kargo uyarısı
+- önerilen ürünler
+- stok kontrolü
+- misafir sepet
+- üyeli sepet
+- sepet birleştirme
+- sepet kalıcılığı
+
+Mobil sepet çok iyi olmalı.
+
+==================================================
+17. FAZ — ÖDEME ÖNCESİ / CHECKOUT
+==================================================
+
+Şunları geliştir:
+
+- misafir ödeme
+- üye girişi ile ödeme
+- fatura adresi
+- teslimat adresi
+- çoklu adres desteği
+- il / ilçe seçimi gerekiyorsa
+- kargo yöntemi seçimi
+- ödeme yöntemi seçimi
+- sipariş notu
+- yasal onay kutuları
+- kupon desteği
+- final özet ekranı
+- hatalı ödeme senaryoları
+- başarılı sipariş ekranı
+
+Checkout sade, hızlı, mobil öncelikli olmalı.
+
+==================================================
+18. FAZ — ÖDEME SİSTEMİ
+==================================================
+
+İyzico entegrasyonunu geliştir:
+
+- tek çekim
+- taksit desteği uygunsa
+- 3D Secure
+- başarılı/başarısız ödeme akışı
+- ödeme logları
+- tekrar deneme mantığı
+- siparişe ödeme sonucunu düzgün bağlama
+
+Ayrıca opsiyonel hazırlık bırak:
+- havale/EFT
+- kapıda ödeme gerekiyorsa
+
+==================================================
+19. FAZ — KARGO SİSTEMİ
+==================================================
+
+Güçlü bir kargo sistemi kur:
+
+- kargo firması yönetimi
+- kargo profili yönetimi
+- ürün bazlı kargo profili
+- kategori bazlı kargo profili gerekiyorsa
+- ağırlık / boyut alanları
+- sabit kargo
+- şehir/bölge bazlı mantık gerekiyorsa
+- ücretsiz kargo limiti
+- üretim + kargo süre gösterimi
+- takip numarası
+- takip linki
+- sipariş durumu ile kargo ilişkilendirmesi
+- kargoya verildi maili
+
+==================================================
+20. FAZ — SİPARİŞ YÖNETİMİ
+==================================================
+
+Admin panelde güçlü sipariş yönetimi oluştur:
+
+- sipariş listesi
+- sipariş detay sayfası
+- müşteri bilgileri
+- adres bilgileri
+- sipariş kalemleri
+- varyasyon bilgileri
+- ödeme bilgileri
+- kargo bilgileri
+- iç not alanı
+- sipariş zaman çizelgesi
+- durumlar:
+  - ödeme bekliyor
+  - ödendi
+  - üretimde
+  - hazırlanıyor
+  - kargoya verildi
+  - teslim edildi
+  - iptal
+  - iade
+- filtreler
+- mümkünse excel dışa aktarma
+- mümkünse yazdırılabilir sipariş/paketleme çıktısı
+
+==================================================
+21. FAZ — MÜŞTERİ HESABI
+==================================================
+
+Şunları geliştir:
+
+- kayıt ol
+- giriş yap
+- şifre sıfırlama
+- profil düzenleme
+- adres yönetimi
+- sipariş geçmişi
+- sipariş detayları
+- kargo takibi
+- favoriler
+- yorum bırakma
+- bildirim tercihleri
+
+==================================================
+22. FAZ — YORUMLAR VE SOSYAL KANIT
+==================================================
+
+Şunları geliştir:
+
+- yıldız puanlama
+- metin yorum
+- fotoğraflı yorum
+- doğrulanmış satın alım etiketi
+- admin onayı
+- öne çıkan yorumlar
+- ortalama puan
+- ana sayfada yorum alanı
+- ürün sayfasında yorum alanı
+- mümkünse admin cevabı
+
+==================================================
+23. FAZ — İÇERİK SAYFALARI
+==================================================
+
+Admin panelden yönetilebilir sayfalar oluştur/geliştir:
+
+- hakkımızda
+- marka hikayesi
+- üretim süreci
+- malzeme kalitesi
+- SSS
+- iletişim
+- kargo ve teslimat
+- iade ve değişim
+- gizlilik politikası
+- mesafeli satış sözleşmesi / kullanım şartları
+- blog sistemi
+
+Bu sayfalar premium şablonlarla gelsin.
+
+==================================================
+24. FAZ — SATIŞ ARTIRICI MODÜLLER
+==================================================
+
+Şunları geliştir:
+
+- kupon sistemi
+- kampanya sistemi
+- kategori bazlı indirim
+- ürün bazlı indirim
+- sepet tutarına göre indirim
+- ücretsiz kargo kampanyası
+- ilk sipariş indirimi
+- kampanya popup
+- exit intent popup uygunsa
+- WhatsApp popup
+- newsletter popup
+- ilgili ürün önerileri
+- çapraz satış alanları
+- upsell alanları
+- son görüntülenen ürünler
+
+==================================================
+25. FAZ — E-POSTA VE BİLDİRİM OTOMASYONLARI
+==================================================
+
+Şunları geliştir:
+
+- sipariş alındı maili
+- ödeme alındı maili
+- üretime alındı maili
+- kargoya verildi maili
+- teslim edildi maili
+- yorum bırak maili
+- terk edilen sepet mail yapısı uygunsa
+- hoş geldin maili
+- şifre sıfırlama maili
+- admin yeni sipariş bildirimi
+- admin yeni yorum bildirimi
+- iletişim formu bildirimi
+
+==================================================
+26. FAZ — İLETİŞİM VE DESTEK
+==================================================
+
+Şunları geliştir:
+
+- iletişim formu
+- ürün sorusu formu
+- sipariş destek formu
+- admin destek kutusu
+- destek talebi durum yönetimi
+- WhatsApp hızlı iletişim
+- SSS bağlantısı
+
+==================================================
+27. FAZ — SEO
+==================================================
+
+Şunları geliştir:
+
+- SEO dostu URL
+- meta title
+- meta description
+- canonical
+- open graph
+- twitter card
+- XML sitemap
+- robots.txt
+- product schema
+- review schema
+- FAQ schema
+- breadcrumb schema
+- blog SEO
+- kategori SEO
+- ürün SEO
+- görsel alt text
+- gerekiyorsa yönlendirme desteği
+
+Ayrıca HTML çıktısı SEO dostu olmalı.
+
+==================================================
+28. FAZ — PERFORMANS
+==================================================
+
+Şunları geliştir:
+
+- sorgu optimizasyonu
+- sayfalama
+- indexleme
+- görsel optimizasyonu
+- lazy loading
+- CSS/JS küçültme
+- response compression
+- cache
+- çok ürünlü yapılarda performans
+- mobil performans
+- Core Web Vitals mantığı
+
+==================================================
+29. FAZ — GÜVENLİK
+==================================================
+
+Şunları kontrol et ve geliştir:
+
+- SQL injection koruması
+- XSS koruması
+- CSRF koruması
+- dosya yükleme güvenliği
+- güvenli auth/session yapısı
+- yetki kontrolleri
+- güvenli hata yönetimi
+- işlem logları
+- environment secret yönetimi
+
+==================================================
+30. FAZ — RAPORLAMA
+==================================================
+
+Şunları geliştir:
+
+- günlük satış raporu
+- haftalık satış raporu
+- aylık satış raporu
+- ürün bazlı satış raporu
+- kategori bazlı satış raporu
+- çok satanlar
+- az satanlar
+- iptal/iade istatistikleri
+- kupon kullanım istatistikleri
+- yeni müşteri istatistikleri
+
+==================================================
+31. FAZ — GELECEĞE HAZIR MİMARİ
+==================================================
+
+Projeyi ileride şunlara uygun tasarla:
+- çoklu dil desteği
+- çoklu para birimi
+- ülke bazlı fiyatlandırma
+- ülke bazlı kargo
+- pazaryeri entegrasyonları
+- mobil uygulama / API kullanımı
+
+Bunların hepsini şimdi tam kurmak zorunda değilsin ama mimariyi buna uygun hazırla.
+
+==================================================
+TASARIM VE UX KURALLARI
+==================================================
+
+Kod yazarken her yerde şunları iyileştir:
+
+- boşluk kullanımı
+- tipografi
+- kartlar
+- formlar
+- butonlar
+- badge’ler
+- bannerlar
+- ürün gridleri
+- filtre alanları
+- modallar
+- admin tabloları
+- boş durum ekranları
+- loading durumları
+- doğrulama mesajları
+- başarı/hata uyarıları
+
+Her şey:
+- premium
+- temiz
+- modern
+- tutarlı
+- responsive
+- mobile-first
+olmalı.
+
+==================================================
+ÇALIŞMA YÖNTEMİ
+==================================================
+
+Çalışma yöntemin şu olsun:
+
+1. Önce tüm projeyi analiz et
+2. Öncelikli görevleri sırala
+3. Hemen kodlamaya başla
+4. Mantıklı parçalara bölerek ilerle
+5. Her parça bittikten sonra:
+   - yapılan işleri özetle
+   - değişen dosyaları yaz
+   - sıradaki adımı yaz
+6. Sadece plan yapıp durma
+7. Onay beklemeden mantıklı şekilde ilerle
+8. Gerçekten kodu değiştir ve projeyi geliştir
+
+Şimdi hemen başla:
+- önce tüm repo’yu analiz et
+- mevcut mimariyi çıkar
+- eksikleri tespit et
+- mobil ve tasarım sorunlarını bul
+- sonra da en yüksek öncelikli yerlerden başlayarak kod yazmaya başla
+
+
+
+Son ek not:
+- Site öncelikle Türkiye pazarı için geliştirilecek
+- Vitrin dili Türkçe olacak
+- Admin panel dili Türkçe olacak
+- Kullanıcıya görünen tüm metinler Türkçe olacak
+- SEO yapısı Türkçe içerik mantığına uygun kurulacak
+- Tasarım sade, premium ve güven veren bir yapıda olacak
+- Mobil görünüm ve mobil kullanıcı deneyimi bu projede masaüstünden bile daha kritik kabul edilmeli

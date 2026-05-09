@@ -1,0 +1,826 @@
+Aşağıya sana **bu proje için eklenmesi gereken tüm özellikleri**, yazılım geliştirme tarafında kullanabileceğin şekilde **modül modül ve en ince detayına kadar maddeler halinde** yazıyorum. Bunu direkt backlog, görev listesi ya da teknik şartname gibi kullanabilirsin.
+
+---
+
+# 1. Genel sistem mimarisi
+
+* ASP.NET Core MVC katmanlı yapı
+* Entity katmanı
+* Service katmanı
+* Repository katmanı
+* Admin panel katmanı
+* Frontend vitrini
+* API katmanı gerekiyorsa ayrı servis yapısı
+* PostgreSQL veritabanı
+* Docker ile container yapısı
+* Nginx reverse proxy
+* SSL yapılandırması
+* Production ve development environment ayrımı
+* Hata loglama sistemi
+* Global exception handling
+* Config yönetimi
+* Ortam bazlı ayar dosyaları
+* Medya dosyaları için ayrı klasör yapısı
+* Yedekleme planı
+* Cron/background job altyapısı
+* Cache altyapısı
+* Güvenlik middleware’leri
+* Audit log altyapısı
+
+---
+
+# 2. Kullanıcı rolleri ve yetkilendirme
+
+* Süper admin rolü
+* Yönetici rolü
+* Sipariş yöneticisi
+* Ürün yöneticisi
+* İçerik yöneticisi
+* Kargo yöneticisi
+* Sadece görüntüleyici rolü
+* Rol bazlı sayfa erişim kontrolü
+* Rol bazlı işlem yetkisi
+* Yetkisiz işlem loglama
+* Admin giriş logları
+* Son giriş tarihi gösterimi
+* Şifre yenileme sistemi
+* Güçlü şifre politikası
+* Oturum süresi yönetimi
+* Çoklu giriş kontrolü
+* İki aşamalı doğrulama opsiyonu
+* IP bazlı admin güvenliği opsiyonu
+
+---
+
+# 3. Admin panel dashboard
+
+* Toplam sipariş sayısı
+* Bugünkü siparişler
+* Bekleyen siparişler
+* Kargoya hazır siparişler
+* Kargoya verilen siparişler
+* İptal/iade siparişleri
+* Toplam ciro
+* Günlük ciro
+* Haftalık ciro
+* Aylık ciro
+* En çok satan ürünler
+* En çok görüntülenen ürünler
+* Düşük stoklu ürünler
+* Son eklenen ürünler
+* Son müşteri yorumları
+* Okunmamış iletişim talepleri
+* Kargo bekleyen sipariş özeti
+* Trafik/analitik alanı
+* Hızlı işlem butonları
+* Kısa yol menüleri
+* Sistem uyarıları
+* Hata/eksik veri uyarıları
+
+---
+
+# 4. Ana site yönetimi
+
+* Site adı yönetimi
+* Marka adı yönetimi
+* Logo yükleme
+* Favicon yükleme
+* Header ayarları
+* Footer ayarları
+* İletişim bilgileri
+* WhatsApp numarası
+* Sosyal medya linkleri
+* E-posta adresleri
+* Mağaza adresi
+* Çalışma saatleri
+* Sabit üst bar mesajı
+* Kampanya duyuru barı
+* Site bakım modu
+* Analitik kod alanları
+* Meta genel ayarları
+* Varsayılan SEO ayarları
+* Varsayılan sosyal paylaşım görseli
+* Cookie metni
+* KVKK ve kullanım koşulları sayfaları
+
+---
+
+# 5. Ana sayfa modülleri
+
+* Hero banner alanı
+* Ana başlık
+* Alt başlık
+* CTA butonları
+* Banner görseli/video alanı
+* Çoklu slider desteği
+* Öne çıkan kategoriler alanı
+* En çok satan ürünler alanı
+* Yeni ürünler alanı
+* Kampanyalı ürünler alanı
+* Koleksiyon alanı
+* Oda bazlı keşif alanı
+* Üretim süreci tanıtım bloğu
+* Malzeme kalite bloğu
+* Güven unsurları bloğu
+* Müşteri yorumları bloğu
+* Gerçek müşteri ev fotoğrafları bloğu
+* Sosyal medya bloğu
+* Marka hikayesi kısa alanı
+* SSS alanı
+* Blog yazıları alanı
+* Newsletter alanı
+* WhatsApp iletişim çağrısı
+* Dinamik sıralanabilir blok sistemi
+* Admin’den blok aç/kapat
+* Her blok için ayrı başlık, açıklama, görsel yönetimi
+
+---
+
+# 6. Menü ve navigasyon sistemi
+
+* Üst menü yönetimi
+* Alt menü yönetimi
+* Çok seviyeli menü
+* Mega menu desteği
+* Menü sıralama
+* Menü ikon/görsel desteği
+* Kategori bazlı otomatik menü üretimi
+* Mobil menü optimizasyonu
+* Arama kutusu
+* Hızlı kategori erişimi
+* Breadcrumb sistemi
+* Arama önerileri
+* Trend aramalar alanı
+
+---
+
+# 7. Kategori sistemi
+
+* Ana kategori oluşturma
+* Alt kategori oluşturma
+* İstenirse üçüncü seviye kategori
+* Kategori sıralama
+* Kategori aktif/pasif durumu
+* Kategori görseli
+* Kategori bannerı
+* Kategori açıklaması
+* Kategori kısa açıklaması
+* Kategori SEO title
+* Kategori SEO description
+* Kategori URL slug
+* Kategoriye özel üst metin
+* Kategoriye özel alt metin
+* Kategoriye özel filtreler
+* Kategoriye özel ürün sıralama tipi
+* Kategoriye özel kampanya etiketi
+* Kategori bazlı içerik blokları
+
+---
+
+# 8. Ürün temel veri yapısı
+
+* Ürün adı
+* Kısa ürün adı opsiyonu
+* Ürün kodu / SKU
+* Barkod opsiyonu
+* Marka alanı
+* Ana kategori
+* Alt kategori
+* Çoklu kategori atama opsiyonu
+* Etiketler
+* Kısa açıklama
+* Uzun açıklama
+* Teknik özellikler
+* Malzeme bilgisi
+* Baskı bilgisi
+* Bakım talimatı
+* Paketleme bilgisi
+* Üretim süresi
+* Kargoya veriliş süresi
+* Tahmini teslim süresi
+* Stok durumu
+* Ana fiyat
+* İndirimli fiyat
+* Maliyet alanı
+* KDV durumu
+* Aktif/pasif
+* Öne çıkan ürün işareti
+* Yeni ürün işareti
+* Kampanyalı ürün işareti
+* Ana sayfada göster işareti
+* Sıralama değeri
+* Görüntülenme sayısı
+* Satış sayısı
+* Favorilenme sayısı
+* Min sipariş adedi
+* Max sipariş adedi opsiyonu
+
+---
+
+# 9. Gelişmiş ürün varyasyon sistemi
+
+* Ölçü varyasyonu
+* Çerçeve seçeneği
+* Çerçeve rengi
+* Çerçeve kalınlığı
+* Çerçeve tipi
+* Malzeme türü
+* Yön seçeneği
+* Parça sayısı
+* Özel tasarım notu alanı
+* Kişiselleştirme metni
+* Varyasyon bazlı fiyat farkı
+* Varyasyon bazlı stok
+* Varyasyon bazlı SKU
+* Varyasyon bazlı görsel
+* Varyasyon bazlı üretim süresi
+* Varyasyon bazlı ağırlık/desi
+* Varyasyon bazlı aktif/pasif
+* Bağımlı varyasyon sistemi
+* Alt varyasyon sistemi
+* Ölçüye göre uygun çerçeve seçenekleri
+* Ölçüye göre fiyat dinamik değişimi
+* Çoklu varyasyon kombinasyon desteği
+* Varyasyon sıralama
+* Varsayılan varyasyon seçimi
+* Tükendiğinde gizleme opsiyonu
+* Tükendiğinde ön sipariş opsiyonu
+
+---
+
+# 10. Ürün özellik alanları sistemi
+
+* Dinamik özellik tanımlama
+* Ürün tipine göre farklı özellik setleri
+* Kanvas için özel alanlar
+* Ayna için özel alanlar
+* Halı için özel alanlar
+* Cam tablo için özel alanlar
+* Duvar kağıdı için özel alanlar
+* Sehpa/mobilya için özel alanlar
+* Ürün tipi seçildiğinde uygun alanların açılması
+* Filtreye yansıtılabilir özellikler
+* Ürün detay sayfasında göster/gizle
+* Teknik tablo görünümü
+* Admin’den özellik seti tanımlama
+
+---
+
+# 11. Ürün medya sistemi
+
+* Ana ürün görseli
+* Çoklu galeri görseli
+* Varyasyona özel görseller
+* Ürün videosu yükleme
+* Video URL desteği
+* Kısa tanıtım videosu
+* Mockup görselleri
+* Yakın çekim detay görselleri
+* Üretim görselleri
+* Üretim videosu
+* Müşteri kullanım görselleri
+* Görsel sıralama
+* Görsel alt metin alanları
+* WebP optimize yükleme
+* Görsel boyutlandırma
+* Lazy load uyumu
+* Mobil optimize medya
+* Medya kütüphanesi
+
+---
+
+# 12. Mockup ve yaşam alanı görselleri
+
+* Salon mockup kategorisi
+* Yatak odası mockup kategorisi
+* Çocuk odası mockup kategorisi
+* Ofis mockup kategorisi
+* Koridor mockup kategorisi
+* Mutfak/yemek alanı mockup kategorisi
+* Ürün bazlı mockup eşleme
+* Kategori bazlı varsayılan mockup
+* Mockup görsel sıralama
+* Mockup başlıkları
+* Mockup etiketleri
+* Gerçek yaşam fotoğraf galerisi
+* “Sizden gelenler” alanı
+* Admin onaylı kullanıcı görsel sistemi
+
+---
+
+# 13. Ürün detay sayfası
+
+* Büyük ürün görsel alanı
+* Thumbnail galeri
+* Zoom özelliği
+* Video gösterimi
+* Ürün adı
+* Ürün kısa satış metni
+* Fiyat alanı
+* İndirim gösterimi
+* Varyasyon seçim alanı
+* Stok durumu
+* Teslimat süresi
+* Üretim süresi
+* Kargo bilgisi
+* Sepete ekle butonu
+* Hemen al butonu
+* WhatsApp ile sor butonu
+* Favorilere ekle
+* Sosyal paylaşım butonları
+* Güven ikonları
+* Malzeme bilgisi sekmesi
+* Baskı bilgisi sekmesi
+* Ölçü tablosu
+* Bakım bilgisi
+* SSS alanı
+* Yorumlar alanı
+* İlgili ürünler
+* Benzer ürünler
+* Aynı kategoriden ürünler
+* Son görüntülenen ürünler
+* Sabit mobil sepete ekle butonu
+
+---
+
+# 14. Arama ve filtre sistemi
+
+* Ürün adıyla arama
+* SKU ile arama
+* Etiket ile arama
+* Kategori ile arama
+* Otomatik önerili arama
+* Arama sonuçlarında ürün görseli
+* Yazım hatası toleransı
+* Çoklu filtreleme
+* Fiyat filtresi
+* Ölçü filtresi
+* Renk filtresi
+* Tema filtresi
+* Malzeme filtresi
+* Çerçeve filtresi
+* Oda tipi filtresi
+* Yeni ürün filtresi
+* Kampanyalı ürün filtresi
+* Stokta olanlar filtresi
+* Sıralama seçenekleri
+* En yeniler
+* Fiyata göre
+* Popülerliğe göre
+* Çok satanlara göre
+
+---
+
+# 15. Sepet sistemi
+
+* Sepete ürün ekleme
+* Varyasyonlu ürün ekleme
+* Adet artırma/azaltma
+* Ürün silme
+* Sepet toplamı
+* Ara toplam
+* Kargo tahmini
+* İndirim kodu uygulama
+* Ücretsiz kargo uyarısı
+* Sepette önerilen ürünler
+* Stok kontrolü
+* Misafir sepet
+* Giriş yapan kullanıcı sepeti
+* Sepet birleştirme
+* Sepet terk etme takibi
+* Mobil optimize sepet ekranı
+
+---
+
+# 16. Checkout sistemi
+
+* Misafir sipariş
+* Üye olarak sipariş
+* Fatura adresi
+* Teslimat adresi
+* Birden fazla adres kaydı
+* İl / ilçe seçimi
+* Telefon doğrulama opsiyonu
+* Kargo seçimi
+* Ödeme yöntemi seçimi
+* Sipariş notu
+* Sözleşme onayı
+* KVKK onayı
+* Kupon kullanımı
+* Özet ekranı
+* Hata kontrolü
+* Başarılı sipariş sayfası
+* Başarısız ödeme senaryosu
+* Sipariş teyit e-postası
+
+---
+
+# 17. Ödeme sistemi
+
+* İyzico entegrasyonu
+* Tek çekim
+* Taksit
+* 3D secure
+* Başarılı ödeme kaydı
+* Başarısız ödeme logları
+* Tekrar ödeme deneme
+* Havale/EFT ödeme seçeneği
+* Kapıda ödeme opsiyonu gerekiyorsa
+* Siparişe ödeme durumu eşleme
+* İade/iptal destek alanı
+* Ödeme işlem numarası loglama
+* Admin ödeme kontrol ekranı
+
+---
+
+# 18. Kargo sistemi
+
+* Kargo firması tanımlama
+* Kargo profili oluşturma
+* Ürün bazlı kargo profili
+* Kategori bazlı kargo profili
+* Desi/ağırlık alanı
+* Boyut alanı
+* Şehre göre fiyat
+* Sabit kargo fiyatı
+* Ücretsiz kargo limiti
+* Kargo süresi gösterimi
+* Üretim + kargo toplam süre mantığı
+* Kargo takip numarası
+* Kargo takip linki
+* Sipariş durumunu kargoya bağlama
+* Kargoya verildi maili
+* Kargoya verildi SMS/WhatsApp opsiyonu
+* Kargo not alanı
+* Ayrı kargolanan ürün senaryosu gerekiyorsa destek
+
+---
+
+# 19. Sipariş yönetimi
+
+* Sipariş listesi
+* Sipariş detay ekranı
+* Sipariş numarası
+* Müşteri bilgileri
+* Adres bilgileri
+* Sipariş kalemleri
+* Varyasyon bilgileri
+* Ödeme bilgileri
+* Kargo bilgileri
+* Sipariş notu
+* İç not alanı
+* Sipariş durum değiştirme
+* Toplu sipariş durumu güncelleme
+* Sipariş filtreleme
+* Tarihe göre filtreleme
+* Duruma göre filtreleme
+* Ödeme türüne göre filtreleme
+* Excel dışa aktarma
+* Yazdırılabilir sipariş çıktısı
+* Paketleme listesi
+* Üretim listesi
+* Kargo listesi
+* İptal/iade yönetimi
+* Sipariş zaman çizelgesi
+
+---
+
+# 20. Müşteri hesabı
+
+* Üye kayıt
+* Giriş
+* Şifre sıfırlama
+* Profil düzenleme
+* Adres yönetimi
+* Sipariş geçmişi
+* Sipariş detay görüntüleme
+* Kargo takip
+* Favoriler
+* Yorum bırakma
+* Bildirim tercihleri
+* Kuponlarım alanı
+* Destek talepleri
+* Ürün tekrar satın alma
+* Hesap silme isteği
+* KVKK veri talep süreçleri
+
+---
+
+# 21. Yorum ve sosyal kanıt sistemi
+
+* Ürün puanlama
+* Yıldızlı yorum
+* Metin yorum
+* Fotoğraflı yorum
+* Videolu yorum opsiyonu
+* Doğrulanmış satın alım etiketi
+* Admin onay sistemi
+* Uygunsuz yorum filtreleme
+* Öne çıkan yorumlar
+* Ana sayfada yorum gösterimi
+* Ürün sayfasında yorum gösterimi
+* Ortalama puan hesaplama
+* Yorum sıralama
+* Yorumlara admin cevabı
+* Kullanıcı ev fotoğrafları galerisi
+
+---
+
+# 22. İçerik yönetimi
+
+* Hakkımızda sayfası
+* Marka hikayesi sayfası
+* Üretim süreci sayfası
+* Malzeme kalitesi sayfası
+* Sık sorulan sorular sayfası
+* İletişim sayfası
+* Teslimat ve kargo sayfası
+* İade ve değişim sayfası
+* KVKK sayfası
+* Mesafeli satış sözleşmesi
+* Kullanım koşulları
+* Blog altyapısı
+* Blog kategori sistemi
+* Blog yazı editörü
+* SEO alanları
+* Görsel yönetimi
+* İç linkleme
+* Taslak/yayın modu
+
+---
+
+# 23. Satış artırıcı modüller
+
+* Kupon sistemi
+* İndirim kampanyaları
+* Kategori bazlı indirim
+* Ürün bazlı indirim
+* Sepet tutarı bazlı indirim
+* Ücretsiz kargo kampanyası
+* İlk sipariş indirimi
+* Pop-up kampanya kutusu
+* Exit intent popup
+* WhatsApp popup
+* Newsletter popup
+* “Birlikte alınan ürünler”
+* “Benzer ürünler”
+* “Bu ürünü alanlar bunları da aldı”
+* Çapraz satış alanları
+* Upsell alanları
+* Son bakılan ürünler
+* Sepette ek ürün önerileri
+
+---
+
+# 24. E-posta ve bildirim otomasyonları
+
+* Sipariş alındı maili
+* Ödeme alındı maili
+* Üretime alındı maili
+* Kargoya verildi maili
+* Teslim edildi maili
+* Yorum bırak maili
+* Sepet terk maili
+* Kampanya maili
+* Şifre sıfırlama maili
+* Üyelik hoş geldin maili
+* Admin yeni sipariş bildirimi
+* Admin yeni yorum bildirimi
+* Admin iletişim formu bildirimi
+* Mobil bildirim altyapısı varsa entegrasyon
+* WhatsApp bildirim altyapısı opsiyonel
+
+---
+
+# 25. İletişim ve destek modülü
+
+* İletişim formu
+* Siparişle ilgili soru formu
+* Ürünle ilgili soru formu
+* WhatsApp hızlı bağlantı
+* Canlı destek alanı opsiyonel
+* Destek talebi kayıt sistemi
+* Admin’de mesaj kutusu
+* Mesaj durum yönetimi
+* Cevaplandı/bekliyor durumları
+* E-posta yönlendirme
+* SSS entegrasyonu
+
+---
+
+# 26. SEO sistemi
+
+* SEO uyumlu URL
+* Meta title
+* Meta description
+* Meta keywords opsiyonel
+* Open Graph
+* Twitter card
+* Canonical URL
+* Sitemap XML
+* Robots.txt
+* Breadcrumb schema
+* Product schema
+* Review schema
+* FAQ schema
+* Blog schema
+* Görsel alt etiketleri
+* Sayfa bazlı SEO alanları
+* Kategori bazlı SEO alanları
+* Ürün bazlı SEO alanları
+* Blog SEO
+* Otomatik slug üretimi
+* 301 yönlendirme yönetimi
+* Kırık link kontrol listesi
+* Hız optimizasyonu
+* Core Web Vitals odaklı yapı
+* Lazy load
+* Görsel sıkıştırma
+* SSR uyumlu temiz HTML çıktısı
+
+---
+
+# 27. Performans ve teknik kalite
+
+* Veritabanı indeksleme
+* Sorgu optimizasyonu
+* Sayfalama
+* Cache kullanımı
+* Görsel optimizasyonu
+* WebP/AVIF desteği
+* CDN uyumu
+* Minify CSS/JS
+* Lazy loading
+* Sunucu tarafı cache
+* Response compression
+* Performans logları
+* Yük testi yapılması
+* Büyük ürün sayısında listeleme optimizasyonu
+* Arama optimizasyonu
+
+---
+
+# 28. Güvenlik
+
+* SQL injection koruması
+* XSS koruması
+* CSRF koruması
+* Güvenli cookie ayarları
+* Rate limiting
+* Brute force koruması
+* Dosya yükleme güvenliği
+* Yetki kontrolü
+* Log kayıtları
+* Admin panel IP logları
+* SSL zorunluluğu
+* Hassas verilerin maskelenmesi
+* Ortam gizli anahtar yönetimi
+* Backup güvenliği
+* Hata mesajlarının güvenli gösterimi
+
+---
+
+# 29. Raporlama modülü
+
+* Günlük satış raporu
+* Haftalık satış raporu
+* Aylık satış raporu
+* Ürün bazlı satış raporu
+* Kategori bazlı satış raporu
+* En çok satan ürünler
+* Düşük performanslı ürünler
+* Sipariş durumu raporu
+* İptal/iade raporu
+* Kupon kullanım raporu
+* Yeni müşteri raporu
+* Tekrar satın alma raporu
+* Trafik dönüşüm raporları için analitik entegrasyon alanı
+* Excel/PDF dışa aktarma
+
+---
+
+# 30. Çok ürün tipli yapı
+
+Bu projede sadece kanvas değil, başka ürünler de olacağı için:
+
+* Kanvas tablo desteği
+* Cam tablo desteği
+* Duvar kağıdı desteği
+* Cam kesme tahtası desteği
+* Ayna desteği
+* Baskılı halı desteği
+* Ahşap dekorasyon desteği
+* Sehpa/mobilya aksesuarı desteği
+* Lightbox desteği
+* Afiş desteği
+* Yeni ürün tipi eklenebilir mimari
+* Ürün tipine göre özel alan tanımı
+* Ürün tipine göre filtre ve varyasyon sistemi
+* Ürün tipine göre kargo profili
+* Ürün tipine göre açıklama şablonları
+
+---
+
+# 31. Tasarım tarafında özel istekler
+
+* Zara Home / H&M Home benzeri sade premium tasarım
+* Büyük görseller
+* Bol beyaz alan
+* Modern tipografi
+* Yüksek kalite hissi
+* Minimal header
+* Premium kategori kartları
+* Temiz ürün kartları
+* Hover efektleri
+* Mobilde premium görünüm
+* Şık footer
+* Marka güvenini artıran düzen
+* Aşırı karışık olmayan vitrin
+* Dönüşüm odaklı CTA yerleşimi
+
+---
+
+# 32. Eksik bırakılmaması gereken özel sayfalar
+
+* Ana sayfa
+* Kategori listeleme sayfası
+* Ürün detay sayfası
+* Sepet
+* Ödeme
+* Üye girişi / kayıt
+* Hesabım
+* Sipariş takibi
+* Hakkımızda
+* Marka hikayesi
+* Üretim süreci
+* Malzeme kalitesi
+* Teslimat ve kargo
+* İade ve değişim
+* SSS
+* İletişim
+* Blog
+* Kampanya sayfası
+* Gizlilik/KVKK
+* Mesafeli satış sözleşmesi
+
+---
+
+# 33. Geleceğe açık bırakılması gereken şeyler
+
+* Çoklu dil desteğine uygun veri yapısı
+* Çoklu para birimine uygun veri yapısı
+* Ülke bazlı fiyat alanları için genişletilebilir yapı
+* Ülke bazlı kargo altyapısına uygun yapı
+* Mobil uygulama bağlanabilir API düzeni
+* Pazaryeri entegrasyonlarına açık mimari
+* ERP/fatura entegrasyonuna açık yapı
+* SMS/WhatsApp servis entegrasyonuna açık yapı
+
+---
+
+# 34. Sana kodlama öncelik sırası önerisi
+
+Önce şunları bitir:
+
+* kullanıcı/rol sistemi
+* kategori sistemi
+* ürün sistemi
+* varyasyon sistemi
+* medya sistemi
+* ürün detay sayfası
+* sepet
+* checkout
+* ödeme
+* sipariş yönetimi
+* kargo sistemi
+* admin panel ürün giriş ekranı
+* ana sayfa modüler yapı
+* içerik sayfaları
+* yorum sistemi
+* SEO sistemi
+* raporlama
+* güvenlik ve performans
+
+---
+
+# 35. Bu projede kesinlikle yarım bırakmaman gereken kritik noktalar
+
+* alt kategori
+* alt varyasyon
+* ürün giriş ekranı zenginliği
+* ürün videosu
+* mockup sistemi
+* üretim/kargo süresi gösterimi
+* güven unsurları
+* marka hikayesi
+* üretim süreci sayfası
+* sosyal medya linkleri
+* SEO alanları
+* kargo profilleri
+* premium tasarım
+* yeni ürün tipi eklenebilir mimari
+* admin panel yetki sistemi
+
+---
+
+İstersen bir sonraki mesajda bunu sana daha da profesyonel hale getirip **“yazılımcı görev listesi / backlog formatında checkbox’lı sürüm”** olarak hazırlayayım.

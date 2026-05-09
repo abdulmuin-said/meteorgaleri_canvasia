@@ -1,0 +1,215 @@
+@model List<KanvasProje.Core.Varliklar.SepetItem>
+
+@{
+    ViewData["Title"] = "Sepetim";
+    decimal sepetToplami = Model.Sum(x => x.Toplam);
+    decimal indirimTutari = (decimal)(ViewBag.IndirimTutari ?? 0);
+    decimal genelToplam = sepetToplami - indirimTutari;
+}
+
+<!-- Breadcrumb -->
+<div class="bg-[#f1ede7] border-b border-[#e5e2dc] py-3">
+    <div class="container mx-auto px-4 flex items-center gap-2 text-xs text-[#47473d]">
+        <a href="/" class="hover:text-[#313511] transition-colors">Ana Sayfa</a>
+        <span>/</span>
+        <span class="text-[#1c1c18] font-medium">Sepetim</span>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-10">
+    <h1 class="font-serif text-3xl text-[#313511] mb-1">Sepetim</h1>
+    <p class="text-xs text-[#47473d] mb-8">@Model.Count ürün</p>
+
+    @if (TempData["SepetBasari"] != null)
+    {
+        <div class="mb-6 rounded-lg border border-[#cbd3a3] bg-[#f7f8ed] px-4 py-3 text-sm text-[#313511]">
+            @TempData["SepetBasari"]
+        </div>
+    }
+    @if (TempData["SepetHata"] != null)
+    {
+        <div class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            @TempData["SepetHata"]
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-24">
+            <i class="fas fa-shopping-bag fa-4x text-[#e5e2dc] mb-6"></i>
+            <h3 class="font-serif text-2xl text-[#313511] mb-3">Sepetiniz boş</h3>
+            <p class="text-sm text-[#47473d] mb-8 max-w-sm mx-auto">
+                Koleksiyonumuzu keşfedin ve yaşam alanlarınıza özel bir dokunuş ekleyin.
+            </p>
+            <a href="/Urun" class="inline-block bg-[#313511] text-white px-8 py-3 text-xs tracking-widest uppercase rounded-full hover:bg-[#1c2001] transition-colors">
+                Alışverişe Başla
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Ürün Listesi -->
+            <div class="flex-1 space-y-4">
+                @foreach (var item in Model)
+                {
+                    <article class="bg-white border border-[#e5e2dc] rounded-lg p-4 flex gap-4 relative">
+                        <!-- Sil Butonu -->
+                        <form method="post" action="/Sepet/Sil" class="absolute right-3 top-3">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="sepetItemId" value="@item.Id" />
+                            <button type="submit" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50" title="Ürünü kaldır">
+                                <i class="fas fa-times text-xs"></i>
+                            </button>
+                        </form>
+
+                        <!-- Ürün Görseli -->
+                        <a href="/Urun/Detay/@item.UrunId" class="flex-shrink-0 w-24 h-24 bg-[#f1ede7] rounded overflow-hidden block">
+                            <img src="@item.UrunResimUrl" class="w-full h-full object-cover" alt="@item.UrunBaslik" loading="lazy" decoding="async" />
+                        </a>
+
+                        <!-- Ürün Bilgisi -->
+                        <div class="flex-1 min-w-0 pr-6">
+                            <a href="/Urun/Detay/@item.UrunId" class="font-medium text-sm text-[#1c1c18] hover:text-[#b58735] transition-colors line-clamp-2 block mb-1">
+                                @item.UrunBaslik
+                            </a>
+                            @if (!string.IsNullOrWhiteSpace(item.SecenekAdi))
+                            {
+                                <span class="text-xs text-[#47473d] bg-[#f1ede7] px-2 py-0.5 rounded">@item.SecenekAdi</span>
+                            }
+
+                            <div class="mt-3">
+                                <form method="post" action="/Sepet/NotGuncelle" class="flex flex-col gap-1">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="sepetItemId" value="@item.Id" />
+                                    <label class="text-[10px] uppercase tracking-widest text-[#a09e99] font-medium">Not / Özel İstek</label>
+                                    <textarea name="musteriNotu"
+                                             rows="2"
+                                             maxlength="500"
+                                             placeholder="Özel ölçü, renk tercihi, yazı isteği..."
+                                             class="w-full border border-[#e5e2dc] rounded px-3 py-2 text-xs text-[#1c1c18] bg-[#fcf9f3] focus:ring-1 focus:ring-[#b58735] focus:outline-none resize-none placeholder:text-[#a09e99]">@item.MusteriNotu</textarea>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[9px] text-[#a09e99]">En fazla 500 karakter</span>
+                                        <button type="submit" class="text-[10px] text-[#b58735] hover:text-[#313511] transition-colors font-medium">
+                                            <i class="fas fa-save mr-1"></i>Kaydet
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="flex items-center justify-between mt-3">
+                                <!-- Adet Kontrol -->
+                                <div class="flex items-center border border-[#e5e2dc] rounded overflow-hidden">
+                                    @if (item.Adet > 1)
+                                    {
+                                        <form method="post" action="/Sepet/AdetGuncelle">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="sepetItemId" value="@item.Id" />
+                                            <input type="hidden" name="yeniAdet" value="@(item.Adet - 1)" />
+                                            <button type="submit" class="w-8 h-8 flex items-center justify-center text-[#47473d] hover:bg-[#f1ede7] transition-colors text-xs">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form method="post" action="/Sepet/Sil">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="sepetItemId" value="@item.Id" />
+                                            <button type="submit" class="w-8 h-8 flex items-center justify-center text-red-400 hover:bg-red-50 transition-colors text-xs">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    <span class="w-8 h-8 flex items-center justify-center text-sm font-medium text-[#1c1c18] border-x border-[#e5e2dc]">@item.Adet</span>
+                                    <form method="post" action="/Sepet/AdetGuncelle">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="sepetItemId" value="@item.Id" />
+                                        <input type="hidden" name="yeniAdet" value="@(item.Adet + 1)" />
+                                        <button type="submit" class="w-8 h-8 flex items-center justify-center text-[#47473d] hover:bg-[#f1ede7] transition-colors text-xs">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                <!-- Fiyat -->
+                                <span class="font-semibold text-[#1c1c18]">₺@item.Toplam.ToString("N2")</span>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+
+            <!-- Sipariş Özeti -->
+            <aside class="lg:w-80 flex-shrink-0">
+                <div class="bg-white border border-[#e5e2dc] rounded-lg p-6 sticky top-28">
+                    <h2 class="font-serif text-lg text-[#313511] mb-5 pb-3 border-b border-[#e5e2dc]">Sipariş Özeti</h2>
+
+                    <div class="space-y-3 text-sm mb-5">
+                        <div class="flex justify-between text-[#47473d]">
+                            <span>Ara Toplam</span>
+                            <span>₺@sepetToplami.ToString("N2")</span>
+                        </div>
+                        @if (indirimTutari > 0)
+                        {
+                            <div class="flex justify-between text-green-600">
+                                <span><i class="fas fa-tag mr-1 text-xs"></i>İndirim</span>
+                                <span>-₺@indirimTutari.ToString("N2")</span>
+                            </div>
+                        }
+                        <div class="flex justify-between text-[#47473d]">
+                            <span>Kargo</span>
+                            <span class="text-green-600 font-medium">Ücretsiz</span>
+                        </div>
+                        <div class="flex justify-between text-[#1c1c18] font-bold text-base pt-3 border-t border-[#e5e2dc]">
+                            <span>Toplam</span>
+                            <span>₺@genelToplam.ToString("N2")</span>
+                        </div>
+                    </div>
+
+                    <!-- Kupon -->
+                    @if (ViewBag.KuponKodu != null)
+                    {
+                        <div class="flex items-center justify-between bg-green-50 border border-green-200 rounded px-3 py-2 mb-4 text-sm text-green-700">
+                            <span><i class="fas fa-check-circle mr-1"></i>@ViewBag.KuponKodu</span>
+                            <form method="post" action="/Sepet/KuponKaldir">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="text-red-400 hover:text-red-600"><i class="fas fa-times"></i></button>
+                            </form>
+                        </div>
+                    }
+                    else
+                    {
+                        <form action="/Sepet/KuponUygula" method="post" class="flex mb-4">
+                            @Html.AntiForgeryToken()
+                            <input type="text" name="kuponKodu" placeholder="İndirim kodu" required
+                                   class="flex-1 border border-[#e5e2dc] border-r-0 rounded-l px-3 py-2 text-xs focus:ring-1 focus:ring-[#b58735] outline-none bg-[#fcf9f3]" />
+                            <button type="submit" class="bg-[#f1ede7] border border-[#e5e2dc] rounded-r px-3 py-2 text-xs hover:bg-[#e5e2dc] transition-colors text-[#313511] font-medium">
+                                Uygula
+                            </button>
+                        </form>
+                    }
+
+                    <a asp-controller="Siparis" asp-action="Odeme"
+                       class="w-full bg-[#313511] text-white text-center text-xs tracking-widest uppercase py-3.5 rounded block hover:bg-[#1c2001] transition-colors font-medium">
+                        <i class="fas fa-lock mr-2 text-[10px]"></i>Ödemeye Geç
+                    </a>
+                    <p class="text-center text-[10px] text-gray-400 mt-3">
+                        <i class="fas fa-shield-alt mr-1"></i>256-bit SSL ile güvenli ödeme
+                    </p>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Mobil Ödeme Çubuğu -->
+        <div class="fixed bottom-16 md:bottom-0 left-0 right-0 z-30 lg:hidden bg-white border-t border-[#e5e2dc] px-4 py-3 flex items-center justify-between shadow-lg">
+            <div>
+                <div class="text-[10px] text-[#47473d] uppercase tracking-wide">Toplam</div>
+                <div class="font-bold text-[#1c1c18]">₺@genelToplam.ToString("N2")</div>
+            </div>
+            <a asp-controller="Siparis" asp-action="Odeme"
+               class="bg-[#313511] text-white text-xs tracking-widest uppercase px-6 py-3 rounded-full hover:bg-[#1c2001] transition-colors">
+                <i class="fas fa-lock mr-1 text-[10px]"></i>Ödemeye Geç
+            </a>
+        </div>
+    }
+</div>

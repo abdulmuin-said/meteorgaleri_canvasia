@@ -1,0 +1,315 @@
+import os
+
+file_path = r"E:\Projeler\MeteorGaleri\KanvasProje.Web\Views\Siparis\Odeme.cshtml"
+
+new_content = """@model KanvasProje.Core.Varliklar.Siparis
+@{
+    ViewData["Title"] = "Güvenli Ödeme";
+
+    decimal araToplam = ViewBag.AraToplam ?? 0;
+    decimal indirim = ViewBag.IndirimTutari ?? 0;
+    decimal genelToplam = ViewBag.ToplamTutar ?? 0;
+    string? kuponKodu = ViewBag.KuponKodu as string;
+
+    var kayitliAdresler = ViewBag.KayitliAdresler as List<KanvasProje.Core.Varliklar.Adres>;
+    bool girisYapmis = User.Identity?.IsAuthenticated == true;
+    var sehirler = new[]
+    {
+        "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Aksaray", "Amasya", "Ankara", "Antalya", "Ardahan", "Artvin",
+        "Aydın", "Balıkesir", "Bartın", "Batman", "Bayburt", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur",
+        "Bursa", "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Düzce", "Edirne", "Elazığ", "Erzincan",
+        "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkari", "Hatay", "Iğdır", "Isparta", "İstanbul",
+        "İzmir", "Kahramanmaraş", "Karabük", "Karaman", "Kars", "Kastamonu", "Kayseri", "Kırıkkale", "Kırklareli", "Kırşehir",
+        "Kilis", "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Mardin", "Mersin", "Muğla", "Muş",
+        "Nevşehir", "Niğde", "Ordu", "Osmaniye", "Rize", "Sakarya", "Samsun", "Siirt", "Sinop", "Sivas",
+        "Şanlıurfa", "Şırnak", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Uşak", "Van", "Yalova", "Yozgat",
+        "Zonguldak"
+    };
+}
+
+<!-- Breadcrumb -->
+<div class="bg-[#f1ede7] border-b border-[#e5e2dc] py-4">
+    <div class="container mx-auto px-4 flex items-center justify-center gap-4 text-xs tracking-widest uppercase">
+        <a href="/Sepet" class="text-[#47473d] hover:text-[#313511] transition-colors flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-[#e5e2dc] text-[#47473d] flex items-center justify-center font-bold">1</span> Sepet
+        </a>
+        <span class="text-[#e5e2dc]">/</span>
+        <span class="text-[#313511] font-bold flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-[#313511] text-white flex items-center justify-center font-bold">2</span> Ödeme & Teslimat
+        </span>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-12 md:py-16">
+    <div class="text-center mb-12">
+        <h1 class="font-serif text-3xl md:text-5xl text-[#313511] mb-4">Güvenli Ödeme</h1>
+        <p class="text-sm text-[#47473d] max-w-2xl mx-auto">Teslimat bilgilerinizi doğrulayın ve siparişinizi güvenle tamamlayın.</p>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-12 lg:gap-16 max-w-6xl mx-auto">
+        <!-- Sol Form Alanı -->
+        <div class="lg:w-2/3 space-y-12">
+            
+            @if (kayitliAdresler != null && kayitliAdresler.Any())
+            {
+                <section>
+                    <h2 class="font-serif text-2xl text-[#313511] mb-6 flex items-center gap-3 border-b border-[#e5e2dc] pb-4">
+                        <i class="fas fa-address-book text-[#b58735]"></i> Kayıtlı Adresleriniz
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        @foreach (var adres in kayitliAdresler)
+                        {
+                            <label class="relative border border-[#e5e2dc] rounded-lg p-5 cursor-pointer transition-colors hover:border-[#b58735] has-[:checked]:border-[#313511] has-[:checked]:bg-[#fcf9f3] group block">
+                                <input type="radio" name="kayitliAdresSecimi" class="absolute opacity-0 w-0 h-0 peer" onclick="selectAddress('@adres.AdSoyad', '@adres.Telefon', '@adres.Sehir', '@adres.Ilce', '@adres.AcikAdres')">
+                                <div class="flex items-start gap-3">
+                                    <div class="mt-1 w-4 h-4 rounded-full border border-[#b58735] flex items-center justify-center peer-checked:bg-[#313511] peer-checked:border-[#313511]">
+                                        <div class="w-1.5 h-1.5 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="text-sm font-semibold text-[#1c1c18] mb-2 uppercase tracking-wide">@adres.Baslik</div>
+                                        <div class="text-sm text-[#47473d] mb-1">@adres.AdSoyad</div>
+                                        <div class="text-sm text-[#47473d] mb-1">@adres.Telefon</div>
+                                        <div class="text-sm text-[#47473d] mb-2">@adres.Sehir / @adres.Ilce</div>
+                                        <div class="text-xs text-[#47473d] leading-relaxed line-clamp-2">@adres.AcikAdres</div>
+                                    </div>
+                                </div>
+                            </label>
+                        }
+                    </div>
+                </section>
+            }
+
+            <section>
+                <h2 class="font-serif text-2xl text-[#313511] mb-6 flex items-center gap-3 border-b border-[#e5e2dc] pb-4">
+                    <i class="fas fa-truck text-[#b58735]"></i> Teslimat Bilgileri
+                </h2>
+
+                <form asp-action="Odeme" method="post" id="odemeForm">
+                    @if (girisYapmis)
+                    {
+                        <input type="hidden" asp-for="Eposta" />
+                    }
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs uppercase tracking-widest text-[#1c1c18] font-medium mb-2" for="MusteriAdSoyad">Ad Soyad</label>
+                            <input asp-for="MusteriAdSoyad" id="MusteriAdSoyad" class="w-full bg-transparent border-0 border-b border-[#e5e2dc] px-0 py-2 focus:ring-0 focus:border-[#313511] text-[#1c1c18] transition-colors" placeholder="Adınız ve soyadınız" required>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs uppercase tracking-widest text-[#1c1c18] font-medium mb-2" for="Eposta">E-posta</label>
+                            @if (girisYapmis)
+                            {
+                                <input value="@Model.Eposta" class="w-full bg-transparent border-0 border-b border-[#e5e2dc] px-0 py-2 text-[#47473d] cursor-not-allowed" readonly>
+                                <div class="mt-2 text-[10px] uppercase tracking-widest text-[#b58735]">Kayıtlı e-posta adresiniz kullanılacak.</div>
+                            }
+                            else
+                            {
+                                <input asp-for="Eposta" id="Eposta" type="email" class="w-full bg-transparent border-0 border-b border-[#e5e2dc] px-0 py-2 focus:ring-0 focus:border-[#313511] text-[#1c1c18] transition-colors" placeholder="ornek@mail.com" required>
+                            }
+                        </div>
+
+                        <div>
+                            <label class="block text-xs uppercase tracking-widest text-[#1c1c18] font-medium mb-2" for="Telefon">Telefon</label>
+                            <input asp-for="Telefon" id="Telefon" class="w-full bg-transparent border-0 border-b border-[#e5e2dc] px-0 py-2 focus:ring-0 focus:border-[#313511] text-[#1c1c18] transition-colors" placeholder="5XX XXX XX XX" maxlength="13" required>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs uppercase tracking-widest text-[#1c1c18] font-medium mb-2" for="Sehir">Şehir</label>
+                            <select asp-for="Sehir" id="Sehir" class="w-full bg-transparent border-0 border-b border-[#e5e2dc] px-0 py-2 focus:ring-0 focus:border-[#313511] text-[#1c1c18] transition-colors" required>
+                                <option value="">Şehir seçiniz</option>
+                                @foreach (var sehir in sehirler)
+                                {
+                                    <option value="@sehir">@sehir</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs uppercase tracking-widest text-[#1c1c18] font-medium mb-2" for="Ilce">İlçe</label>
+                            <input asp-for="Ilce" id="Ilce" class="w-full bg-transparent border-0 border-b border-[#e5e2dc] px-0 py-2 focus:ring-0 focus:border-[#313511] text-[#1c1c18] transition-colors" placeholder="İlçe adı" required>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-xs uppercase tracking-widest text-[#1c1c18] font-medium mb-2" for="AcikAdres">Açık Adres</label>
+                            <textarea asp-for="AcikAdres" id="AcikAdres" class="w-full bg-transparent border-0 border-b border-[#e5e2dc] px-0 py-2 focus:ring-0 focus:border-[#313511] text-[#1c1c18] transition-colors resize-none h-24" placeholder="Mahalle, sokak, apartman, daire numarası ve ek adres bilgileri" required></textarea>
+                        </div>
+
+                        @if (girisYapmis)
+                        {
+                            <div class="md:col-span-2 mt-4 bg-white border border-[#e5e2dc] p-5 rounded-lg">
+                                <label class="flex items-center gap-3 cursor-pointer group">
+                                    <input type="checkbox" id="AdresiKaydet" name="AdresiKaydet" value="true" class="w-4 h-4 text-[#313511] border-[#e5e2dc] rounded focus:ring-[#313511]">
+                                    <span class="text-sm font-medium text-[#1c1c18] group-hover:text-[#313511] transition-colors">Bu adresi hesabıma kaydetmek istiyorum</span>
+                                </label>
+                                
+                                <div id="adresBaslikWrapper" class="mt-4 hidden transition-all duration-300">
+                                    <label class="block text-xs uppercase tracking-widest text-[#1c1c18] font-medium mb-2" for="YeniAdresBasligi">Adres Başlığı</label>
+                                    <input type="text" id="YeniAdresBasligi" name="YeniAdresBasligi" class="w-full bg-transparent border-0 border-b border-[#e5e2dc] px-0 py-2 focus:ring-0 focus:border-[#313511] text-[#1c1c18] transition-colors" placeholder="Örn: Evim, Ofisim">
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mt-12">
+                        <h2 class="font-serif text-2xl text-[#313511] mb-6 flex items-center gap-3 border-b border-[#e5e2dc] pb-4">
+                            <i class="fas fa-credit-card text-[#b58735]"></i> Ödeme Yöntemi
+                        </h2>
+                        
+                        <div class="border border-[#e5e2dc] rounded-lg p-6 bg-white relative overflow-hidden">
+                            <div class="absolute top-0 right-0 bg-[#b58735] text-white text-[10px] uppercase tracking-widest px-3 py-1 font-bold rounded-bl-lg">256-Bit SSL</div>
+                            
+                            <div class="flex items-center gap-4 mb-4">
+                                <i class="fas fa-shield-alt text-[#313511] text-3xl"></i>
+                                <div>
+                                    <h6 class="text-base font-bold text-[#1c1c18]">Kredi veya Banka Kartı</h6>
+                                    <p class="text-xs text-[#47473d]">İyzico güvenli ödeme altyapısı kullanılmaktadır.</p>
+                                </div>
+                            </div>
+
+                            <p class="text-sm text-[#47473d] mb-6 border-t border-[#e5e2dc] pt-4">
+                                Siparişi tamamla butonuna tıkladıktan sonra <strong class="text-[#313511]">3D Secure Güvenli Ödeme</strong> ekranına yönlendirileceksiniz. Kart bilgileriniz kesinlikle sistemimizde saklanmamaktadır.
+                            </p>
+
+                            <label class="flex items-start gap-3 cursor-pointer group mt-4 bg-[#fcf9f3] p-4 rounded border border-[#e5e2dc]">
+                                <input type="checkbox" id="terms" required class="w-4 h-4 mt-0.5 text-[#313511] border-[#e5e2dc] rounded focus:ring-[#313511]">
+                                <span class="text-sm leading-relaxed text-[#47473d]">
+                                    <a href="/Kurumsal/Gizlilik" class="text-[#313511] font-semibold hover:text-[#b58735] transition-colors underline decoration-1 underline-offset-2">Gizlilik Politikası</a> ve 
+                                    <a href="/Kurumsal/KullaniciSozlesmesi" class="text-[#313511] font-semibold hover:text-[#b58735] transition-colors underline decoration-1 underline-offset-2">Kullanıcı Sözleşmesi</a> şartlarını okudum, onaylıyorum.
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full mt-8 bg-[#313511] text-white text-sm font-medium tracking-widest uppercase py-4 rounded hover:bg-[#1c2001] transition-colors flex items-center justify-center gap-3">
+                        <i class="fas fa-lock"></i> Siparişi Tamamla - @genelToplam.ToString("N2") TL
+                    </button>
+                </form>
+            </section>
+        </div>
+
+        <!-- Sağ Sipariş Özeti -->
+        <div class="lg:w-1/3">
+            <div class="sticky top-8 bg-white border border-[#e5e2dc] rounded-lg p-6 lg:p-8">
+                <h3 class="font-serif text-2xl text-[#313511] mb-6 pb-4 border-b border-[#e5e2dc]">Sipariş Özeti</h3>
+                
+                <div class="space-y-4 mb-6 text-sm">
+                    <div class="flex justify-between text-[#47473d]">
+                        <span>Ara Toplam</span>
+                        <span>@araToplam.ToString("N2") TL</span>
+                    </div>
+
+                    @if (indirim > 0)
+                    {
+                        <div class="flex justify-between text-[#b58735] font-medium">
+                            <span>İndirim (@kuponKodu)</span>
+                            <span>-@indirim.ToString("N2") TL</span>
+                        </div>
+                    }
+
+                    <div class="flex justify-between text-[#47473d]">
+                        <span>Kargo Ücreti</span>
+                        <span class="text-[#313511] font-medium">Ücretsiz</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-end border-t border-[#e5e2dc] pt-6 mb-8">
+                    <span class="text-base text-[#1c1c18] font-bold">Genel Toplam</span>
+                    <span class="font-serif text-3xl text-[#313511]">@genelToplam.ToString("N2") TL</span>
+                </div>
+
+                <div class="space-y-4 pt-6 border-t border-[#e5e2dc]">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-shield-check text-[#b58735] mt-1"></i>
+                        <div>
+                            <p class="text-xs font-bold text-[#1c1c18] uppercase tracking-wider mb-1">256-Bit SSL Şifreleme</p>
+                            <p class="text-[10px] text-[#47473d]">Tüm bilgileriniz uçtan uca şifrelenir ve bankaya iletilir.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-box-open text-[#b58735] mt-1"></i>
+                        <div>
+                            <p class="text-xs font-bold text-[#1c1c18] uppercase tracking-wider mb-1">Hasarsız Teslimat</p>
+                            <p class="text-[10px] text-[#47473d]">Özel korumalı ambalajlarla ürününüz güvenle kapınıza ulaşır.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-undo text-[#b58735] mt-1"></i>
+                        <div>
+                            <p class="text-xs font-bold text-[#1c1c18] uppercase tracking-wider mb-1">Kolay İade</p>
+                            <p class="text-[10px] text-[#47473d]">14 gün içinde koşulsuz iade hakkınız bulunmaktadır.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function selectAddress(ad, tel, sehir, ilce, acikAdres) {
+        document.getElementById("MusteriAdSoyad").value = ad;
+        document.getElementById("Telefon").value = tel;
+        document.getElementById("Sehir").value = sehir;
+        document.getElementById("Ilce").value = ilce;
+        document.getElementById("AcikAdres").value = acikAdres;
+
+        if (window.showToast) {
+            window.showToast('Adres bilgileri forma aktarıldı.', 'success');
+        }
+    }
+
+    const adresKaydetCheckbox = document.getElementById('AdresiKaydet');
+    if (adresKaydetCheckbox) {
+        adresKaydetCheckbox.addEventListener('change', function () {
+            const target = document.getElementById('adresBaslikWrapper');
+            if (!target) return;
+
+            if (this.checked) {
+                target.classList.remove('hidden');
+            } else {
+                target.classList.add('hidden');
+            }
+        });
+    }
+
+    const telefonInput = document.getElementById('Telefon');
+    if (telefonInput) {
+        telefonInput.addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\D/g, '');
+
+            if (value.startsWith('0')) {
+                value = value.substring(1);
+            }
+
+            if (value.length > 10) {
+                value = value.substring(0, 10);
+            }
+
+            if (value.length > 6) {
+                value = value.replace(/(\d{3})(\d{3})(\d{2})(\d{2})/, '$1 $2 $3 $4');
+            } else if (value.length > 3) {
+                value = value.replace(/(\d{3})(\d{3})/, '$1 $2');
+            }
+
+            e.target.value = value;
+        });
+    }
+
+    // Form submission validation UI
+    const form = document.getElementById('odemeForm');
+    form.addEventListener('submit', function(e) {
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            if (window.showToast) {
+                window.showToast('Lütfen tüm zorunlu alanları eksiksiz doldurun.', 'error');
+            }
+        }
+    });
+</script>
+"""
+
+with open(file_path, "w", encoding="utf-8") as f:
+    f.write(new_content)
+
+print("Odeme.cshtml refactored.")

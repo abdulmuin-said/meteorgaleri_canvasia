@@ -1,0 +1,56 @@
+@model KanvasProje.Core.Varliklar.Siparis
+@{
+    ViewData["Title"] = "İade Talebi Oluştur";
+}
+
+<div class="bg-[#f1ede7] border-b border-[#e5e2dc] py-3">
+    <div class="container mx-auto px-4 flex items-center gap-2 text-xs text-[#47473d]">
+        <a href="/" class="hover:text-[#313511] transition-colors">Ana Sayfa</a>
+        <span>/</span>
+        <a href="/Profil" class="hover:text-[#313511] transition-colors">Hesabım</a>
+        <span>/</span>
+        <a href="/Profil/Siparislerim" class="hover:text-[#313511] transition-colors">Siparişlerim</a>
+        <span>/</span>
+        <span class="text-[#1c1c18] font-medium">İade Talebi</span>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-10 max-w-3xl">
+    <h1 class="font-serif text-3xl text-[#313511] mb-6">İade Talebi Oluştur</h1>
+    
+    <div class="bg-white border border-[#e5e2dc] rounded-lg p-6 mb-8">
+        <h3 class="font-bold text-[#1c1c18] mb-4 border-b border-[#e5e2dc] pb-2">Sipariş Bilgileri</h3>
+        <p class="text-sm text-[#47473d] mb-2"><strong>Sipariş No:</strong> @Model.SiparisNo</p>
+        <p class="text-sm text-[#47473d] mb-2"><strong>Tarih:</strong> @Model.OlusturulmaTarihi.ToString("dd.MM.yyyy")</p>
+        <p class="text-sm text-[#47473d]"><strong>Tutar:</strong> @Model.ToplamTutar.ToString("N2") TL</p>
+    </div>
+
+    <form asp-action="IadeTalebiGonder" method="post" class="space-y-6">
+        <input type="hidden" name="siparisId" value="@Model.Id" />
+        
+        <div>
+            <label class="block text-xs uppercase tracking-widest text-[#1c1c18] font-medium mb-2">İade Nedeni</label>
+            <select name="IadeNedeni" required class="w-full border border-[#e5e2dc] rounded px-4 py-3 text-sm focus:ring-1 focus:ring-[#b58735] focus:border-[#b58735] outline-none bg-[#fcf9f3]">
+                <option value="">Seçiniz</option>
+                <option value="Hasarlı Ürün">Ürün hasarlı geldi</option>
+                <option value="Yanlış Ürün">Yanlış ürün gönderildi</option>
+                <option value="Beklentimi Karşılamadı">Ürün beklentimi karşılamadı</option>
+                <option value="Vazgeçtim">Satın almaktan vazgeçtim</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-xs uppercase tracking-widest text-[#1c1c18] font-medium mb-2">Açıklama (İsteğe Bağlı)</label>
+            <textarea name="Aciklama" rows="4" class="w-full border border-[#e5e2dc] rounded px-4 py-3 text-sm focus:ring-1 focus:ring-[#b58735] focus:border-[#b58735] outline-none bg-[#fcf9f3] resize-none" placeholder="İade talebinizle ilgili eklemek istedikleriniz..."></textarea>
+        </div>
+
+        <div class="flex gap-4">
+            <button type="submit" class="bg-[#313511] text-white px-8 py-3 text-xs tracking-widest uppercase rounded hover:bg-[#1c2001] transition-colors">
+                Talebi Gönder
+            </button>
+            <a href="/Profil/Siparislerim" class="bg-white border border-[#e5e2dc] text-[#313511] px-8 py-3 text-xs tracking-widest uppercase rounded hover:bg-[#fcf9f3] transition-colors inline-flex items-center">
+                İptal
+            </a>
+        </div>
+    </form>
+</div>
