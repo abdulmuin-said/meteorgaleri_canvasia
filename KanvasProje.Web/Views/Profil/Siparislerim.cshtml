@@ -123,6 +123,12 @@
                                             <span class="border text-xs px-2 py-0.5 rounded-full @DurumRenk(item.Durum)">
                                                 @DurumAdi(item.Durum)
                                             </span>
+                                            @if (item.FaturaYuklendiMi)
+                                            {
+                                                <a href="/Siparis/FaturaIndir?id=@item.Id" target="_blank" class="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded hover:bg-green-100 transition-colors" title="Faturayı İndir">
+                                                    <i class="fas fa-file-pdf mr-1"></i>Fatura
+                                                </a>
+                                            }
                                         </div>
                                         <div class="text-xs text-[#47473d] mt-0.5">
                                             @item.OlusturulmaTarihi.ToString("dd MMMM yyyy") — @item.OlusturulmaTarihi.ToString("HH:mm")

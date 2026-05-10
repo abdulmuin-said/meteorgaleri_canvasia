@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace KanvasProje.Web.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    [Authorize(Policy = AdminPolicyNames.AdminPanelAccess)]
+    [Authorize(Roles = "Admin,SuperAdmin,Yonetici,SiparisYoneticisi,UrunYoneticisi,IcerikYoneticisi,KargoYoneticisi,Goruntuleyici")]
     public class AdminBaseController : Controller
     {
         public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)

@@ -39,6 +39,14 @@ namespace KanvasProje.Core.Varliklar
         // GUEST CHECKOUT: Email ile sipariş takibi için hash kodu
         public string? EmailHashKodu { get; set; } // Örn: abc123def456 (unique)
 
+        // --- FATURA ALANLARI ---
+        public string? FaturaDosyaYolu { get; set; } // Örn: /uploads/invoices/12345_abc123.pdf
+        public string? FaturaDosyaAdi { get; set; } // Örn: 12345_abc123.pdf
+        public bool FaturaYuklendiMi { get; set; } = false;
+        public DateTime? FaturaYuklenmeTarihi { get; set; }
+        public bool FaturaMailGonderildiMi { get; set; } = false;
+        public DateTime? FaturaMailGonderimTarihi { get; set; }
+
         public ICollection<SiparisDetay> SiparisDetaylari { get; set; } = new List<SiparisDetay>();
     }
 }

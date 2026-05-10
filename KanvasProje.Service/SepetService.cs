@@ -82,10 +82,11 @@ namespace KanvasProje.Service
                     return false;
                 }
 
+                var requiresFrameSelection = RequiresFrameSelection(urun);
                 var normalizedCerceveModeli = NormalizeFrameModel(cerceveModeli);
-                if (RequiresFrameSelection(urun) && string.IsNullOrWhiteSpace(normalizedCerceveModeli))
+                if (requiresFrameSelection && string.IsNullOrWhiteSpace(normalizedCerceveModeli))
                 {
-                    return false;
+                    normalizedCerceveModeli = "Çerçevesiz";
                 }
 
                 var hedefSecenekId = secenek?.Id;
@@ -328,13 +329,16 @@ namespace KanvasProje.Service
         {
             try
             {
-                var item = await _context.SepetItems.FindAsync(sepetItemId);
+                var item = await _context.SepetItems
+                    .Include(x => x.Sepet)
+                    .FirstOrDefaultAsync(x => x.Id == sepetItemId);
                 if (item == null || item.SilindiMi)
                 {
                     return false;
                 }
 
                 item.MusteriNotu = NormalizeCustomerNote(musteriNotu);
+                item.Sepet.SonGuncellemeTarihi = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
                 return true;
             }
@@ -402,13 +406,60 @@ namespace KanvasProje.Service
 
         private static string BuildVariantLabel(UrunSecenek secenek)
         {
-            var baslik = string.IsNullOrWhiteSpace(secenek.VaryantBasligi)
-                ? "Varsayilan varyasyon"
-                : secenek.VaryantBasligi;
+            var baslikParcalari = new[]
+                {
+                    secenek.Olcu,
+                    secenek.MalzemeTuru,
+                    secenek.Yon,
+                    secenek.ParcaSayisi > 1 ? $"{secenek.ParcaSayisi} Parca" : null
+                }
+                .Where(IsMeaningfulVariantPart)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
-            return string.IsNullOrWhiteSpace(secenek.VaryantOzeti)
-                ? baslik
-                : $"{baslik} | {secenek.VaryantOzeti}";
+            var detayParcalari = new List<string>();
+
+            if (IsMeaningfulVariantPart(secenek.CerceveKalinligi))
+            {
+                detayParcalari.Add($"Kalinlik: {secenek.CerceveKalinligi.Trim()}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(secenek.VaryantSku))
+            {
+                detayParcalari.Add($"SKU: {secenek.VaryantSku.Trim()}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(secenek.KisilestirmeMetni))
+            {
+                detayParcalari.Add($"Kisisellestirme: {secenek.KisilestirmeMetni.Trim()}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(secenek.OzelTasarimNotu))
+            {
+                detayParcalari.Add($"Not: {secenek.OzelTasarimNotu.Trim()}");
+            }
+
+            var baslik = string.Join(" / ", baslikParcalari);
+            var detay = string.Join(" | ", detayParcalari);
+
+            if (string.IsNullOrWhiteSpace(baslik) && string.IsNullOrWhiteSpace(detay))
+            {
+                return "Varsayilan varyasyon";
+            }
+
+            return string.Join(" | ", new[] { baslik, detay }.Where(x => !string.IsNullOrWhiteSpace(x)));
+        }
+
+        private static bool IsMeaningfulVariantPart(string? value)
+        {
+            return !string.IsNullOrWhiteSpace(value)
+                && !IsGenericVariantValue(value);
+        }
+
+        private static bool IsGenericVariantValue(string value)
+        {
+            var normalized = value.Trim().ToLowerInvariant();
+            return normalized is "standart" or "standard" or "varsayilan" or "varsayılan";
         }
 
         private static string BuildCartOptionLabel(string? variantLabel, string frameModel)
@@ -429,6 +480,7 @@ namespace KanvasProje.Service
             return value switch
             {
                 "çerçevesiz" => "Çerçevesiz",
+                "cercevesiz" => "Çerçevesiz",
                 "siyah" => "Siyah",
                 "beyaz" => "Beyaz",
                 "gold" => "Gold",

@@ -79,7 +79,7 @@
 .ca-admin-shell {
     min-height: 100vh;
     background: #f7f4ee;
-    padding-top: 62px;
+    padding-top: 0;
     overflow-x: hidden;
 }
 
@@ -90,7 +90,7 @@
 }
 
 .ca-partner-header {
-    position: fixed;
+    position: sticky;
     top: 0;
     left: 0;
     right: 0;

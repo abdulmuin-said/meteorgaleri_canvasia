@@ -5,6 +5,7 @@ using KanvasProje.Core.Varliklar;
 using KanvasProje.Data;
 using KanvasProje.Service.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
@@ -21,6 +22,7 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
         private readonly IEmailService _emailService;
         private readonly ISiteSettingsService _siteSettingsService;
         private readonly KanvasDbContext _context;
+        private readonly IWebHostEnvironment _env;
 
         public SiparisController(
             IService<Siparis> siparisService,
@@ -29,7 +31,8 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
             IService<Urun> urunService,
             IEmailService emailService,
             ISiteSettingsService siteSettingsService,
-            KanvasDbContext context)
+            KanvasDbContext context,
+            IWebHostEnvironment env)
         {
             _siparisService = siparisService;
             _detayService = detayService;
@@ -38,6 +41,7 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
             _emailService = emailService;
             _siteSettingsService = siteSettingsService;
             _context = context;
+            _env = env;
         }
 
         public async Task<IActionResult> Index(string search, int? durum, int page = 1, int pageSize = 20)
@@ -82,6 +86,7 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
             ViewBag.PaketleniyorCount = siparisler.Count(x => x.Durum == SiparisDurumHelper.Paketleniyor);
             ViewBag.KargodaCount = siparisler.Count(x => x.Durum == SiparisDurumHelper.KargoyaVerildi);
             ViewBag.TeslimCount = siparisler.Count(x => x.Durum == SiparisDurumHelper.TeslimEdildi);
+            ViewBag.FaturaYuklenmemişCount = siparisler.Count(x => !x.FaturaYuklendiMi);
             ViewBag.SiparisDetayOzetleri = siparisDetayOzetleri;
             ViewBag.Page = page;
             ViewBag.PageSize = pageSize;
@@ -160,6 +165,13 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
             var eskiDurum = siparis.Durum;
             var temizKargoNo = kargoNo?.Trim() ?? string.Empty;
             var firma = await ResolveKargoFirmasiAsync(siparis, kargoFirmasiId);
+
+            if (durum != eskiDurum && !CanMoveOrderStatusForward(eskiDurum, durum))
+            {
+                TempData["Mesaj"] = $"Sipariş durumu '{SiparisDurumHelper.GetLabel(eskiDurum)}' aşamasından '{SiparisDurumHelper.GetLabel(durum)}' aşamasına geri alınamaz.";
+                TempData["Durum"] = "warning";
+                return RedirectToAction("Detay", new { id });
+            }
 
             siparis.Durum = durum;
             siparis.KargoFirmasiId = firma?.Id;
@@ -382,6 +394,48 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TopluTeslimEt(List<int> siparisIds)
+        {
+            siparisIds = siparisIds?.Where(x => x > 0).Distinct().ToList() ?? new List<int>();
+
+            if (!siparisIds.Any())
+            {
+                TempData["Mesaj"] = "Teslim etmek icin en az bir siparis secmelisiniz.";
+                TempData["Durum"] = "warning";
+                return RedirectToAction(nameof(Index), new { durum = SiparisDurumHelper.KargoyaVerildi });
+            }
+
+            var siparisler = await _context.Siparisler
+                .Where(x => siparisIds.Contains(x.Id) && x.Durum == SiparisDurumHelper.KargoyaVerildi)
+                .ToListAsync();
+
+            if (!siparisler.Any())
+            {
+                TempData["Mesaj"] = "Teslim edilecek 'Kargoda' durumlu siparis bulunamadi.";
+                TempData["Durum"] = "warning";
+                return RedirectToAction(nameof(Index), new { durum = SiparisDurumHelper.KargoyaVerildi });
+            }
+
+            foreach (var siparis in siparisler)
+            {
+                siparis.Durum = SiparisDurumHelper.TeslimEdildi;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Mesaj"] = $"{siparisler.Count} siparis 'Teslim Edildi' durumuna alindi.";
+            TempData["Durum"] = "success";
+
+            return RedirectToAction(nameof(Index), new
+            {
+                durum = SiparisDurumHelper.KargoyaVerildi,
+                toast = Uri.EscapeDataString($"{siparisler.Count} siparis teslim edildi"),
+                toastType = "success"
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> TopluDurumGuncelle(List<int> siparisIds, int yeniDurum)
         {
             siparisIds = siparisIds?.Where(x => x > 0).Distinct().ToList() ?? new List<int>();
@@ -405,17 +459,28 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
             }
 
             var durumAd = SiparisDurumHelper.GetLabel(yeniDurum);
-            foreach (var siparis in siparisler)
+            var guncellenecekler = siparisler
+                .Where(x => CanMoveOrderStatusForward(x.Durum, yeniDurum))
+                .ToList();
+
+            if (!guncellenecekler.Any())
+            {
+                TempData["Mesaj"] = $"Seçili siparişler '{durumAd}' durumuna alınamaz. Sipariş durumu geriye döndürülemez.";
+                TempData["Durum"] = "warning";
+                return RedirectToAction(nameof(Index));
+            }
+
+            foreach (var siparis in guncellenecekler)
             {
                 siparis.Durum = yeniDurum;
             }
 
             await _context.SaveChangesAsync();
 
-            TempData["Mesaj"] = $"{siparisler.Count} sipariş '{durumAd}' durumuna güncellendi.";
+            TempData["Mesaj"] = $"{guncellenecekler.Count} sipariş '{durumAd}' durumuna güncellendi.";
             TempData["Durum"] = "success";
             
-            return RedirectToAction(nameof(Index), new { toast = Uri.EscapeDataString($"{siparisler.Count} sipariş durumu güncellendi"), toastType = "success" });
+            return RedirectToAction(nameof(Index), new { toast = Uri.EscapeDataString($"{guncellenecekler.Count} sipariş durumu güncellendi"), toastType = "success" });
         }
 
         [HttpPost]
@@ -439,7 +504,11 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
             }
 
             var siparisler = await _context.Siparisler
-                .Where(x => idList.Contains(x.Id) && x.Durum != SiparisDurumHelper.KargoyaVerildi)
+                .Where(x =>
+                    idList.Contains(x.Id) &&
+                    x.Durum != SiparisDurumHelper.KargoyaVerildi &&
+                    x.Durum != SiparisDurumHelper.TeslimEdildi &&
+                    x.Durum != SiparisDurumHelper.IptalEdildi)
                 .ToListAsync();
 
             if (!siparisler.Any())
@@ -715,6 +784,169 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
             }
 
             return string.Join(" | ", details);
+        }
+
+        private static bool CanMoveOrderStatusForward(int currentStatus, int nextStatus)
+        {
+            if (currentStatus == nextStatus)
+            {
+                return true;
+            }
+
+            if (currentStatus == SiparisDurumHelper.IptalEdildi ||
+                currentStatus == SiparisDurumHelper.TeslimEdildi ||
+                SiparisDurumHelper.IsReturn(currentStatus))
+            {
+                return false;
+            }
+
+            if (nextStatus == SiparisDurumHelper.IptalEdildi)
+            {
+                return currentStatus != SiparisDurumHelper.KargoyaVerildi &&
+                       currentStatus != SiparisDurumHelper.TeslimEdildi;
+            }
+
+            if (!TryGetOperationalStatusRank(currentStatus, out var currentRank) ||
+                !TryGetOperationalStatusRank(nextStatus, out var nextRank))
+            {
+                return false;
+            }
+
+            return nextRank > currentRank;
+        }
+
+        private static bool TryGetOperationalStatusRank(int status, out int rank)
+        {
+            rank = status switch
+            {
+                SiparisDurumHelper.SiparisAlindi => 1,
+                SiparisDurumHelper.UretimHazirlaniyor => 2,
+                SiparisDurumHelper.Paketleniyor => 3,
+                SiparisDurumHelper.KargoyaVerildi => 4,
+                SiparisDurumHelper.TeslimEdildi => 5,
+                _ => 0
+            };
+
+            return rank > 0;
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> FaturaYukle(IFormFile faturaDosyasi, int siparisId)
+        {
+            if (faturaDosyasi == null || faturaDosyasi.Length == 0)
+            {
+                TempData["Hata"] = "Lütfen bir dosya seçin.";
+                return RedirectToAction("Detay", new { id = siparisId });
+            }
+
+            // Sadece PDF kontrolü - hem içerik tipi hem uzantı
+            var allowedContentTypes = new[] { "application/pdf" };
+            var allowedExtensions = new[] { ".pdf" };
+            var fileExtension = Path.GetExtension(faturaDosyasi.FileName).ToLowerInvariant();
+            var contentType = faturaDosyasi.ContentType?.ToLowerInvariant();
+
+            if (!allowedContentTypes.Contains(contentType) || !allowedExtensions.Contains(fileExtension))
+            {
+                TempData["Hata"] = "Sadece PDF dosyaları yüklenebilir.";
+                return RedirectToAction("Detay", new { id = siparisId });
+            }
+
+            // Dosya boyutu kontrolü (5MB max)
+            const long maxFileSize = 5 * 1024 * 1024;
+            if (faturaDosyasi.Length > maxFileSize)
+            {
+                TempData["Hata"] = "Dosya boyutu maksimum 5 MB olabilir.";
+                return RedirectToAction("Detay", new { id = siparisId });
+            }
+
+            var siparis = await _context.Siparisler.FindAsync(siparisId);
+            if (siparis == null)
+            {
+                TempData["Hata"] = "Sipariş bulunamadı.";
+                return RedirectToAction("Index");
+            }
+
+            // Upload klasörü oluştur
+            var uploadsPath = Path.Combine(_env.WebRootPath, "uploads", "invoices");
+
+            if (!Directory.Exists(uploadsPath))
+            {
+                Directory.CreateDirectory(uploadsPath);
+            }
+
+            // Güvenli dosya adı: siparisId_benzersizGuid.pdf
+            var safeFileName = $"{siparisId}_{Guid.NewGuid():N}.pdf";
+            var filePath = Path.Combine(uploadsPath, safeFileName);
+            var relativePath = $"/uploads/invoices/{safeFileName}";
+
+            // Eski fatura varsa sil
+            if (!string.IsNullOrWhiteSpace(siparis.FaturaDosyaYolu))
+            {
+                var oldFilePath = Path.Combine(_env.WebRootPath, siparis.FaturaDosyaYolu.TrimStart('/'));
+                if (System.IO.File.Exists(oldFilePath))
+                {
+                    try { System.IO.File.Delete(oldFilePath); }
+                    catch { /* Silinemezse ignore */ }
+                }
+            }
+
+            // Dosyayı kaydet
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await faturaDosyasi.CopyToAsync(stream);
+            }
+
+            // Sipariş fatura bilgilerini güncelle
+            siparis.FaturaDosyaYolu = relativePath;
+            siparis.FaturaDosyaAdi = faturaDosyasi.FileName;
+            siparis.FaturaYuklendiMi = true;
+            siparis.FaturaYuklenmeTarihi = DateTime.UtcNow;
+
+            // E-posta ile fatura gönder
+            var mailGonderildi = false;
+            if (!string.IsNullOrWhiteSpace(siparis.Eposta))
+            {
+                mailGonderildi = await _emailService.SendInvoiceEmailAsync(
+                    siparis.Eposta,
+                    siparis.MusteriAdSoyad,
+                    siparis.SiparisNo ?? siparis.Id.ToString(),
+                    filePath);
+
+                if (mailGonderildi)
+                {
+                    siparis.FaturaMailGonderildiMi = true;
+                    siparis.FaturaMailGonderimTarihi = DateTime.UtcNow;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Basarili"] = mailGonderildi
+                ? "Fatura başarıyla yüklendi ve müşteriye e-posta gönderildi."
+                : "Fatura yüklendi ancak e-posta gönderilemedi.";
+
+            return RedirectToAction("Detay", new { id = siparisId });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> FaturaIndir(int id)
+        {
+            var siparis = await _context.Siparisler.FindAsync(id);
+            if (siparis == null || string.IsNullOrWhiteSpace(siparis.FaturaDosyaYolu))
+            {
+                return NotFound("Fatura bulunamadı.");
+            }
+
+            var filePath = Path.Combine(_env.WebRootPath, siparis.FaturaDosyaYolu.TrimStart('/'));
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound("Fatura dosyası bulunamadı.");
+            }
+
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+            return File(fileBytes, "application/pdf", siparis.FaturaDosyaAdi ?? $"fatura_{id}.pdf");
         }
     }
 }

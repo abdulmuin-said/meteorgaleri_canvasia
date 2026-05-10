@@ -120,6 +120,14 @@
             </div>
         }
 
+        <div class="alert alert-info border-0 shadow-sm mb-4">
+            <div class="fw-semibold mb-1">Satış fiyatı ve varyasyon fiyatı nasıl çalışır?</div>
+            <div class="small">
+                Bu ekrandaki <strong>Satış Fiyatı</strong> ürünün ana fiyatıdır. Ürün kaydedilirken sistem bu fiyatla otomatik bir varsayılan varyasyon oluşturur.
+                Farklı ölçü, çerçeve veya varyasyonlara özel fiyat girmek isterseniz ürünü kaydettikten sonra düzenleme ekranından ekleyebilirsiniz.
+            </div>
+        </div>
+
         <div class="ca-simple-product">
             <div class="ca-card">
                 <div class="ca-card-header">
@@ -229,13 +237,18 @@
 
                         <div class="col-12">
                             <div class="form-check form-switch">
-                                <input asp-for="AktifMi" class="form-check-input" type="checkbox">
+                                <input asp-for="AktifMi" class="form-check-input" type="checkbox" value="true">
                                 <label asp-for="AktifMi" class="form-check-label fw-semibold">Ürün yayında olsun</label>
                             </div>
                         </div>
                     </div>
 
-                    @await Html.PartialAsync("_VariantEditor", Model.UrunSecenek?.ToList() ?? new System.Collections.Generic.List<KanvasProje.Core.Varliklar.UrunSecenek>())
+                    <div class="alert alert-light border mt-4 mb-0">
+                        <div class="fw-semibold mb-1">Varyasyon ve ölçü bilgileri kayıt sonrası düzenlenir.</div>
+                        <div class="small text-muted">
+                            İlk kayıt tamamlandıktan sonra ölçü, çerçeve, stok ve varyasyon fiyatlarını ürün düzenleme ekranından yönetebilirsiniz.
+                        </div>
+                    </div>
 
                     <input asp-for="KisaAd" type="hidden" />
                     <input asp-for="SKU" type="hidden" />

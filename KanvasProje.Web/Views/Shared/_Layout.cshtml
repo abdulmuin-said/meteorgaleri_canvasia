@@ -1,8 +1,11 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
 @using KanvasProje.Core.Helpers
+@using KanvasProje.Core.Varliklar
 @using KanvasProje.Web.Extensions
 @using KanvasProje.Web.Models
+@using System.Globalization
+@using System.Text
 @inject SignInManager<KanvasProje.Core.Varliklar.AppUser> SignInManager
 @inject UserManager<KanvasProje.Core.Varliklar.AppUser> UserManager
 @inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
@@ -82,6 +85,64 @@
         .OrderBy(k => k.Sira)
         .ThenBy(k => k.Ad)
         .ToListAsync();
+
+    string NormalizeCategoryKey(string? value)
+    {
+        var normalized = (value ?? string.Empty)
+            .Trim()
+            .ToLowerInvariant()
+            .Replace("ı", "i")
+            .Replace("İ", "i")
+            .Replace("&", "and")
+            .Normalize(NormalizationForm.FormD);
+
+        var builder = new StringBuilder(normalized.Length);
+        foreach (var character in normalized)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+            {
+                builder.Append(character);
+            }
+        }
+
+        return builder.ToString().Normalize(NormalizationForm.FormC);
+    }
+
+    string GetCategoryMenuImage(Kategori category)
+    {
+        var configured = !string.IsNullOrWhiteSpace(category.GorselUrl) ? category.GorselUrl : category.BannerUrl;
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            var keyForOverride = NormalizeCategoryKey(category.Ad);
+            if (keyForOverride != "ataturk kosesi")
+            {
+                return configured;
+            }
+        }
+
+        return NormalizeCategoryKey(category.Ad) switch
+        {
+            "ataturk kosesi" or "ataturk ve turkiye" => "/img/products/7-parcali-kanvas-tablo-tarihi-liderler-mustafa-kemal-ataturk-portre-serisi-ana.webp",
+            "islami sanat and hat" or "dini ve hat sanati" => "/img/products/35-besmele-lila-allah-ve-muhammed-yazili-kanvas-tablo-ana.webp",
+            "osmanli ve tugra" => "/img/products/5-parca-tugra-allah-muhammed-kanvas-tablo-ana.webp",
+            "dunya klasikleri" or "klasik eserler" => "/img/products/ademin-yaratilisi-the-creation-of-adam-kanvas-tablosu-ana.webp",
+            "modern and soyut" or "soyut ve sanatsal" or "farkli tasarimlar" => "/img/products/3-parcali-renkli-gokkusagi-kanvas-tablo-ana.webp",
+            "sehir manzaralari" or "sehir ve mimari" => "/img/products/i-stanbul-bogazici-koprusu-kanvas-tablosu-ana.webp",
+            "parcali tablolar" or "panoramik tablolar" => "/img/products/5-parcali-manzarali-sisli-orman-kanvas-tablo-ana.webp",
+            "manzara temali" => "/img/products/5-parcali-manzarali-sisli-orman-kanvas-tablo-ana.webp",
+            "hayvanlar alemi" => "/img/products/2-beyaz-kurt-ve-ay-manzarali-5-parca-kanvas-tablo-ana.webp",
+            "araba ve araclar" => "/img/products/bmw-e30-araba-5-parca-kanvas-tablo-ana.webp",
+            "cocuk odasi" => "/img/products/cocuk-odasi-i-cin-dekoratif-zebra-ve-fil-resimli-kanvas-tablo-ana.webp",
+            "nu sanat" or "kadin temali" => "/img/products/3-lu-afrikali-kadin-kanvas-tablo-ana.webp",
+            "unluler ve sinema" => "/img/products/gitar-ve-sehir-sliuetli-kanvas-tablo-ana.webp",
+            "yiyecek ve icecek" => "/img/products/cicekli-vintage-fincan-ve-kahve-temali-5-parcali-kanvas-tablo-ana.webp",
+            "ask ve romantizm" => "/img/products/acik-pembe-renkli-romantik-guller-kanvas-tablo-ana.webp",
+            "taraftar kosesi" => "/img/products_yeni/dalgalanan-turk-bayragi-5-parca-kanvas-t-bc6a.jpg",
+            "adalet ve hukuk" => "/img/products/adalet-ve-hukuk-resimli-kanvas-tablo-ana.webp",
+            "cicekli ve dekoratif" => "/img/products/3-parca-orkide-cicekli-kanvas-tablo-ana.webp",
+            _ => configured ?? "/img/banner/slider-1.webp"
+        };
+    }
 }
 <!DOCTYPE html>
 <html lang="tr">
@@ -139,7 +200,9 @@
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body class="bg-[#fcf9f3] overflow-x-hidden antialiased flex flex-col min-h-screen">
-    @Html.AntiForgeryToken()
+    <form id="globalAntiForgeryForm" class="hidden">
+        @Html.AntiForgeryToken()
+    </form>
 
     <!-- BEGIN: AnnouncementBar -->
     <div class="trust-ticker relative z-50 overflow-hidden bg-[#b58735] py-2 text-xs font-light tracking-wider text-white">
@@ -281,7 +344,7 @@
                                         <div class="grid grid-cols-3 gap-x-5 gap-y-1 lg:grid-cols-4">
                                         @foreach (var alt in altKategoriler)
                                         {
-                                            var altGorsel = !string.IsNullOrWhiteSpace(alt.GorselUrl) ? alt.GorselUrl : alt.BannerUrl;
+                                            var altGorsel = GetCategoryMenuImage(alt);
                                             <a href="/Urun?k=@alt.Id" class="flex items-center gap-3 border-b border-[#dfd3ba]/70 px-1 py-2 text-left text-[11px] leading-snug text-[#47473d] transition-colors hover:text-[#9a6d24]">
                                                 <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden bg-[#efe4cf] text-[#b58735]">
                                                     @if (!string.IsNullOrWhiteSpace(altGorsel))
@@ -864,8 +927,11 @@ document.addEventListener('keydown', function(event) {
 
 <script>
         window.toggleFavori = function(btn, urunId) {
-            event.preventDefault();
-            event.stopPropagation();
+            const evt = window.event;
+            if (evt) {
+                evt.preventDefault();
+                evt.stopPropagation();
+            }
             
             const originalHtml = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin text-sm text-[#47473d]"></i>';

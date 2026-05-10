@@ -25,12 +25,13 @@
         <p class="text-sm text-[#47473d]"><strong>Tutar:</strong> @Model.ToplamTutar.ToString("N2") TL</p>
     </div>
 
-    <form asp-action="IadeTalebiGonder" method="post" class="space-y-6">
-        <input type="hidden" name="siparisId" value="@Model.Id" />
+    <form asp-action="IadeOlustur" method="post" class="space-y-6">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="SiparisId" value="@Model.Id" />
         
         <div>
             <label class="block text-xs uppercase tracking-widest text-[#1c1c18] font-medium mb-2">İade Nedeni</label>
-            <select name="IadeNedeni" required class="w-full border border-[#e5e2dc] rounded px-4 py-3 text-sm focus:ring-1 focus:ring-[#b58735] focus:border-[#b58735] outline-none bg-[#fcf9f3]">
+            <select name="Neden" required class="w-full border border-[#e5e2dc] rounded px-4 py-3 text-sm focus:ring-1 focus:ring-[#b58735] focus:border-[#b58735] outline-none bg-[#fcf9f3]">
                 <option value="">Seçiniz</option>
                 <option value="Hasarlı Ürün">Ürün hasarlı geldi</option>
                 <option value="Yanlış Ürün">Yanlış ürün gönderildi</option>
@@ -42,6 +43,11 @@
         <div>
             <label class="block text-xs uppercase tracking-widest text-[#1c1c18] font-medium mb-2">Açıklama (İsteğe Bağlı)</label>
             <textarea name="Aciklama" rows="4" class="w-full border border-[#e5e2dc] rounded px-4 py-3 text-sm focus:ring-1 focus:ring-[#b58735] focus:border-[#b58735] outline-none bg-[#fcf9f3] resize-none" placeholder="İade talebinizle ilgili eklemek istedikleriniz..."></textarea>
+        </div>
+
+        <div>
+            <label class="block text-xs uppercase tracking-widest text-[#1c1c18] font-medium mb-2">IBAN (İsteğe Bağlı)</label>
+            <input name="IBAN" class="w-full border border-[#e5e2dc] rounded px-4 py-3 text-sm focus:ring-1 focus:ring-[#b58735] focus:border-[#b58735] outline-none bg-[#fcf9f3]" placeholder="TR..." />
         </div>
 
         <div class="flex gap-4">

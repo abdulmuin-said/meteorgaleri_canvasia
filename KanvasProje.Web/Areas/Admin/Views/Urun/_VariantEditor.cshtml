@@ -6,6 +6,8 @@
         .ThenBy(x => x.Sira)
         .ThenBy(x => x.Id)
         .ToList();
+    var canvasOptionCategoryIds = ViewBag.CanvasOptionCategoryIds as IEnumerable<int> ?? Enumerable.Empty<int>();
+    var canvasOptionCategoryIdJson = System.Text.Json.JsonSerializer.Serialize(canvasOptionCategoryIds);
 }
 
 <div class="ca-card mt-4" style="border:1px solid var(--ca-border);">
@@ -51,28 +53,28 @@
                     <input type="hidden" data-variant-field="Id" name="UrunSecenek[@i].Id" value="@variant.Id" />
 
                     <div class="row g-3">
-                        <div class="col-lg-3 col-md-6">
+                        <div class="col-lg-3 col-md-6" data-canvas-option>
                             <label class="ca-label" data-label-for="Olcu">Ölçü</label>
                             <input class="ca-input" data-variant-field="Olcu" name="UrunSecenek[@i].Olcu" value="@temizOlcu" />
                         </div>
-                        <div class="col-lg-3 col-md-6">
+                        <div class="col-lg-3 col-md-6" data-canvas-option>
                             <label class="ca-label" data-label-for="CerceveTipi">Çerçeve Tipi</label>
                             <input class="ca-input" data-variant-field="CerceveTipi" name="UrunSecenek[@i].CerceveTipi" value="@temizCerceveTipi" />
                         </div>
-                        <div class="col-lg-2 col-md-6">
+                        <div class="col-lg-2 col-md-6" data-canvas-option>
                             <label class="ca-label" data-label-for="CerceveRengi">Çerçeve Rengi</label>
                             <input class="ca-input" data-variant-field="CerceveRengi" name="UrunSecenek[@i].CerceveRengi" value="@temizCerceveRengi" />
                         </div>
-                        <div class="col-lg-2 col-md-6">
+                        <div class="col-lg-2 col-md-6" data-canvas-option>
                             <label class="ca-label" data-label-for="CerceveKalinligi">Kalınlık</label>
                             <input class="ca-input" data-variant-field="CerceveKalinligi" name="UrunSecenek[@i].CerceveKalinligi" value="@temizCerceveKalinligi" />
                         </div>
-                        <div class="col-lg-2 col-md-6">
+                        <div class="col-lg-2 col-md-6" data-canvas-option>
                             <label class="ca-label" data-label-for="ParcaSayisi">Parça</label>
                             <input class="ca-input" type="number" min="1" data-variant-field="ParcaSayisi" name="UrunSecenek[@i].ParcaSayisi" value="@(variant.ParcaSayisi < 1 ? 1 : variant.ParcaSayisi)" />
                         </div>
 
-                        <div class="col-lg-3 col-md-6">
+                        <div class="col-lg-3 col-md-6" data-canvas-option>
                             <label class="ca-label" data-label-for="MalzemeTuru">Malzeme</label>
                             <input class="ca-input" data-variant-field="MalzemeTuru" name="UrunSecenek[@i].MalzemeTuru" value="@temizMalzemeTuru" />
                         </div>
@@ -130,19 +132,23 @@
                         <div class="col-12">
                             <div class="ca-variant-flags">
                                 <label class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" data-variant-field="AktifMi" name="UrunSecenek[@i].AktifMi" @(variant.AktifMi ? "checked" : string.Empty) />
+                                    <input class="form-check-input" type="checkbox" data-variant-field="AktifMi" name="UrunSecenek[@i].AktifMi" value="true" @(variant.AktifMi ? "checked" : string.Empty) />
+                                    <input type="hidden" name="UrunSecenek[@i].AktifMi" value="false" />
                                     <span class="form-check-label">Aktif</span>
                                 </label>
                                 <label class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" data-variant-field="VarsayilanMi" name="UrunSecenek[@i].VarsayilanMi" @(variant.VarsayilanMi ? "checked" : string.Empty) data-variant-default />
+                                    <input class="form-check-input" type="checkbox" data-variant-field="VarsayilanMi" name="UrunSecenek[@i].VarsayilanMi" value="true" @(variant.VarsayilanMi ? "checked" : string.Empty) data-variant-default />
+                                    <input type="hidden" name="UrunSecenek[@i].VarsayilanMi" value="false" />
                                     <span class="form-check-label">Varsayılan</span>
                                 </label>
                                 <label class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" data-variant-field="TukeninceGizle" name="UrunSecenek[@i].TukeninceGizle" @(variant.TukeninceGizle ? "checked" : string.Empty) />
+                                    <input class="form-check-input" type="checkbox" data-variant-field="TukeninceGizle" name="UrunSecenek[@i].TukeninceGizle" value="true" @(variant.TukeninceGizle ? "checked" : string.Empty) />
+                                    <input type="hidden" name="UrunSecenek[@i].TukeninceGizle" value="false" />
                                     <span class="form-check-label">Tükenince Gizle</span>
                                 </label>
                                 <label class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" data-variant-field="OnSipariseAcikMi" name="UrunSecenek[@i].OnSipariseAcikMi" @(variant.OnSipariseAcikMi ? "checked" : string.Empty) />
+                                    <input class="form-check-input" type="checkbox" data-variant-field="OnSipariseAcikMi" name="UrunSecenek[@i].OnSipariseAcikMi" value="true" @(variant.OnSipariseAcikMi ? "checked" : string.Empty) />
+                                    <input type="hidden" name="UrunSecenek[@i].OnSipariseAcikMi" value="false" />
                                     <span class="form-check-label">Ön Sipariş</span>
                                 </label>
                             </div>
@@ -167,28 +173,28 @@
                 <input type="hidden" data-variant-field="Id" name="UrunSecenek[__index__].Id" value="0" />
 
                 <div class="row g-3">
-                    <div class="col-lg-3 col-md-6">
+                    <div class="col-lg-3 col-md-6" data-canvas-option>
                         <label class="ca-label" data-label-for="Olcu">Ölçü</label>
                         <input class="ca-input" data-variant-field="Olcu" name="UrunSecenek[__index__].Olcu" value="" />
                     </div>
-                    <div class="col-lg-3 col-md-6">
+                    <div class="col-lg-3 col-md-6" data-canvas-option>
                         <label class="ca-label" data-label-for="CerceveTipi">Çerçeve Tipi</label>
                         <input class="ca-input" data-variant-field="CerceveTipi" name="UrunSecenek[__index__].CerceveTipi" value="" />
                     </div>
-                    <div class="col-lg-2 col-md-6">
+                    <div class="col-lg-2 col-md-6" data-canvas-option>
                         <label class="ca-label" data-label-for="CerceveRengi">Çerçeve Rengi</label>
                         <input class="ca-input" data-variant-field="CerceveRengi" name="UrunSecenek[__index__].CerceveRengi" value="" />
                     </div>
-                    <div class="col-lg-2 col-md-6">
+                    <div class="col-lg-2 col-md-6" data-canvas-option>
                         <label class="ca-label" data-label-for="CerceveKalinligi">Kalınlık</label>
                         <input class="ca-input" data-variant-field="CerceveKalinligi" name="UrunSecenek[__index__].CerceveKalinligi" value="" />
                     </div>
-                    <div class="col-lg-2 col-md-6">
+                    <div class="col-lg-2 col-md-6" data-canvas-option>
                         <label class="ca-label" data-label-for="ParcaSayisi">Parça</label>
                         <input class="ca-input" type="number" min="1" data-variant-field="ParcaSayisi" name="UrunSecenek[__index__].ParcaSayisi" value="1" />
                     </div>
 
-                    <div class="col-lg-3 col-md-6">
+                    <div class="col-lg-3 col-md-6" data-canvas-option>
                         <label class="ca-label" data-label-for="MalzemeTuru">Malzeme</label>
                         <input class="ca-input" data-variant-field="MalzemeTuru" name="UrunSecenek[__index__].MalzemeTuru" value="" />
                     </div>
@@ -246,19 +252,23 @@
                     <div class="col-12">
                         <div class="ca-variant-flags">
                             <label class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" data-variant-field="AktifMi" name="UrunSecenek[__index__].AktifMi" checked />
+                                <input class="form-check-input" type="checkbox" data-variant-field="AktifMi" name="UrunSecenek[__index__].AktifMi" value="true" checked />
+                                <input type="hidden" name="UrunSecenek[__index__].AktifMi" value="false" />
                                 <span class="form-check-label">Aktif</span>
                             </label>
                             <label class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" data-variant-field="VarsayilanMi" name="UrunSecenek[__index__].VarsayilanMi" data-variant-default />
+                                <input class="form-check-input" type="checkbox" data-variant-field="VarsayilanMi" name="UrunSecenek[__index__].VarsayilanMi" value="true" data-variant-default />
+                                <input type="hidden" name="UrunSecenek[__index__].VarsayilanMi" value="false" />
                                 <span class="form-check-label">Varsayılan</span>
                             </label>
                             <label class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" data-variant-field="TukeninceGizle" name="UrunSecenek[__index__].TukeninceGizle" />
+                                <input class="form-check-input" type="checkbox" data-variant-field="TukeninceGizle" name="UrunSecenek[__index__].TukeninceGizle" value="true" />
+                                <input type="hidden" name="UrunSecenek[__index__].TukeninceGizle" value="false" />
                                 <span class="form-check-label">Tükenince Gizle</span>
                             </label>
                             <label class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" data-variant-field="OnSipariseAcikMi" name="UrunSecenek[__index__].OnSipariseAcikMi" />
+                                <input class="form-check-input" type="checkbox" data-variant-field="OnSipariseAcikMi" name="UrunSecenek[__index__].OnSipariseAcikMi" value="true" />
+                                <input type="hidden" name="UrunSecenek[__index__].OnSipariseAcikMi" value="false" />
                                 <span class="form-check-label">Ön Sipariş</span>
                             </label>
                         </div>
@@ -308,6 +318,10 @@
         gap: 18px;
         padding-top: 4px;
     }
+
+    .ca-canvas-option-hidden {
+        display: none !important;
+    }
 </style>
 
 <script>
@@ -316,6 +330,9 @@
         const list = document.getElementById('variantList');
         const template = document.getElementById('variantCardTemplate');
         const emptyState = document.getElementById('variantEmptyState');
+        const categorySelect = document.querySelector('[name="KategoriId"]');
+        const canvasOptionCategoryIds = new Set(@Html.Raw(canvasOptionCategoryIdJson));
+        const canvasFields = ['Olcu', 'CerceveTipi', 'CerceveRengi', 'CerceveKalinligi', 'MalzemeTuru', 'ParcaSayisi'];
 
         if (!list || !template) {
             return;
@@ -323,6 +340,33 @@
 
         function selector(card, fieldName) {
             return card.querySelector(`[data-variant-field="${fieldName}"]`);
+        }
+
+        function supportsCanvasOptions() {
+            const categoryId = parseInt(categorySelect?.value || '0', 10);
+            return canvasOptionCategoryIds.has(categoryId);
+        }
+
+        function clearCanvasFields(card) {
+            canvasFields.forEach((field) => {
+                const input = selector(card, field);
+                if (!input) {
+                    return;
+                }
+
+                input.value = field === 'ParcaSayisi' ? '1' : '';
+            });
+        }
+
+        function applyCategoryScope() {
+            const enabled = supportsCanvasOptions();
+            list.querySelectorAll('[data-canvas-option]').forEach((el) => {
+                el.classList.toggle('ca-canvas-option-hidden', !enabled);
+            });
+
+            if (!enabled) {
+                list.querySelectorAll('[data-variant-card]').forEach(clearCanvasFields);
+            }
         }
 
         function toggleEmptyState() {
@@ -334,9 +378,10 @@
         }
 
         function buildTitle(card, index) {
-            const olcu = selector(card, 'Olcu')?.value?.trim() || '';
-            const cerceve = selector(card, 'CerceveTipi')?.value?.trim() || '';
-            const renk = selector(card, 'CerceveRengi')?.value?.trim() || '';
+            const canvasEnabled = supportsCanvasOptions();
+            const olcu = canvasEnabled ? selector(card, 'Olcu')?.value?.trim() || '' : '';
+            const cerceve = canvasEnabled ? selector(card, 'CerceveTipi')?.value?.trim() || '' : '';
+            const renk = canvasEnabled ? selector(card, 'CerceveRengi')?.value?.trim() || '' : '';
             const sku = selector(card, 'VaryantSku')?.value?.trim() || '';
 
             const baseTitle = [olcu, cerceve, renk].filter(Boolean).join(' / ');
@@ -352,11 +397,12 @@
         }
 
         function buildSubtitle(card) {
-            const malzeme = selector(card, 'MalzemeTuru')?.value?.trim() || '';
+            const canvasEnabled = supportsCanvasOptions();
+            const malzeme = canvasEnabled ? selector(card, 'MalzemeTuru')?.value?.trim() || '' : '';
             const yon = selector(card, 'Yon')?.value?.trim() || '';
             const kisellestirme = selector(card, 'KisilestirmeMetni')?.value?.trim() || '';
             const not = selector(card, 'OzelTasarimNotu')?.value?.trim() || '';
-            const parca = parseInt(selector(card, 'ParcaSayisi')?.value || '1', 10);
+            const parca = canvasEnabled ? parseInt(selector(card, 'ParcaSayisi')?.value || '1', 10) : 1;
 
             const parts = [];
             if (malzeme) parts.push(malzeme);
@@ -381,6 +427,8 @@
         }
 
         function reindex() {
+            applyCategoryScope();
+
             list.querySelectorAll('[data-variant-card]').forEach((card, index) => {
                 card.dataset.index = index;
 
@@ -396,6 +444,10 @@
                             label.htmlFor = id;
                         }
                     }
+                });
+
+                card.querySelectorAll('input[type="hidden"][name^="UrunSecenek["]').forEach((input) => {
+                    input.name = input.name.replace(/UrunSecenek\[[^\]]+\]\./, `UrunSecenek[${index}].`);
                 });
 
                 const title = card.querySelector('[data-variant-title]');
@@ -452,11 +504,22 @@
 
         if (form) {
             form.addEventListener('submit', () => {
+                if (!supportsCanvasOptions()) {
+                    list.querySelectorAll('[data-variant-card]').forEach(clearCanvasFields);
+                }
+
                 list.querySelectorAll('input[type="number"]').forEach((input) => {
                     if (input.value === '') {
                         input.value = input.min && parseFloat(input.min) > 0 ? input.min : '0';
                     }
                 });
+            });
+        }
+
+        if (categorySelect) {
+            categorySelect.addEventListener('change', () => {
+                applyCategoryScope();
+                reindex();
             });
         }
 

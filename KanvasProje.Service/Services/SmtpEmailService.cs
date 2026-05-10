@@ -228,10 +228,103 @@ namespace KanvasProje.Service.Services
             }
         }
 
-        private static bool IsBrevoSmtpLoginAddress(string? email)
+private static bool IsBrevoSmtpLoginAddress(string? email)
         {
             return !string.IsNullOrWhiteSpace(email)
                 && email.Trim().EndsWith("@smtp-brevo.com", StringComparison.OrdinalIgnoreCase);
+        }
+
+        public async Task<bool> SendInvoiceEmailAsync(string toEmail, string musteriAdi, string siparisNo, string filePath)
+        {
+            try
+            {
+                if (!File.Exists(filePath))
+                {
+                    _logger.LogWarning("Fatura dosyasi bulunamadi: {FilePath}", filePath);
+                    return false;
+                }
+
+                var siteSettings = _siteSettingsService.GetSettings();
+                var brandName = string.IsNullOrWhiteSpace(siteSettings.MarkaAdi) ? siteSettings.SiteAdi : siteSettings.MarkaAdi;
+                var fromEmail = _config["EmailSettings:FromEmail"];
+                if (string.IsNullOrWhiteSpace(fromEmail))
+                {
+                    fromEmail = siteSettings.Email;
+                }
+                var fromName = _config["EmailSettings:FromName"];
+                if (string.IsNullOrWhiteSpace(fromName))
+                {
+                    fromName = brandName;
+                }
+
+                var host = _config["EmailSettings:Host"] ?? "smtp.gmail.com";
+                var port = int.TryParse(_config["EmailSettings:Port"], out var parsedPort) ? parsedPort : 587;
+                var enableSsl = bool.TryParse(_config["EmailSettings:EnableSSL"], out var parsedSsl) ? parsedSsl : true;
+                var username = _config["EmailSettings:Username"] ?? string.Empty;
+                var password = _config["EmailSettings:Password"] ?? string.Empty;
+
+                if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+                {
+                    _logger.LogWarning("SMTP ayarlari eksik - fatura maili gonderilemedi");
+                    return false;
+                }
+
+                if (!TryCreateMailAddress(fromEmail, fromName, out var fromAddress) || !TryCreateMailAddress(toEmail, null, out var toAddress))
+                {
+                    _logger.LogWarning("Gecersiz e-posta adresi - fatura maili gonderilemedi");
+                    return false;
+                }
+
+                var subject = $"Sipariş Faturanız Hazır - {siparisNo}";
+                var body = $@"
+                    <div style='font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                        <h2 style='color: #313511; margin-bottom: 20px;'>Merhaba {musteriAdi},</h2>
+                        <p style='color: #47473d; line-height: 1.6;'>
+                            Siparişiniz için fatura hazırlanmıştır. Aşağıdaki ekten fatura belgesini indirebilirsiniz.
+                        </p>
+                        <div style='background: #fcf9f3; border-radius: 12px; padding: 20px; margin: 20px 0; border: 1px solid #e5e2dc;'>
+                            <p style='margin: 0;'><strong>Sipariş No:</strong> {siparisNo}</p>
+                        </div>
+                        <p style='color: #7a766a; font-size: 14px;'>
+                            Herhangi bir sorunuz olursa bizimle iletişime geçebilirsiniz.
+                        </p>
+                        <p style='color: #313511; margin-top: 30px;'>
+                            Saygılarımızla,<br/>
+                            <strong>{brandName}</strong>
+                        </p>
+                    </div>";
+
+                using var client = new SmtpClient(host, port)
+                {
+                    Credentials = new NetworkCredential(username, password),
+                    EnableSsl = enableSsl,
+                    Timeout = 30000
+                };
+
+                using var mailMessage = new MailMessage
+                {
+                    From = fromAddress,
+                    Subject = subject,
+                    Body = body,
+                    IsBodyHtml = true
+                };
+
+                mailMessage.To.Add(toAddress);
+
+                var attachment = new Attachment(filePath, "application/pdf");
+                attachment.ContentDisposition.Inline = false;
+                attachment.ContentDisposition.DispositionType = DispositionTypeNames.Attachment;
+                mailMessage.Attachments.Add(attachment);
+
+                await client.SendMailAsync(mailMessage);
+                _logger.LogInformation("Fatura maili basariyla gonderildi. SiparisNo={SiparisNo}, To={To}", siparisNo, toEmail);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fatura maili gonderim hatasi. SiparisNo={SiparisNo}", siparisNo);
+                return false;
+            }
         }
     }
 }

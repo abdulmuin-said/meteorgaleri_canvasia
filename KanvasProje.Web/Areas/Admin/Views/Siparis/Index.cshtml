@@ -1,4 +1,26 @@
 @model IEnumerable<KanvasProje.Core.Varliklar.Siparis>
+@functions {
+    private static TimeZoneInfo GetTurkeyTimeZone()
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
+        }
+    }
+
+    private static string FormatTurkeyDateTime(DateTime value)
+    {
+        var utcValue = value.Kind == DateTimeKind.Utc
+            ? value
+            : DateTime.SpecifyKind(value, DateTimeKind.Utc);
+
+        return TimeZoneInfo.ConvertTimeFromUtc(utcValue, GetTurkeyTimeZone()).ToString("dd.MM.yyyy HH:mm");
+    }
+}
 @{
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Sipariş Yönetimi";
@@ -46,6 +68,11 @@
         <input type="hidden" name="kargoFirmasiId" id="shipKargoFirmasiId" value="">
         <input type="hidden" name="kargoNo" id="shipKargoNo" value="">
     </form>
+
+    <form id="bulkDeliverForm" method="post" action="/Admin/Siparis/TopluTeslimEt" class="d-none">
+        @Html.AntiForgeryToken()
+        <div id="bulkDeliverInputs"></div>
+    </form>
     
     <form id="bulkStatusForm" method="post" action="/Admin/Siparis/TopluDurumGuncelle" class="d-none">
         @Html.AntiForgeryToken()
@@ -74,7 +101,7 @@
                 <input type="text" name="search" value="@currentSearch" class="ca-input" style="width:280px;" placeholder="Sipariş no, müşteri, telefon veya e-posta ara">
             </div>
             <button type="submit" class="ca-btn ca-btn-primary ca-btn-sm"><i class="fas fa-search"></i></button>
-            <a href="/Admin/Siparis/ExcelExport" class="ca-btn ca-btn-outline ca-btn-sm">
+            <a href="/Admin/Siparis/ExcelExport" class="ca-btn ca-btn-sm text-white fw-semibold" style="background:#198754; border-color:#198754; min-height:42px; padding:.65rem 1.15rem; font-size:.92rem;">
                 <i class="fas fa-file-excel"></i> XLSX
             </a>
         </form>
@@ -99,6 +126,15 @@
         <a href="/Admin/Siparis?durum=@SiparisDurumHelper.TeslimEdildi" class="ca-tab @(currentDurum == SiparisDurumHelper.TeslimEdildi ? "active" : "")">
             <i class="fas fa-check-circle"></i> Teslim <span class="ca-tab-count">@ViewBag.TeslimCount</span>
         </a>
+        @{
+            var faturaYuklenmemişCount = ViewBag.FaturaYuklenmemişCount as int? ?? 0;
+        }
+        @if (faturaYuklenmemişCount > 0)
+        {
+            <a href="/Admin/Siparis?fatura=yuklenmemiş" class="ca-tab" style="background:#dc3545; color:white;">
+                <i class="fas fa-file-pdf"></i> Fatura Yok <span class="ca-tab-count">@faturaYuklenmemişCount</span>
+            </a>
+        }
     </div>
 
     <div class="ca-card">
@@ -131,10 +167,22 @@
                         <i class="fas fa-truck me-1"></i> Kargoya Ver
                     </button>
                 }
+
+                @if (currentDurum == SiparisDurumHelper.KargoyaVerildi)
+                {
+                    <button type="button" class="btn btn-sm text-white fw-semibold" style="background:#198754; border-radius:999px; padding:.55rem 1rem;" onclick="topluTeslimEt()">
+                        <i class="fas fa-check-circle me-1"></i> Teslim Et
+                    </button>
+                }
                 
-                <button type="button" class="btn btn-sm text-white fw-semibold" style="background:#6f42c1; border-radius:999px; padding:.55rem 1rem;" onclick="topluPaket()">
-                    <i class="fas fa-box me-1"></i> Paketleniyor Yap
-                </button>
+                @if (currentDurum != SiparisDurumHelper.KargoyaVerildi &&
+                    currentDurum != SiparisDurumHelper.TeslimEdildi &&
+                    currentDurum != SiparisDurumHelper.IptalEdildi)
+                {
+                    <button type="button" class="btn btn-sm text-white fw-semibold" style="background:#6f42c1; border-radius:999px; padding:.55rem 1rem;" onclick="topluPaket()">
+                        <i class="fas fa-box me-1"></i> Paketleniyor Yap
+                    </button>
+                }
                 
                 <button type="button" class="btn btn-sm text-white fw-semibold" style="background:#dc3545; border-radius:999px; padding:.55rem 1rem;" onclick="topluIptal()">
                     <i class="fas fa-times-circle me-1"></i> İptal Et
@@ -174,6 +222,7 @@
                         <th>İçerik</th>
                         <th>Tutar</th>
                         <th>Durum / Kargo</th>
+                        <th>Fatura</th>
                         <th class="text-end">İşlemler</th>
                         <th class="text-center pe-4" style="width:54px;">
                             <input id="selectAllOrders" type="checkbox" class="form-check-input" title="Bu sayfadaki siparişleri seç">
@@ -190,7 +239,7 @@
                             <td class="ps-4">
                                 <span class="ca-order-id">@siparisNo</span>
                                 <div class="ca-text-muted" style="font-size:.75rem;">ID: #@item.Id</div>
-                                <div class="ca-text-muted" style="font-size:.75rem;">@item.OlusturulmaTarihi.ToString("dd.MM.yyyy HH:mm")</div>
+                                <div class="ca-text-muted" style="font-size:.75rem;">@FormatTurkeyDateTime(item.OlusturulmaTarihi)</div>
                             </td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
@@ -233,6 +282,21 @@
                                     @(string.IsNullOrWhiteSpace(item.KargoFirmasi) ? "Aras Kargo" : item.KargoFirmasi)
                                     @(string.IsNullOrWhiteSpace(item.KargoTakipNo) ? " - takip no bekleniyor" : $" - {item.KargoTakipNo}")
                                 </div>
+                            </td>
+                            <td>
+                                @if (item.FaturaYuklendiMi)
+                                {
+                                    <span class="badge bg-success"><i class="fas fa-check"></i> Var</span>
+                                    <div class="mt-1">
+                                        <a href="/Admin/Siparis/FaturaIndir/@item.Id" target="_blank" class="btn btn-sm btn-outline-primary" title="İndir">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Yok</span>
+                                }
                             </td>
                             <td class="text-end pe-4">
                                 <div class="dropdown">
@@ -410,6 +474,28 @@
         
         document.body.appendChild(form);
         form.submit();
+    }
+
+    function topluTeslimEt() {
+        var ids = getSelectedOrders();
+        if (ids.length === 0) {
+            alert('LÃ¼tfen en az bir sipariÅŸ seÃ§in');
+            return;
+        }
+        if (!confirm(ids.length + ' sipariÅŸ "Teslim Edildi" durumuna alÄ±nacak. Devam edilsin mi?')) return;
+
+        var container = document.getElementById('bulkDeliverInputs');
+        container.innerHTML = '';
+
+        ids.forEach(function(id) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'siparisIds';
+            input.value = id;
+            container.appendChild(input);
+        });
+
+        document.getElementById('bulkDeliverForm').submit();
     }
 
     function topluIptal() {

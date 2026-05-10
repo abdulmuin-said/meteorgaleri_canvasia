@@ -128,10 +128,12 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
             var postedVariants = urun.UrunSecenek?.ToList() ?? new List<UrunSecenek>();
             var postedFeatureValues = urun.UrunOzellikleri?.ToList() ?? new List<UrunOzellikDegeri>();
             NormalizeProductInput(urun);
+            var supportsCanvasOptions = await SupportsCanvasOptionsAsync(urun.KategoriId);
             if (!postedVariants.Any(IsMeaningfulVariant))
             {
                 postedVariants.Add(BuildDefaultProductVariant(urun));
             }
+            SanitizeVariantScope(postedVariants, supportsCanvasOptions);
 
             urun.OlusturulmaTarihi = DateTime.UtcNow;
             urun.Sira = await NormalizeProductOrderAsync(urun.Sira);
@@ -151,10 +153,12 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
 
             _context.Urunler.Add(urun);
             await _context.SaveChangesAsync();
+            await EnsureProductSkuAsync(urun);
             await SyncVariantsAsync(urun, postedVariants);
             await SyncFeatureValuesAsync(urun, postedFeatureValues);
             await SaveGalleryImagesAsync(urun, galeriDosyalari);
             await _context.SaveChangesAsync();
+            await EnsureVariantSkusAsync(urun.Id);
 
             TempData["Mesaj"] = "Ürün başarıyla eklendi.";
             return RedirectToAction(nameof(Duzenle), new { id = urun.Id });
@@ -222,6 +226,8 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
 
             NormalizeProductInput(model);
             ApplyProductFields(model, urun);
+            var supportsCanvasOptions = await SupportsCanvasOptionsAsync(model.KategoriId);
+            SanitizeVariantScope(model.UrunSecenek, supportsCanvasOptions);
             urun.Sira = await NormalizeProductOrderAsync(model.Sira);
             urun.UrlYolu = SlugHelper.GenerateSlug(string.IsNullOrWhiteSpace(model.UrlYolu) ? model.Baslik : model.UrlYolu);
             urun.Slug = await GenerateUniqueProductSlugAsync(model.Slug, model.Baslik, id);
@@ -236,6 +242,8 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
             }
 
             await SyncVariantsAsync(urun, model.UrunSecenek);
+            await EnsureProductSkuAsync(urun);
+            await EnsureVariantSkusAsync(urun.Id);
             await SyncFeatureValuesAsync(urun, model.UrunOzellikleri);
             await SaveGalleryImagesAsync(urun, galeriDosyalari);
             await EnsureDefaultProductMediaAsync(urun);
@@ -319,6 +327,234 @@ await _context.SaveChangesAsync();
             TempData["Mesaj"] = $"{urunler.Count} ürün arşive alındı.";
             TempData["Durum"] = "success";
             return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DurumGuncelle(int id, bool aktif)
+        {
+            var urun = await _context.Urunler.FirstOrDefaultAsync(x => x.Id == id);
+            if (urun == null)
+            {
+                TempData["Mesaj"] = "Ürün bulunamadı.";
+                TempData["Durum"] = "warning";
+                return RedirectToAction(nameof(Index));
+            }
+
+            urun.AktifMi = aktif;
+            await _context.SaveChangesAsync();
+
+            TempData["Mesaj"] = aktif ? "Ürün aktif hale getirildi." : "Ürün pasif hale getirildi.";
+            TempData["Durum"] = "success";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TopluDurumGuncelle(List<int> urunIds, bool aktif)
+        {
+            urunIds = urunIds
+                .Where(x => x > 0)
+                .Distinct()
+                .ToList();
+
+            if (!urunIds.Any())
+            {
+                TempData["Mesaj"] = "İşlem için en az bir ürün seçmelisiniz.";
+                TempData["Durum"] = "warning";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var urunler = await _context.Urunler
+                .Where(x => urunIds.Contains(x.Id))
+                .ToListAsync();
+
+            foreach (var urun in urunler)
+            {
+                urun.AktifMi = aktif;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Mesaj"] = aktif
+                ? $"{urunler.Count} ürün aktif hale getirildi."
+                : $"{urunler.Count} ürün pasif hale getirildi.";
+            TempData["Durum"] = "success";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> KaliciSil(int id)
+        {
+            var sonuc = await TryHardDeleteProductsAsync(new[] { id });
+
+            TempData["Mesaj"] = sonuc.message;
+            TempData["Durum"] = sonuc.deletedCount > 0 && sonuc.blockedCount == 0 ? "success" : "warning";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TopluKaliciSil(List<int> urunIds)
+        {
+            urunIds = urunIds
+                .Where(x => x > 0)
+                .Distinct()
+                .ToList();
+
+            if (!urunIds.Any())
+            {
+                TempData["Mesaj"] = "Kalıcı silmek için en az bir ürün seçmelisiniz.";
+                TempData["Durum"] = "warning";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var sonuc = await TryHardDeleteProductsAsync(urunIds);
+
+            TempData["Mesaj"] = sonuc.message;
+            TempData["Durum"] = sonuc.deletedCount > 0 && sonuc.blockedCount == 0 ? "success" : "warning";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BosSkulariOlustur()
+        {
+            var products = await _context.Urunler
+                .IgnoreQueryFilters()
+                .Include(x => x.UrunSecenek)
+                .Where(x => !x.SilindiMi)
+                .OrderBy(x => x.Id)
+                .ToListAsync();
+
+            var updatedProducts = 0;
+            var updatedVariants = 0;
+            var usedProductSkus = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var usedVariantSkus = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var product in products)
+            {
+                var originalSku = product.SKU?.Trim() ?? string.Empty;
+                product.SKU = BuildUniqueProductSkuForBatch(product.Id, originalSku, usedProductSkus);
+                if (!string.Equals(originalSku, product.SKU, StringComparison.Ordinal))
+                {
+                    updatedProducts++;
+                }
+
+                var variantIndex = 1;
+                foreach (var variant in product.UrunSecenek.Where(x => !x.SilindiMi).OrderBy(x => x.Sira).ThenBy(x => x.Id))
+                {
+                    var originalVariantSku = variant.VaryantSku?.Trim() ?? string.Empty;
+                    variant.VaryantSku = BuildUniqueVariantSkuForBatch(product.Id, variant.Id, variantIndex, originalVariantSku, usedVariantSkus);
+                    if (!string.Equals(originalVariantSku, variant.VaryantSku, StringComparison.Ordinal))
+                    {
+                        updatedVariants++;
+                    }
+
+                    variantIndex++;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Mesaj"] = $"{updatedProducts} ürün SKU ve {updatedVariants} varyasyon SKU tamamlandı.";
+            TempData["Durum"] = "success";
+            return RedirectToAction(nameof(Index));
+        }
+
+        private async Task<(int deletedCount, int blockedCount, string message)> TryHardDeleteProductsAsync(IEnumerable<int> productIds)
+        {
+            var ids = productIds
+                .Where(x => x > 0)
+                .Distinct()
+                .ToList();
+
+            if (!ids.Any())
+            {
+                return (0, 0, "Silinecek ürün bulunamadı.");
+            }
+
+            var blockedIds = new HashSet<int>();
+
+            var orderProductIds = await _context.SiparisDetaylari
+                .Where(x => ids.Contains(x.UrunId))
+                .Select(x => x.UrunId)
+                .Distinct()
+                .ToListAsync();
+
+            foreach (var productId in orderProductIds)
+            {
+                blockedIds.Add(productId);
+            }
+
+            var cartProductIds = await _context.SepetItems
+                .Where(x => ids.Contains(x.UrunId))
+                .Select(x => x.UrunId)
+                .Distinct()
+                .ToListAsync();
+
+            foreach (var productId in cartProductIds)
+            {
+                blockedIds.Add(productId);
+            }
+
+            var favoriteProductIds = await _context.Favoriler
+                .Where(x => ids.Contains(x.UrunId))
+                .Select(x => x.UrunId)
+                .Distinct()
+                .ToListAsync();
+
+            foreach (var productId in favoriteProductIds)
+            {
+                blockedIds.Add(productId);
+            }
+
+            var reviewProductIds = await _context.Yorumlar
+                .Where(x => ids.Contains(x.UrunId))
+                .Select(x => x.UrunId)
+                .Distinct()
+                .ToListAsync();
+
+            foreach (var productId in reviewProductIds)
+            {
+                blockedIds.Add(productId);
+            }
+
+            var deletableIds = ids.Except(blockedIds).ToList();
+            if (!deletableIds.Any())
+            {
+                return (0, blockedIds.Count, "Seçili ürünler sipariş, sepet, favori veya yorum kayıtlarında kullanıldığı için kalıcı silinemedi. Bu ürünleri pasif yapabilirsiniz.");
+            }
+
+            var media = await _context.UrunResimleri
+                .IgnoreQueryFilters()
+                .Where(x => deletableIds.Contains(x.UrunId))
+                .ToListAsync();
+            var variants = await _context.UrunSecenekleri
+                .Where(x => deletableIds.Contains(x.UrunId))
+                .ToListAsync();
+            var featureValues = await _context.UrunOzellikDegerleri
+                .Where(x => deletableIds.Contains(x.UrunId))
+                .ToListAsync();
+            var products = await _context.Urunler
+                .IgnoreQueryFilters()
+                .Where(x => deletableIds.Contains(x.Id))
+                .ToListAsync();
+
+            _context.UrunResimleri.RemoveRange(media);
+            _context.UrunSecenekleri.RemoveRange(variants);
+            _context.UrunOzellikDegerleri.RemoveRange(featureValues);
+            _context.Urunler.RemoveRange(products);
+
+            await _context.SaveChangesAsync();
+
+            if (blockedIds.Count > 0)
+            {
+                return (products.Count, blockedIds.Count, $"{products.Count} ürün kalıcı silindi. {blockedIds.Count} ürün ilişkili kayıtları olduğu için silinemedi.");
+            }
+
+            return (products.Count, 0, $"{products.Count} ürün kalıcı olarak silindi.");
         }
 
         public async Task<IActionResult> ResimSil(int id)
@@ -537,7 +773,7 @@ await _context.SaveChangesAsync();
             return View("Excel");
         }
 
-        public IActionResult ExcelSablon(string tip)
+        public async Task<IActionResult> ExcelSablon(string tip)
         {
             var operation = NormalizeExcelOperation(tip);
             ExcelPackage.License.SetNonCommercialOrganization("Canvasia");
@@ -555,9 +791,11 @@ await _context.SaveChangesAsync();
             }
 
             FillTemplateSampleRow(worksheet, operation);
+            StyleTemplateSampleRow(worksheet, headers.Length);
             StyleExcelHeader(worksheet, headers.Length);
+            StyleRequiredTemplateHeaders(worksheet, headers, operation);
             AddTemplateNotes(worksheet, operation, headers.Length);
-            _ = AddCategoryReferenceSheetAsync(package);
+            await AddCategoryReferenceSheetAsync(package);
 
             worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
             infoSheet.Column(1).Width = 32;
@@ -843,7 +1081,7 @@ await _context.SaveChangesAsync();
         {
             ExcelPackage.License.SetNonCommercialOrganization("Canvasia");
             using var package = new ExcelPackage(new FileInfo(filePath));
-            var worksheet = package.Workbook.Worksheets.FirstOrDefault();
+            var worksheet = SelectProductImportWorksheet(package);
             if (worksheet?.Dimension == null)
             {
                 throw new InvalidOperationException("Excel dosyasında okunabilir veri bulunamadı.");
@@ -857,7 +1095,9 @@ await _context.SaveChangesAsync();
 
             for (var row = 2; row <= worksheet.Dimension.End.Row; row++)
             {
-                if (IsExcelRowEmpty(worksheet, row))
+                if (IsExcelRowEmpty(worksheet, row) ||
+                    IsTemplateHelperRow(worksheet, row, operation) ||
+                    IsTemplateSampleRow(worksheet, headers, row, operation))
                 {
                     continue;
                 }
@@ -947,10 +1187,13 @@ await _context.SaveChangesAsync();
                 OlusturulmaTarihi = DateTime.UtcNow
             };
 
-            product.UrunSecenek.Add(BuildImportedProductVariant(product, worksheet, headers, row));
+            var supportsCanvasOptions = SupportsCanvasOptions(categories, categoryId.Value);
+            product.UrunSecenek.Add(BuildImportedProductVariant(product, worksheet, headers, row, supportsCanvasOptions));
 
             _context.Urunler.Add(product);
             await _context.SaveChangesAsync();
+            await EnsureProductSkuAsync(product);
+            await EnsureVariantSkusAsync(product.Id);
             return (true, string.Empty);
         }
 
@@ -958,28 +1201,33 @@ await _context.SaveChangesAsync();
             Urun product,
             ExcelWorksheet worksheet,
             Dictionary<string, int> headers,
-            int row)
+            int row,
+            bool supportsCanvasOptions)
         {
             var salePrice = GetExcelDecimal(worksheet, headers, row, "varyantsatisfiyati", "varyantsatis", "varyasyonfiyati")
                 ?? product.IndirimliFiyat
                 ?? product.Fiyat;
 
-            var olcu = GetExcelString(worksheet, headers, row, "olcu", "ebat", "varyasyon", "varyasyonadi");
+            var olcu = supportsCanvasOptions
+                ? GetExcelString(worksheet, headers, row, "olcu", "ebat", "varyasyon", "varyasyonadi")
+                : string.Empty;
             var variantSku = GetExcelString(worksheet, headers, row, "varyantsku", "varyasyonsku");
             var stock = GetExcelInt(worksheet, headers, row, "stok", "stokadedi", "varyantstok") ?? 100;
-            var cerceveTipi = GetExcelString(worksheet, headers, row, "cercevetipi", "cerceve");
+            var cerceveTipi = supportsCanvasOptions
+                ? GetExcelString(worksheet, headers, row, "cercevetipi", "cerceve")
+                : string.Empty;
             if (string.IsNullOrWhiteSpace(cerceveTipi))
             {
-                cerceveTipi = "Cercevesiz";
+                cerceveTipi = supportsCanvasOptions ? "Cercevesiz" : string.Empty;
             }
 
             return new UrunSecenek
             {
-                Olcu = string.IsNullOrWhiteSpace(olcu) ? "Standart" : olcu,
+                Olcu = string.IsNullOrWhiteSpace(olcu) ? (supportsCanvasOptions ? "Standart" : string.Empty) : olcu,
                 CerceveTipi = cerceveTipi,
-                CerceveRengi = GetExcelString(worksheet, headers, row, "cerceverengi"),
-                CerceveKalinligi = GetExcelString(worksheet, headers, row, "cercevekalinligi", "kalinlik"),
-                MalzemeTuru = GetExcelString(worksheet, headers, row, "malzemeturu", "malzeme"),
+                CerceveRengi = supportsCanvasOptions ? GetExcelString(worksheet, headers, row, "cerceverengi") : string.Empty,
+                CerceveKalinligi = supportsCanvasOptions ? GetExcelString(worksheet, headers, row, "cercevekalinligi", "kalinlik") : string.Empty,
+                MalzemeTuru = supportsCanvasOptions ? GetExcelString(worksheet, headers, row, "malzemeturu", "malzeme") : string.Empty,
                 Yon = GetExcelString(worksheet, headers, row, "yon"),
                 VaryantSku = string.IsNullOrWhiteSpace(variantSku) ? product.SKU : variantSku,
                 SatisFiyati = salePrice,
@@ -987,7 +1235,7 @@ await _context.SaveChangesAsync();
                 StokAdedi = stock < 0 ? 0 : stock,
                 UretimSuresiGun = GetExcelInt(worksheet, headers, row, "uretimsuresigun", "uretimgunu") ?? product.UretimSuresiGun,
                 GorselUrl = GetExcelString(worksheet, headers, row, "varyantgorselurl", "varyasyongorselurl"),
-                ParcaSayisi = Math.Max(1, GetExcelInt(worksheet, headers, row, "parcasayisi", "parca") ?? 1),
+                ParcaSayisi = supportsCanvasOptions ? Math.Max(1, GetExcelInt(worksheet, headers, row, "parcasayisi", "parca") ?? 1) : 1,
                 AktifMi = true,
                 VarsayilanMi = true,
                 Sira = 1
@@ -1017,6 +1265,141 @@ await _context.SaveChangesAsync();
                 VarsayilanMi = true,
                 Sira = 1
             };
+        }
+
+        private async Task EnsureProductSkuAsync(Urun product)
+        {
+            product.SKU = await BuildUniqueProductSkuAsync(product.Id, product.SKU);
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task EnsureVariantSkusAsync(int productId)
+        {
+            var product = await _context.Urunler
+                .IgnoreQueryFilters()
+                .Include(x => x.UrunSecenek)
+                .FirstOrDefaultAsync(x => x.Id == productId);
+
+            if (product == null)
+            {
+                return;
+            }
+
+            var variantIndex = 1;
+            foreach (var variant in product.UrunSecenek.Where(x => !x.SilindiMi).OrderBy(x => x.Sira).ThenBy(x => x.Id))
+            {
+                if (string.IsNullOrWhiteSpace(variant.VaryantSku))
+                {
+                    variant.VaryantSku = await BuildUniqueVariantSkuAsync(product.Id, variant.Id, variantIndex, variant.VaryantSku);
+                }
+                else
+                {
+                    variant.VaryantSku = await BuildUniqueVariantSkuAsync(product.Id, variant.Id, variantIndex, variant.VaryantSku);
+                }
+
+                variantIndex++;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        private static string BuildProductSku(int productId)
+        {
+            return $"URN-{productId:D6}";
+        }
+
+        private static string BuildVariantSku(int productId, int variantId, int variantIndex)
+        {
+            var suffix = variantId > 0 ? variantId : variantIndex;
+            return $"{BuildProductSku(productId)}-VAR-{suffix:D6}";
+        }
+
+        private async Task<string> BuildUniqueProductSkuAsync(int productId, string? requestedSku)
+        {
+            var candidate = requestedSku?.Trim() ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(candidate) && !await ProductSkuExistsAsync(candidate, productId))
+            {
+                return candidate;
+            }
+
+            var baseSku = BuildProductSku(productId);
+            candidate = baseSku;
+            var counter = 2;
+            while (await ProductSkuExistsAsync(candidate, productId))
+            {
+                candidate = $"{baseSku}-{counter++}";
+            }
+
+            return candidate;
+        }
+
+        private async Task<string> BuildUniqueVariantSkuAsync(int productId, int variantId, int variantIndex, string? requestedSku)
+        {
+            var candidate = requestedSku?.Trim() ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(candidate) && !await VariantSkuExistsAsync(candidate, variantId))
+            {
+                return candidate;
+            }
+
+            var baseSku = BuildVariantSku(productId, variantId, variantIndex);
+            candidate = baseSku;
+            var counter = 2;
+            while (await VariantSkuExistsAsync(candidate, variantId))
+            {
+                candidate = $"{baseSku}-{counter++}";
+            }
+
+            return candidate;
+        }
+
+        private async Task<bool> ProductSkuExistsAsync(string sku, int excludedProductId)
+        {
+            var normalizedSku = sku.ToLowerInvariant();
+            return await _context.Urunler
+                .IgnoreQueryFilters()
+                .AnyAsync(x => x.Id != excludedProductId && x.SKU != null && x.SKU.ToLower() == normalizedSku);
+        }
+
+        private async Task<bool> VariantSkuExistsAsync(string sku, int excludedVariantId)
+        {
+            var normalizedSku = sku.ToLowerInvariant();
+            return await _context.UrunSecenekleri
+                .AnyAsync(x => x.Id != excludedVariantId && x.VaryantSku != null && x.VaryantSku.ToLower() == normalizedSku);
+        }
+
+        private static string BuildUniqueProductSkuForBatch(int productId, string currentSku, HashSet<string> usedSkus)
+        {
+            var candidate = currentSku.Trim();
+            if (string.IsNullOrWhiteSpace(candidate) || usedSkus.Contains(candidate))
+            {
+                candidate = BuildProductSku(productId);
+                var counter = 2;
+                while (usedSkus.Contains(candidate))
+                {
+                    candidate = $"{BuildProductSku(productId)}-{counter++}";
+                }
+            }
+
+            usedSkus.Add(candidate);
+            return candidate;
+        }
+
+        private static string BuildUniqueVariantSkuForBatch(int productId, int variantId, int variantIndex, string currentSku, HashSet<string> usedSkus)
+        {
+            var candidate = currentSku.Trim();
+            if (string.IsNullOrWhiteSpace(candidate) || usedSkus.Contains(candidate))
+            {
+                var baseSku = BuildVariantSku(productId, variantId, variantIndex);
+                candidate = baseSku;
+                var counter = 2;
+                while (usedSkus.Contains(candidate))
+                {
+                    candidate = $"{baseSku}-{counter++}";
+                }
+            }
+
+            usedSkus.Add(candidate);
+            return candidate;
         }
 
         private async Task<(bool Success, string Message)> ImportProductUpdateRowAsync(
@@ -1264,6 +1647,18 @@ await _context.SaveChangesAsync();
             categorySheet.Cells[categorySheet.Dimension.Address].AutoFitColumns();
         }
 
+        private static ExcelWorksheet? SelectProductImportWorksheet(ExcelPackage package)
+        {
+            return package.Workbook.Worksheets.FirstOrDefault(x =>
+                    x.Name.Contains("ablon", StringComparison.OrdinalIgnoreCase) &&
+                    x.Dimension != null)
+                ?? package.Workbook.Worksheets.FirstOrDefault(x =>
+                    !x.Name.Contains("Bilgilendirme", StringComparison.OrdinalIgnoreCase) &&
+                    !x.Name.Contains("Rehber", StringComparison.OrdinalIgnoreCase) &&
+                    x.Dimension != null)
+                ?? package.Workbook.Worksheets.FirstOrDefault(x => x.Dimension != null);
+        }
+
         private static void StyleExcelHeader(ExcelWorksheet worksheet, int columnCount)
         {
             using var range = worksheet.Cells[1, 1, 1, columnCount];
@@ -1273,8 +1668,51 @@ await _context.SaveChangesAsync();
             range.Style.Font.Color.SetColor(System.Drawing.Color.White);
         }
 
+        private static void StyleTemplateSampleRow(ExcelWorksheet worksheet, int columnCount)
+        {
+            using var range = worksheet.Cells[2, 1, 2, columnCount];
+            range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+            range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(255, 243, 205));
+            range.Style.Font.Color.SetColor(System.Drawing.Color.FromArgb(75, 75, 75));
+        }
+
+        private static void StyleRequiredTemplateHeaders(ExcelWorksheet worksheet, string[] headers, string operation)
+        {
+            var required = GetRequiredTemplateColumnIndexes(operation);
+            for (var i = 0; i < headers.Length; i++)
+            {
+                if (!required.Contains(i + 1))
+                {
+                    continue;
+                }
+
+                var cell = worksheet.Cells[1, i + 1];
+                cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                cell.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.FromArgb(183, 28, 28));
+                cell.Style.Font.Color.SetColor(System.Drawing.Color.White);
+                cell.Style.Font.Bold = true;
+            }
+        }
+
+        private static HashSet<int> GetRequiredTemplateColumnIndexes(string operation)
+        {
+            var indexes = operation switch
+            {
+                "update" => new[] { 1 },
+                "price" => new[] { 1, 2, 3 },
+                _ => new[] { 1, 2, 3, 4, 6 }
+            };
+
+            return indexes.ToHashSet();
+        }
+
         private static void AddTemplateNotes(ExcelWorksheet worksheet, string operation, int columnCount)
         {
+            if (!string.Equals(operation, "__legacy_notes__", StringComparison.Ordinal))
+            {
+                return;
+            }
+
             var notesRow = worksheet.Dimension.End.Row + 3;
             var notes = operation switch
             {
@@ -1362,6 +1800,58 @@ await _context.SaveChangesAsync();
             }
 
             return true;
+        }
+
+        private static bool IsTemplateHelperRow(ExcelWorksheet worksheet, int row, string operation)
+        {
+            var firstCell = worksheet.Cells[row, 1].Text?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(firstCell))
+            {
+                return false;
+            }
+
+            if (firstCell.Contains("SABLON", StringComparison.OrdinalIgnoreCase) ||
+                firstCell.Contains("ÅABLON", StringComparison.OrdinalIgnoreCase) ||
+                firstCell.StartsWith("â– ", StringComparison.OrdinalIgnoreCase) ||
+                firstCell.StartsWith("â€¢", StringComparison.OrdinalIgnoreCase) ||
+                firstCell.StartsWith("-", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var normalized = NormalizeExcelKey(firstCell);
+            return normalized.Contains("sablon") ||
+                normalized.Contains("zorunlualan") ||
+                normalized.Contains("kategoriid") ||
+                normalized.Contains("satisfiyati") ||
+                normalized.Contains("indirimlifiyat") ||
+                normalized.Contains("aktifmi") ||
+                normalized.Contains("varyant") ||
+                normalized.Contains("kategorilericin") ||
+                normalized.Contains("bosbirakilirsa");
+        }
+
+        private static bool IsTemplateSampleRow(
+            ExcelWorksheet worksheet,
+            Dictionary<string, int> headers,
+            int row,
+            string operation)
+        {
+            if (row != 2)
+            {
+                return false;
+            }
+
+            var title = NormalizeExcelKey(GetExcelString(worksheet, headers, row, "urunadi"));
+            var imageUrl = NormalizeExcelKey(GetExcelString(worksheet, headers, row, "anagorselurl"));
+            var sku = NormalizeExcelKey(GetExcelString(worksheet, headers, row, "sku", "varyantsku"));
+
+            return operation switch
+            {
+                "price" => sku == "sku001",
+                "update" => title == "modernsoyutkanvastablo" && imageUrl.Contains("ornekwebp"),
+                _ => title == "modernsoyutkanvastablo" && imageUrl.Contains("ornekwebp")
+            };
         }
 
         private static string NormalizeExcelKey(string? value)
@@ -1568,6 +2058,7 @@ await _context.SaveChangesAsync();
                 .ThenBy(x => x.Ad)
                 .ToListAsync();
 
+            ViewBag.CanvasOptionCategoryIds = GetCanvasOptionCategoryIds(kategoriler);
             var items = new List<SelectListItem>();
             foreach (var (category, depth) in CategoryTreeHelper.FlattenHierarchy(kategoriler))
             {
@@ -1580,6 +2071,40 @@ await _context.SaveChangesAsync();
             }
 
             return items;
+        }
+
+        private async Task<bool> SupportsCanvasOptionsAsync(int categoryId)
+        {
+            var categories = await _context.Kategoriler
+                .IgnoreQueryFilters()
+                .ToListAsync();
+
+            return SupportsCanvasOptions(categories, categoryId);
+        }
+
+        private static bool SupportsCanvasOptions(IEnumerable<Kategori> categories, int categoryId)
+        {
+            return GetCanvasOptionCategoryIds(categories).Contains(categoryId);
+        }
+
+        private static HashSet<int> GetCanvasOptionCategoryIds(IEnumerable<Kategori> categories)
+        {
+            var categoryList = categories.ToList();
+            var canvasRoots = categoryList
+                .Where(x => NormalizeExcelKey(x.Ad).Contains("kanvastablo"))
+                .Select(x => x.Id)
+                .ToList();
+
+            var result = new HashSet<int>();
+            foreach (var rootId in canvasRoots)
+            {
+                foreach (var id in CategoryTreeHelper.GetDescendantIds(categoryList, rootId))
+                {
+                    result.Add(id);
+                }
+            }
+
+            return result;
         }
 
         private void RemoveOptionalProductModelStateErrors()
@@ -1603,7 +2128,8 @@ await _context.SaveChangesAsync();
                 nameof(Urun.UrlYolu),
                 nameof(Urun.SeoTitle),
                 nameof(Urun.SeoDescription),
-                nameof(Urun.SeoKeywords)
+                nameof(Urun.SeoKeywords),
+                nameof(Urun.AktifMi)
             };
 
             foreach (var key in optionalProductFields)
@@ -1623,7 +2149,11 @@ await _context.SaveChangesAsync();
                 nameof(UrunSecenek.KisilestirmeMetni),
                 nameof(UrunSecenek.OzelTasarimNotu),
                 nameof(UrunSecenek.GorselUrl),
-                nameof(UrunSecenek.Urun)
+                nameof(UrunSecenek.Urun),
+                nameof(UrunSecenek.AktifMi),
+                nameof(UrunSecenek.VarsayilanMi),
+                nameof(UrunSecenek.TukeninceGizle),
+                nameof(UrunSecenek.OnSipariseAcikMi)
             };
 
             foreach (var key in ModelState.Keys.ToList())
@@ -2128,6 +2658,24 @@ await _context.SaveChangesAsync();
             }
 
             return Task.CompletedTask;
+        }
+
+        private static void SanitizeVariantScope(ICollection<UrunSecenek>? variants, bool supportsCanvasOptions)
+        {
+            if (supportsCanvasOptions || variants == null)
+            {
+                return;
+            }
+
+            foreach (var variant in variants)
+            {
+                variant.Olcu = string.Empty;
+                variant.CerceveTipi = string.Empty;
+                variant.CerceveRengi = string.Empty;
+                variant.CerceveKalinligi = string.Empty;
+                variant.MalzemeTuru = string.Empty;
+                variant.ParcaSayisi = 1;
+            }
         }
 
         private async Task SyncFeatureValuesAsync(Urun urun, ICollection<UrunOzellikDegeri>? incomingValues)

@@ -27,9 +27,9 @@
 }
 
 <div class="container-fluid ca-fade-in">
-    <form id="bulkProductDeleteForm" method="post" action="/Admin/Urun/TopluSil" class="d-none">
+    <form id="bulkProductActionForm" method="post" action="/Admin/Urun/TopluSil" class="d-none">
         @Html.AntiForgeryToken()
-        <div id="bulkProductDeleteInputs"></div>
+        <div id="bulkProductActionInputs"></div>
     </form>
 
     <div class="ca-page-header">
@@ -44,6 +44,12 @@
             <a href="/Admin/Urun/Excel" class="ca-btn ca-btn-excel">
                 <i class="fas fa-file-excel"></i> Excel İşlemleri
             </a>
+            <form action="/Admin/Urun/BosSkulariOlustur" method="post" class="m-0" onsubmit="return confirm('Boş veya tekrar eden SKU değerleri otomatik benzersiz SKU ile tamamlansın mı?')">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="ca-btn ca-btn-outline">
+                    <i class="fas fa-barcode"></i> SKU'ları Tamamla
+                </button>
+            </form>
             <a href="/Admin/Urun/Ekle" class="ca-btn ca-btn-primary">
                 <i class="fas fa-plus"></i> Yeni Ürün
             </a>
@@ -86,14 +92,45 @@
                 </select>
                 <input type="hidden" name="page" value="1" />
                 <button type="submit" class="ca-btn ca-btn-primary ca-btn-sm"><i class="fas fa-search"></i></button>
-                <button id="bulkProductDeleteButton"
-                        type="submit"
-                        form="bulkProductDeleteForm"
-                        class="ca-btn ca-btn-sm"
+                <button type="submit"
+                        form="bulkProductActionForm"
+                        formaction="/Admin/Urun/TopluDurumGuncelle"
+                        name="aktif"
+                        value="true"
+                        class="ca-btn ca-btn-sm bulk-product-button"
+                        style="background:#157347; color:#fff; border-radius:999px;"
+                        disabled
+                        onclick="return confirm('Seçili ürünler aktif hale getirilsin mi?')">
+                    <i class="fas fa-check-circle"></i> Seçili Aktif Yap
+                </button>
+                <button type="submit"
+                        form="bulkProductActionForm"
+                        formaction="/Admin/Urun/TopluDurumGuncelle"
+                        name="aktif"
+                        value="false"
+                        class="ca-btn ca-btn-sm bulk-product-button"
+                        style="background:#6c757d; color:#fff; border-radius:999px;"
+                        disabled
+                        onclick="return confirm('Seçili ürünler pasif hale getirilsin mi?')">
+                    <i class="fas fa-pause-circle"></i> Seçili Pasif Yap
+                </button>
+                <button type="submit"
+                        form="bulkProductActionForm"
+                        formaction="/Admin/Urun/TopluSil"
+                        class="ca-btn ca-btn-sm bulk-product-button"
                         style="background:#b42318; color:#fff; border-radius:999px;"
                         disabled
                         onclick="return confirm('Seçili ürünler arşive alınsın mı?')">
                     <i class="fas fa-trash"></i> Seçili Ürünleri Sil
+                </button>
+                <button type="submit"
+                        form="bulkProductActionForm"
+                        formaction="/Admin/Urun/TopluKaliciSil"
+                        class="ca-btn ca-btn-sm bulk-product-button"
+                        style="background:#7f1d1d; color:#fff; border-radius:999px;"
+                        disabled
+                        onclick="return confirm('Dikkat: Seçili ürünler kalıcı olarak silinecek. Devam edilsin mi?')">
+                    <i class="fas fa-ban"></i> Kalıcı Sil
                 </button>
                 <span id="selectedProductCount" class="small text-muted">Seçili ürün yok.</span>
                 <span class="ca-filter-count">Toplam <strong>@totalCount</strong> ürün</span>
@@ -199,11 +236,28 @@
                                         <a href="/Admin/Urun/Duzenle/@item.Id" class="ca-btn-icon edit" title="Düzenle">
                                             <i class="fas fa-pen"></i>
                                         </a>
+                                        <form action="/Admin/Urun/DurumGuncelle" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <input type="hidden" name="aktif" value="@(!item.AktifMi)" />
+                                            <button type="submit"
+                                                    class="ca-btn-icon @(item.AktifMi ? "delete" : "view")"
+                                                    title="@(item.AktifMi ? "Pasif Yap" : "Aktif Yap")">
+                                                <i class="fas @(item.AktifMi ? "fa-pause" : "fa-check")"></i>
+                                            </button>
+                                        </form>
                                         <form action="/Admin/Urun/Sil" method="post" class="d-inline" onsubmit="return confirm('Bu ürün arşive alınsın mı?')">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@item.Id" />
                                             <button type="submit" class="ca-btn-icon delete" title="Sil">
                                                 <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                        <form action="/Admin/Urun/KaliciSil" method="post" class="d-inline" onsubmit="return confirm('Dikkat: Bu ürün kalıcı olarak silinecek. Devam edilsin mi?')">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="ca-btn-icon delete" title="Kalıcı Sil">
+                                                <i class="fas fa-ban"></i>
                                             </button>
                                         </form>
                                     </div>
@@ -255,10 +309,10 @@
     document.addEventListener('DOMContentLoaded', function () {
         const checkboxes = Array.from(document.querySelectorAll('.product-select'));
         const selectAll = document.getElementById('selectAllProducts');
-        const bulkButton = document.getElementById('bulkProductDeleteButton');
+        const bulkButtons = Array.from(document.querySelectorAll('.bulk-product-button'));
         const selectedText = document.getElementById('selectedProductCount');
-        const bulkForm = document.getElementById('bulkProductDeleteForm');
-        const hiddenInputs = document.getElementById('bulkProductDeleteInputs');
+        const bulkForm = document.getElementById('bulkProductActionForm');
+        const hiddenInputs = document.getElementById('bulkProductActionInputs');
 
         function selectedValues() {
             return checkboxes.filter(x => x.checked).map(x => x.value);
@@ -266,9 +320,7 @@
 
         function refreshBulkState() {
             const values = selectedValues();
-            if (bulkButton) {
-                bulkButton.disabled = values.length === 0;
-            }
+            bulkButtons.forEach(x => x.disabled = values.length === 0);
             if (selectedText) {
                 selectedText.textContent = values.length === 0
                     ? 'Seçili ürün yok.'

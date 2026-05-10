@@ -3,6 +3,8 @@ using KanvasProje.Core.Varliklar;
 using KanvasProje.Data;
 using KanvasProje.Service.Interfaces;
 using KanvasProje.Service.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +23,7 @@ namespace KanvasProje.Web.Controllers
         private readonly ISepetService _sepetService;
         private readonly ISiteSettingsService _siteSettingsService;
         private readonly ILogger<SiparisController> _logger;
+        private readonly IWebHostEnvironment _env;
 
         public SiparisController(
             UserManager<AppUser> userManager,
@@ -30,7 +33,8 @@ namespace KanvasProje.Web.Controllers
             IPaymentService paymentService,
             ISepetService sepetService,
             ISiteSettingsService siteSettingsService,
-            ILogger<SiparisController> logger)
+            ILogger<SiparisController> logger,
+            IWebHostEnvironment env)
         {
             _userManager = userManager;
             _adresService = adresService;
@@ -40,6 +44,7 @@ namespace KanvasProje.Web.Controllers
             _sepetService = sepetService;
             _siteSettingsService = siteSettingsService;
             _logger = logger;
+            _env = env;
         }
 
         [HttpGet]
@@ -373,6 +378,43 @@ namespace KanvasProje.Web.Controllers
         public IActionResult Basarisiz()
         {
             return View();
+        }
+
+        [Authorize]
+        public async Task<IActionResult> FaturaIndir(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Challenge();
+            }
+
+            var siparis = await _context.Siparisler.FindAsync(id);
+            if (siparis == null)
+            {
+                return NotFound("Sipariş bulunamadı.");
+            }
+
+            // Güvenlik: Sadece kendi siparişinin faturasını indirebilir
+            if (siparis.AppUserId != user.Id)
+            {
+                return Forbid();
+            }
+
+            if (string.IsNullOrWhiteSpace(siparis.FaturaDosyaYolu))
+            {
+                return NotFound("Fatura henüz yüklenmemiş.");
+            }
+
+            var filePath = Path.Combine(_env.WebRootPath, siparis.FaturaDosyaYolu.TrimStart('/'));
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound("Fatura dosyası bulunamadı.");
+            }
+
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+            return File(fileBytes, "application/pdf", siparis.FaturaDosyaAdi ?? $"fatura_{id}.pdf");
         }
 
         private async Task PrepareCheckoutViewDataAsync(string? userId, string sessionId, List<SepetItem>? sepetItems = null)

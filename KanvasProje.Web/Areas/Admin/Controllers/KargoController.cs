@@ -31,57 +31,66 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Kaydet(KargoFirmasi model)
         {
-            if (string.IsNullOrWhiteSpace(model.Ad))
+            try
             {
-                TempData["Mesaj"] = "Kargo firması adı zorunludur.";
-                TempData["Durum"] = "danger";
-                return RedirectToAction(nameof(Index));
-            }
-
-            model.Ad = model.Ad.Trim();
-            model.Kod = string.IsNullOrWhiteSpace(model.Kod)
-                ? model.Ad.ToLowerInvariant().Replace(" ", "-")
-                : model.Kod.Trim().ToLowerInvariant();
-
-            if (model.VarsayilanMi)
-            {
-                await _context.KargoFirmalari
-                    .Where(x => x.Id != model.Id)
-                    .ExecuteUpdateAsync(x => x.SetProperty(v => v.VarsayilanMi, false));
-            }
-
-            if (model.Id == 0)
-            {
-                model.OlusturulmaTarihi = DateTime.UtcNow;
-                _context.KargoFirmalari.Add(model);
-                TempData["Mesaj"] = $"{model.Ad} kargo firması eklendi.";
-            }
-            else
-            {
-                var firma = await _context.KargoFirmalari.FirstOrDefaultAsync(x => x.Id == model.Id);
-                if (firma == null)
+                if (string.IsNullOrWhiteSpace(model.Ad))
                 {
-                    TempData["Mesaj"] = "Kargo firması bulunamadı.";
+                    TempData["Mesaj"] = "Kargo firması adı zorunludur.";
                     TempData["Durum"] = "danger";
                     return RedirectToAction(nameof(Index));
                 }
 
-                firma.Ad = model.Ad;
-                firma.Kod = model.Kod;
-                firma.LogoUrl = model.LogoUrl;
-                firma.Telefon = model.Telefon;
-                firma.TakipUrl = model.TakipUrl;
-                firma.GondericiUnvan = model.GondericiUnvan;
-                firma.GondericiAdres = model.GondericiAdres;
-                firma.GondericiTelefon = model.GondericiTelefon;
-                firma.AktifMi = model.AktifMi;
-                firma.VarsayilanMi = model.VarsayilanMi;
-                TempData["Mesaj"] = $"{model.Ad} kargo firması güncellendi.";
-            }
+                model.Ad = model.Ad.Trim();
+                model.Kod = string.IsNullOrWhiteSpace(model.Kod)
+                    ? model.Ad.ToLowerInvariant().Replace(" ", "-")
+                    : model.Kod.Trim().ToLowerInvariant();
 
-            await _context.SaveChangesAsync();
-            TempData["Durum"] = "success";
-            return RedirectToAction(nameof(Index));
+                if (model.VarsayilanMi)
+                {
+                    await _context.KargoFirmalari
+                        .Where(x => x.Id != model.Id)
+                        .ExecuteUpdateAsync(x => x.SetProperty(v => v.VarsayilanMi, false));
+                }
+
+                if (model.Id == 0)
+                {
+                    model.OlusturulmaTarihi = DateTime.UtcNow;
+                    _context.KargoFirmalari.Add(model);
+                    TempData["Mesaj"] = $"{model.Ad} kargo firması eklendi.";
+                }
+                else
+                {
+                    var firma = await _context.KargoFirmalari.FirstOrDefaultAsync(x => x.Id == model.Id);
+                    if (firma == null)
+                    {
+                        TempData["Mesaj"] = "Kargo firması bulunamadı.";
+                        TempData["Durum"] = "danger";
+                        return RedirectToAction(nameof(Index));
+                    }
+
+                    firma.Ad = model.Ad;
+                    firma.Kod = model.Kod;
+                    firma.LogoUrl = model.LogoUrl;
+                    firma.Telefon = model.Telefon;
+                    firma.TakipUrl = model.TakipUrl;
+                    firma.GondericiUnvan = model.GondericiUnvan;
+                    firma.GondericiAdres = model.GondericiAdres;
+                    firma.GondericiTelefon = model.GondericiTelefon;
+                    firma.AktifMi = model.AktifMi;
+                    firma.VarsayilanMi = model.VarsayilanMi;
+                    TempData["Mesaj"] = $"{model.Ad} kargo firması güncellendi.";
+                }
+
+                await _context.SaveChangesAsync();
+                TempData["Durum"] = "success";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                TempData["Mesaj"] = "Hata: " + ex.Message;
+                TempData["Durum"] = "danger";
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         [HttpPost]

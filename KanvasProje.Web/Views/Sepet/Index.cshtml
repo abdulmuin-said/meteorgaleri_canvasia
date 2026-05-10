@@ -7,6 +7,52 @@
     decimal genelToplam = sepetToplami - indirimTutari;
 }
 
+@functions {
+    private static string FormatCartOptionLabel(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var sections = value
+            .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
+
+        if (!sections.Any())
+        {
+            return string.Empty;
+        }
+
+        var firstParts = sections[0]
+            .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(x => !IsGenericCartOption(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var cleanSections = new List<string>();
+
+        if (firstParts.Any())
+        {
+            cleanSections.Add(string.Join(" / ", firstParts));
+        }
+
+        cleanSections.AddRange(sections
+            .Skip(1)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase));
+
+        return string.Join(" | ", cleanSections);
+    }
+
+    private static bool IsGenericCartOption(string value)
+    {
+        var normalized = value.Trim().ToLowerInvariant();
+        return normalized is "standart" or "standard" or "varsayilan" or "varsayılan";
+    }
+}
+
 <!-- Breadcrumb -->
 <div class="bg-[#f1ede7] border-b border-[#e5e2dc] py-3">
     <div class="container mx-auto px-4 flex items-center gap-2 text-xs text-[#47473d]">
@@ -53,6 +99,8 @@
             <div class="flex-1 space-y-4">
                 @foreach (var item in Model)
                 {
+                    var optionLabel = FormatCartOptionLabel(item.SecenekAdi);
+
                     <article class="bg-white border border-[#e5e2dc] rounded-lg p-4 flex gap-4 relative">
                         <!-- Sil Butonu -->
                         <form method="post" action="/Sepet/Sil" class="absolute right-3 top-3">
@@ -73,9 +121,9 @@
                             <a href="/Urun/Detay/@item.UrunId" class="font-medium text-sm text-[#1c1c18] hover:text-[#b58735] transition-colors line-clamp-2 block mb-1">
                                 @item.UrunBaslik
                             </a>
-                            @if (!string.IsNullOrWhiteSpace(item.SecenekAdi))
+                            @if (!string.IsNullOrWhiteSpace(optionLabel))
                             {
-                                <span class="text-xs text-[#47473d] bg-[#f1ede7] px-2 py-0.5 rounded">@item.SecenekAdi</span>
+                                <span class="text-xs text-[#47473d] bg-[#f1ede7] px-2 py-0.5 rounded">@optionLabel</span>
                             }
 
                             <div class="mt-3">
@@ -88,6 +136,12 @@
                                              maxlength="500"
                                              placeholder="Özel ölçü, renk tercihi, yazı isteği..."
                                              class="w-full border border-[#e5e2dc] rounded px-3 py-2 text-xs text-[#1c1c18] bg-[#fcf9f3] focus:ring-1 focus:ring-[#b58735] focus:outline-none resize-none placeholder:text-[#a09e99]">@item.MusteriNotu</textarea>
+                                    @if (!string.IsNullOrWhiteSpace(item.MusteriNotu))
+                                    {
+                                        <div class="rounded border border-[#dfd3ba] bg-[#f7f1e6] px-2 py-1 text-[10px] text-[#47473d]">
+                                            Kaydedilen not: @item.MusteriNotu
+                                        </div>
+                                    }
                                     <div class="flex items-center justify-between">
                                         <span class="text-[9px] text-[#a09e99]">En fazla 500 karakter</span>
                                         <button type="submit" class="text-[10px] text-[#b58735] hover:text-[#313511] transition-colors font-medium">

@@ -117,7 +117,13 @@ namespace KanvasProje.Web.Controllers
                     v.Deger == filterValue));
             }
 
-            sort ??= "yeni";
+            sort = sort switch
+            {
+                "price_asc" => "fiyat_artan",
+                "price_desc" => "fiyat_azalan",
+                _ => sort ?? "yeni"
+            };
+
             switch (sort)
             {
                 case "fiyat_artan":

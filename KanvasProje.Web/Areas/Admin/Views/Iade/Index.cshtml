@@ -1,4 +1,5 @@
 @model IEnumerable<KanvasProje.Core.Varliklar.IadeTalebi>
+@using KanvasProje.Core.Helpers
 @{
     ViewData["Title"] = "İade Talepleri";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -8,7 +9,7 @@
     <div class="ca-page-header">
         <div>
             <h1 class="ca-page-title">İade Talepleri</h1>
-            <p class="ca-page-subtitle">Müşterilerden gelen iade taleplerini yönetin.</p>
+            <p class="ca-page-subtitle">Müşteri, sipariş ve ürün bilgileriyle iade taleplerini inceleyin.</p>
         </div>
     </div>
 
@@ -17,10 +18,11 @@
             <table class="ca-table">
                 <thead>
                     <tr>
-                        <th class="ps-4">Tarih</th>
-                        <th>Sipariş No</th>
-                        <th>Müşteri Nedeni</th>
-                        <th>IBAN</th>
+                        <th class="ps-4">Talep</th>
+                        <th>Sipariş</th>
+                        <th>Müşteri</th>
+                        <th>Ürünler</th>
+                        <th>İade Nedeni</th>
                         <th>Durum</th>
                         <th class="text-end pe-4">İşlem</th>
                     </tr>
@@ -28,32 +30,40 @@
                 <tbody>
                     @foreach (var item in Model)
                     {
+                        var siparis = item.Siparis;
+                        var urunler = siparis?.SiparisDetaylari?.Where(x => !x.SilindiMi).ToList() ?? new List<KanvasProje.Core.Varliklar.SiparisDetay>();
+                        var ilkUrun = urunler.FirstOrDefault();
+                        var toplamAdet = urunler.Sum(x => x.Adet);
                         <tr>
-                            <td class="ps-4 ca-text-muted" style="font-size:.85rem;">@item.OlusturulmaTarihi.ToString("dd.MM.yyyy HH:mm")</td>
-                            <td><span class="ca-order-id">#@item.SiparisId</span></td>
+                            <td class="ps-4">
+                                <div class="ca-fw-semi">#@item.Id</div>
+                                <small class="ca-text-muted">@item.OlusturulmaTarihi.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</small>
+                            </td>
+                            <td>
+                                <div class="ca-fw-semi">@(string.IsNullOrWhiteSpace(siparis?.SiparisNo) ? $"#{item.SiparisId}" : siparis.SiparisNo)</div>
+                                <small class="ca-text-muted">@siparis?.OlusturulmaTarihi.ToLocalTime().ToString("dd.MM.yyyy") - @((siparis?.ToplamTutar ?? 0).ToString("N2")) TL</small>
+                            </td>
+                            <td>
+                                <div class="ca-fw-semi">@(siparis?.MusteriAdSoyad ?? "-")</div>
+                                <small class="ca-text-muted d-block">@(siparis?.Telefon ?? "-")</small>
+                                <small class="ca-text-muted">@(siparis?.Eposta ?? "-")</small>
+                            </td>
+                            <td>
+                                <div class="ca-fw-semi">@(ilkUrun?.Urun?.Baslik ?? "Ürün bilgisi yok")</div>
+                                <small class="ca-text-muted">@urunler.Count kalem / @toplamAdet adet</small>
+                            </td>
                             <td>
                                 <div class="ca-fw-semi">@item.Neden</div>
-                                <small class="ca-text-muted">@item.Aciklama</small>
+                                @if (!string.IsNullOrWhiteSpace(item.Aciklama))
+                                {
+                                    <small class="ca-text-muted">@item.Aciklama</small>
+                                }
                             </td>
-                            <td style="font-family:monospace; font-size:.85rem;">@item.IBAN</td>
-                            <td>
-                                @if(item.Durum == 0) { <span class="ca-badge ca-badge-warning"><i class="fas fa-clock"></i> Bekliyor</span> }
-                                else if(item.Durum == 1) { <span class="ca-badge ca-badge-info"><i class="fas fa-check"></i> Onaylandı (Ürün Bekleniyor)</span> }
-                                else if(item.Durum == 2) { <span class="ca-badge ca-badge-success"><i class="fas fa-check-double"></i> Tamamlandı</span> }
-                                else { <span class="ca-badge ca-badge-danger"><i class="fas fa-times"></i> Reddedildi</span> }
-                            </td>
+                            <td>@IadeDurumBadge(item.Durum)</td>
                             <td class="text-end pe-4">
-                                <div class="d-inline-flex gap-1">
-                                    @if(item.Durum == 0)
-                                    {
-                                        <button class="ca-btn ca-btn-success ca-btn-sm" onclick="modalAc(@item.Id, 1)"><i class="fas fa-check"></i> Onayla</button>
-                                        <button class="ca-btn ca-btn-danger ca-btn-sm" onclick="modalAc(@item.Id, 3)"><i class="fas fa-times"></i> Reddet</button>
-                                    }
-                                    else if(item.Durum == 1)
-                                    {
-                                        <button class="ca-btn ca-btn-primary ca-btn-sm" onclick="modalAc(@item.Id, 2)"><i class="fas fa-check-double"></i> İadeyi Tamamla</button>
-                                    }
-                                </div>
+                                <a href="/Admin/Iade/Detay/@item.Id" class="ca-btn ca-btn-primary ca-btn-sm">
+                                    <i class="fas fa-eye"></i> İncele
+                                </a>
                             </td>
                         </tr>
                     }
@@ -63,34 +73,18 @@
     </div>
 </div>
 
-<div class="modal fade" id="islemModal" tabindex="-1">
-    <div class="modal-dialog">
-        <form action="/Admin/Iade/DurumGuncelle" method="post" class="modal-content" style="border:none; border-radius:var(--ca-radius-lg);">
-            @Html.AntiForgeryToken()
-            <div class="modal-header" style="background:var(--ca-surface); border-bottom:1px solid var(--ca-border);">
-                <h5 class="modal-title ca-fw-bold">İade İşlemi</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" name="id" id="talepId">
-                <input type="hidden" name="durum" id="yeniDurum">
-                <div class="ca-form-group">
-                    <label class="ca-label">Admin Notu (Müşteri Görecek)</label>
-                    <textarea name="adminNotu" class="ca-textarea" rows="3"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer" style="border-top:1px solid var(--ca-border);">
-                <button type="submit" class="ca-btn ca-btn-primary"><i class="fas fa-save"></i> Kaydet</button>
-            </div>
-        </form>
-    </div>
-</div>
+@functions {
+    private static Microsoft.AspNetCore.Html.IHtmlContent IadeDurumBadge(int durum)
+    {
+        var html = durum switch
+        {
+            0 => "<span class=\"ca-badge ca-badge-warning\"><i class=\"fas fa-clock\"></i> Bekliyor</span>",
+            1 => "<span class=\"ca-badge ca-badge-info\"><i class=\"fas fa-check\"></i> Onaylandı</span>",
+            2 => "<span class=\"ca-badge ca-badge-success\"><i class=\"fas fa-check-double\"></i> Tamamlandı</span>",
+            3 => "<span class=\"ca-badge ca-badge-danger\"><i class=\"fas fa-times\"></i> Reddedildi</span>",
+            _ => "<span class=\"ca-badge ca-badge-secondary\">Bilinmiyor</span>"
+        };
 
-<script>
-    function modalAc(id, durum) {
-        document.getElementById('talepId').value = id;
-        document.getElementById('yeniDurum').value = durum;
-        var myModal = new bootstrap.Modal(document.getElementById('islemModal'));
-        myModal.show();
+        return new Microsoft.AspNetCore.Html.HtmlString(html);
     }
-</script>
+}

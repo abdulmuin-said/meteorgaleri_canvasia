@@ -372,6 +372,25 @@ app.UseAuthorization();  // <--- Yetkisi var mÄ±?
 app.MapControllers();
 app.MapHealthChecks("/health");
 
+app.MapGet("/Admin", (HttpContext context) =>
+{
+    // Admin route'ı için yetki kontrolü - admin rolü olan kullanıcılar erişebilir
+    if (context.User?.Identity?.IsAuthenticated != true)
+    {
+        var returnUrl = Uri.EscapeDataString("/Admin/Home/Index");
+        return Results.Redirect($"/Hesap/GirisYap?returnUrl={returnUrl}");
+    }
+
+    // Kullanıcının admin rolü var mı kontrol et
+    var isAdmin = AdminSecurityRoles.AllAdminRoles.Any(role => context.User.IsInRole(role));
+    if (!isAdmin)
+    {
+        return Results.Redirect("/Hesap/ErisimEngellendi");
+    }
+
+    return Results.Redirect("/Admin/Home/Index");
+});
+
 // Hangfire ArayÃ¼zÃ¼ (Åimdilik yetkisiz eriÅŸim aÃ§Ä±k; daha sonra yetkilendirilecek)
 if (isDatabaseAvailableAtStartup)
 {

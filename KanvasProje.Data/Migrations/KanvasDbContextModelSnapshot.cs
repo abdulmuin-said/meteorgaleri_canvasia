@@ -678,6 +678,24 @@ namespace KanvasProje.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("FaturaDosyaAdi")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FaturaDosyaYolu")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("FaturaMailGonderildiMi")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("FaturaMailGonderimTarihi")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("FaturaYuklendiMi")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("FaturaYuklenmeTarihi")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Ilce")
                         .IsRequired()
                         .HasColumnType("text");
