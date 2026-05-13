@@ -98,12 +98,18 @@ namespace KanvasProje.Web.Controllers
                 secilenUrunler,
                 8);
 
-            var kategoriler = await _context.Kategoriler
+var kategoriler = await _context.Kategoriler
                 .AsNoTracking()
                 .Where(k => k.AktifMi && !k.SilindiMi && k.ParentKategoriId == null)
                 .OrderBy(k => k.Sira)
                 .ThenBy(k => k.Ad)
                 .Take(12)
+                .ToListAsync();
+
+            var aktifSlaytlar = await _context.Slaytlar
+                .AsNoTracking()
+                .Where(s => s.AktifMi)
+                .OrderBy(s => s.Sira)
                 .ToListAsync();
 
             var viewModel = new HomeViewModel
@@ -112,7 +118,8 @@ namespace KanvasProje.Web.Controllers
                 CokSatanlar = cokSatanlar,
                 FirsatUrunleri = firsatUrunleri,
                 Kategoriler = kategoriler,
-                HomePageSettings = _homePageSettingsService.GetSettings()
+                HomePageSettings = _homePageSettingsService.GetSettings(),
+                AktifSlaytlar = aktifSlaytlar
             };
 
             return View(viewModel);

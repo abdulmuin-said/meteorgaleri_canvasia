@@ -22,6 +22,185 @@ namespace KanvasProje.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("KanvasProje.Core.Models.SiteAyarlari", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Adres")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("BakimModuAktif")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("BakimModuMesaji")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("BaseUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("BildirimAliciEmail")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CalismaSaatleri")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CookieMetni")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FacebookPixelId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FacebookUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FaviconUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FooterAciklamasi")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("GoogleAnalyticsId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("IadeHakkiGun")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IadeTalebiMailBildirimi")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("InstagramUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("KampanyaMesaji")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("KargoBedeli")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("KargoFirmasi")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("KargoTakipUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("MarkaAdi")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("MetaDescription")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("MetaKeywords")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("MetaTitle")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ParaBirimi")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PinterestUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("SiparisTeslimSuresiGun")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SiteAciklamasi")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SiteAdi")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SiteBasligi")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SiteLogoUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("StokUyariLimiti")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("StokUyarisiMailBildirimi")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("StoktaYokSatisIzni")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Telefon")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TemaRengi")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TiktokUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TwitterUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("UcretsizKargoLimiti")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("UstBarMesaji")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("VarsayilanSosyalPaylasimGorseliUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("WhatsappNumarasi")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("YeniSiparisMailBildirimi")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("YoutubeUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SiteAyarlari");
+                });
+
             modelBuilder.Entity("KanvasProje.Core.Varliklar.Adres", b =>
                 {
                     b.Property<int>("Id")
@@ -793,6 +972,50 @@ namespace KanvasProje.Data.Migrations
                     b.HasIndex("UrunSecenekId");
 
                     b.ToTable("SiparisDetaylari");
+                });
+
+            modelBuilder.Entity("KanvasProje.Core.Varliklar.Slayt", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Aciklama")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("AktifMi")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("AltBaslik")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Baslik")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("OlusturmaTarihi")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ResimUrl")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Sira")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Tur")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("VideoUrl")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Slaytlar");
                 });
 
             modelBuilder.Entity("KanvasProje.Core.Varliklar.Urun", b =>

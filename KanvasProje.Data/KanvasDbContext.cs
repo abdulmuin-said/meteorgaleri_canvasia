@@ -1,5 +1,6 @@
 using KanvasProje.Core.Varliklar;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore; // Bu Kütüphane Şart
+using KanvasProje.Core.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace KanvasProje.Data
@@ -31,6 +32,10 @@ namespace KanvasProje.Data
         public DbSet<BultenAboneligi> BultenAbonelikleri { get; set; }
         public DbSet<IletisimMesaj> IletisimMesajlari { get; set; }
         public DbSet<SenTasarla> SenTasarla { get; set;}
+        
+        public DbSet<SiteAyarlari> SiteAyarlari { get; set; }
+        
+        public DbSet<Slayt> Slaytlar { get; set; }
         
         // PHASE 8: Database-backed Cart System
         public DbSet<Sepet> Sepetler { get; set; }

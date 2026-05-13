@@ -59,7 +59,7 @@ namespace KanvasProje.Service
             return sepet;
         }
 
-        public async Task<bool> SepeteEkleAsync(string? userId, string sessionId, int urunId, int? urunSecenekId, int adet, string? cerceveModeli = null, string? musteriNotu = null)
+        public async Task<bool> SepeteEkleAsync(string? userId, string sessionId, int urunId, int? urunSecenekId, int adet, string? cerceveModeli = null, string? musteriNotu = null, decimal? cerceveFarki = null)
         {
             try
             {
@@ -110,7 +110,7 @@ namespace KanvasProje.Service
                 }
                 else
                 {
-                    var fiyat = secenek?.SatisFiyati > 0 ? secenek.SatisFiyati : urun.EtkinFiyat;
+                    var fiyat = (secenek?.SatisFiyati > 0 ? secenek.SatisFiyati : urun.EtkinFiyat) + (cerceveFarki ?? 0);
                     var secenekAdi = secenek != null ? BuildVariantLabel(secenek) : null;
                     var gorsel = secenek != null && !string.IsNullOrWhiteSpace(secenek.GorselUrl)
                         ? secenek.GorselUrl

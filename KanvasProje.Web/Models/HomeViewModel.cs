@@ -10,5 +10,6 @@ namespace KanvasProje.Web.Models
         public List<Urun> FirsatUrunleri { get; set; } = new List<Urun>();
         public List<Kategori> Kategoriler { get; set; } = new List<Kategori>();
         public HomePageSettingsModel HomePageSettings { get; set; } = new HomePageSettingsModel();
+        public List<Slayt> AktifSlaytlar { get; set; } = new List<Slayt>();
     }
 }

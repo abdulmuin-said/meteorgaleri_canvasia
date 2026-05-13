@@ -7,7 +7,7 @@
     var siparis = Model.Siparis;
     var detaylar = siparis?.SiparisDetaylari?.Where(x => !x.SilindiMi).ToList() ?? new List<KanvasProje.Core.Varliklar.SiparisDetay>();
     var iadeHakkiGun = ViewBag.IadeHakkiGun is int gun ? gun : 14;
-    var iadeSonTarih = ViewBag.IadeSonTarih is DateTime sonTarih ? sonTarih : siparis.OlusturulmaTarihi.ToUniversalTime().AddDays(iadeHakkiGun);
+    var iadeSonTarih = ViewBag.IadeSonTarih is DateTime sonTarih ? sonTarih : (siparis?.OlusturulmaTarihi.ToUniversalTime().AddDays(iadeHakkiGun) ?? DateTime.UtcNow.AddDays(iadeHakkiGun));
     var talepZamanindaMi = ViewBag.IadeTalepZamanindaMi is bool zamanindaMi && zamanindaMi;
 }
 
@@ -37,9 +37,9 @@
                 <div class="ca-card-header d-flex justify-content-between align-items-center">
                     <div>
                         <h2 class="ca-card-title mb-1">Sipariş Bilgileri</h2>
-                        <div class="ca-text-muted">@(string.IsNullOrWhiteSpace(siparis.SiparisNo) ? $"#{siparis.Id}" : siparis.SiparisNo)</div>
+                        <div class="ca-text-muted">@(string.IsNullOrWhiteSpace(siparis?.SiparisNo) ? $"#{siparis?.Id}" : siparis?.SiparisNo)</div>
                     </div>
-                    <span class="ca-badge ca-badge-info">@SiparisDurumHelper.GetShortLabel(siparis.Durum)</span>
+                    <span class="ca-badge ca-badge-info">@SiparisDurumHelper.GetShortLabel(siparis?.Durum ?? 0)</span>
                 </div>
                 <div class="ca-card-body">
                     <div class="row g-3">

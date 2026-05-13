@@ -296,7 +296,7 @@ ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTit
         <!-- Left: Image Gallery -->
         <div class="space-y-4">
             <div class="relative bg-[#f1ede7] aspect-square rounded-lg overflow-hidden group cursor-zoom-in" onclick="openProductLightbox()">
-                                    <img id="mainProductImage" src="@varsayilanGaleriGorseli" data-default-src="@(varsayilanMedya?.ResimYolu ?? Model.AnaGorselUrl)" data-default-alt="@varsayilanGaleriAltMetni" data-product-name="@Model.Baslik" class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105" alt="@varsayilanGaleriAltMetni" decoding="async" fetchpriority="high">
+                                    <img id="mainProductImage" src="@varsayilanGaleriGorseli" data-default-src="@(varsayilanMedya?.ResimYolu ?? Model.AnaGorselUrl)" data-default-alt="@varsayilanGaleriAltMetni" data-product-name="@Model.Baslik" class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 main-product-image" alt="@varsayilanGaleriAltMetni" decoding="async" fetchpriority="high">
                 
                 <button type="button" class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm w-10 h-10 rounded-full shadow-sm text-[#313511] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white z-10" onclick="navigateGallery('prev', event)">
                     <i class="fas fa-chevron-left"></i>
@@ -373,55 +373,9 @@ ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTit
                 <i class="fas fa-layer-group mr-1.5"></i>@seciliVaryantMetni
             </div>
 
-            @if (!string.IsNullOrWhiteSpace(Model.KisaAciklama))
+@if (!string.IsNullOrWhiteSpace(Model.KisaAciklama))
             {
                 <p class="text-sm text-[#47473d] mb-8 leading-relaxed">@Model.KisaAciklama</p>
-            }
-
-            <div class="mb-8 flex flex-wrap items-center gap-3 border-y border-[#e5e2dc] py-4">
-                <span class="mr-1 text-xs uppercase tracking-widest text-[#47473d]">Paylaş</span>
-                <a href="https://www.facebook.com/sharer/sharer.php?u=@encodedProductUrl" target="_blank" rel="noopener noreferrer" aria-label="Facebook'ta paylaş" class="flex h-9 w-9 items-center justify-center rounded-full border border-[#e5e2dc] bg-white text-[#313511] transition-colors hover:border-[#b58735] hover:text-[#b58735]">
-                    <i class="fab fa-facebook-f text-sm"></i>
-                </a>
-                <a href="@(string.IsNullOrWhiteSpace(siteSettings.InstagramUrl) ? "https://www.instagram.com/" : siteSettings.InstagramUrl)" target="_blank" rel="noopener noreferrer" aria-label="Instagram'da aç" class="flex h-9 w-9 items-center justify-center rounded-full border border-[#e5e2dc] bg-white text-[#313511] transition-colors hover:border-[#b58735] hover:text-[#b58735]">
-                    <i class="fab fa-instagram text-sm"></i>
-                </a>
-                <a href="https://wa.me/?text=@encodedProductTitle%20@encodedProductUrl" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp ile paylaş" class="flex h-9 w-9 items-center justify-center rounded-full border border-[#e5e2dc] bg-white text-[#313511] transition-colors hover:border-[#b58735] hover:text-[#b58735]">
-                    <i class="fab fa-whatsapp text-sm"></i>
-                </a>
-                <button type="button" onclick="copyProductLink(this)" data-url="@productUrl" class="flex h-9 items-center gap-2 rounded-full border border-[#e5e2dc] bg-white px-4 text-xs uppercase tracking-widest text-[#313511] transition-colors hover:border-[#b58735] hover:text-[#b58735]">
-                    <i class="fas fa-link text-xs"></i>
-                    Linki Kopyala
-                </button>
-            </div>
-
-            <div class="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div class="border border-[#e5e2dc] bg-white px-4 py-3">
-                    <p class="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#313511]"><i class="fas fa-industry text-[#b58735]"></i> Üretim</p>
-                    <p id="productionCardText" class="text-sm text-[#47473d]">@(gosterilecekUretimSuresi > 0 ? $"{gosterilecekUretimSuresi} iş günü" : "Siparişe özel hazırlanır")</p>
-                </div>
-                <div class="border border-[#e5e2dc] bg-white px-4 py-3">
-                    <p class="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#313511]"><i class="fas fa-box-open text-[#b58735]"></i> Paketleme</p>
-                    <p class="text-sm text-[#47473d]">Özenli ve korunaklı teslimat</p>
-                </div>
-                <div class="border border-[#e5e2dc] bg-white px-4 py-3">
-                    <p class="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#313511]"><i class="fas fa-route text-[#b58735]"></i> Teslimat</p>
-                    <p class="text-sm text-[#47473d]">Tahmini @gosterilecekTeslimSuresi iş günü</p>
-                </div>
-            </div>
-
-            @if (!string.IsNullOrWhiteSpace(Model.MalzemeBilgisi) || !string.IsNullOrWhiteSpace(Model.PaketlemeBilgisi))
-            {
-                <div class="mb-8 border-l-2 border-[#b58735] bg-[#f1ede7] px-5 py-4">
-                    @if (!string.IsNullOrWhiteSpace(Model.MalzemeBilgisi))
-                    {
-                        <p class="mb-2 text-sm text-[#1c1c18]"><span class="font-semibold">Malzeme:</span> @Model.MalzemeBilgisi</p>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(Model.PaketlemeBilgisi))
-                    {
-                        <p class="text-sm text-[#47473d]"><span class="font-semibold text-[#1c1c18]">Paketleme:</span> @Model.PaketlemeBilgisi</p>
-                    }
-                </div>
             }
 
             @if (secenekler.Any())
@@ -442,7 +396,7 @@ ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTit
                             var disabledAttr = !varyantSatinAlinabilir ? "disabled" : null;
                             
                             <label class="relative border border-[#e5e2dc] rounded px-4 py-2 cursor-pointer transition-colors hover:border-[#b58735] has-[:checked]:border-[#313511] has-[:checked]:bg-[#313511] has-[:checked]:text-white @(!varyantSatinAlinabilir ? "opacity-50 cursor-not-allowed" : "text-[#47473d]")">
-                                <input type="radio" id="variant-@varyant.Id" name="productVariant" value="@varyant.Id" class="variant-radio absolute opacity-0 w-0 h-0" checked="@checkedAttr" disabled="@disabledAttr" data-price="@varyant.SatisFiyati" data-oldprice="@(varyantOldPrice > 0 ? varyantOldPrice.ToString(System.Globalization.CultureInfo.InvariantCulture) : string.Empty)" data-stock="@varyant.StokAdedi" data-preorder="@varyant.OnSipariseAcikMi.ToString().ToLowerInvariant()" data-production="@varyantUretimSuresi" data-image="@varyantMedyaUrl" data-label="@cleanVb">
+                                <input type="radio" id="variant-@varyant.Id" name="productVariant" value="@varyant.Id" class="variant-radio absolute opacity-0 w-0 h-0" checked="@checkedAttr" disabled="@disabledAttr" data-price="@varyant.SatisFiyati" data-oldprice="@(varyantOldPrice > 0 ? varyantOldPrice.ToString(System.Globalization.CultureInfo.InvariantCulture) : string.Empty)" data-stock="@varyant.StokAdedi" data-preorder="@varyant.OnSipariseAcikMi.ToString().ToLowerInvariant()" data-production="@varyantUretimSuresi" data-image="@varyantMedyaUrl" data-label="@cleanVb" data-olcu="@cleanVb">
                                 <span class="text-sm font-medium">@cleanVb</span>
                             </label>
                         }
@@ -472,7 +426,7 @@ ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTit
                             var map = cerceveMap.GetValueOrDefault(cerceve, (image: string.Empty, label: cerceve));
                             <label class="group relative cursor-pointer rounded-lg border-2 border-[#e5e2dc] bg-white p-2 text-center transition-all hover:border-[#b58735] has-[:checked]:border-[#b58735] has-[:checked]:bg-[#f7f1e6] has-[:checked]:shadow-sm"
                                    title="@map.label"
-                                   onclick="selectFrameOption(this, '@cerceve')">
+                                   onclick="selectFrameOption(this, '@cerceve'); updatePriceWithFrame();">
                                 <input type="radio" name="CerceveModeli" value="@cerceve" class="frame-radio absolute h-0 w-0 opacity-0" />
                                 <div class="mb-1.5 flex h-16 items-center justify-center">
                                     <img src="@map.image" alt="@map.label" class="max-h-full max-w-full object-contain" loading="lazy" onerror="this.style.display='none'" />
@@ -506,15 +460,73 @@ ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTit
                         <input type="hidden" id="selectedVariantId" name="SecenekId" value="@varsayilanSecenek?.Id" />
                         <input type="hidden" id="selectedQuantity" name="Adet" value="@minSiparisAdedi" />
                         <input type="hidden" id="selectedFrameModel" name="CerceveModeli" value="" />
+                        <input type="hidden" id="selectedFrameFarki" name="CerceveFarki" value="0" />
 
                         <button type="button" id="ajaxSepetBtn" class="w-full h-12 bg-[#313511] text-white text-xs uppercase tracking-widest rounded hover:bg-[#1c2001] transition-colors flex items-center justify-center gap-2">
-                            <i class="fas fa-shopping-bag"></i> Sepete Ekle
+                            <i class="fas fa-shopping-bag add-to-cart-icon"></i> <span class="add-to-cart-text">Sepete Ekle</span>
                         </button>
                     </form>
                     <button type="button" onclick="window.toggleFavori(this, @Model.Id)" class="group/btn h-12 w-12 flex-shrink-0 flex items-center justify-center border border-[#e5e2dc] rounded hover:border-[#b58735] transition-colors bg-white" title="Favorilere Ekle">
                         <i class="far fa-heart text-[#47473d] group-hover/btn:text-red-500 transition-colors text-lg"></i>
                     </button>
                 </div>
+
+                <div id="selectionSummary" class="hidden mb-6 border border-[#b58735] bg-[#fcf9f3] rounded-lg px-4 py-3">
+                    <p class="text-xs font-medium text-[#1c1c18] mb-1">Seçilen:</p>
+                    <p class="text-sm text-[#313511] font-semibold">
+                        <span id="summaryOlcu">-</span> | <span id="summaryCerceve">Çerçeve seçiniz</span>
+                    </p>
+                    <p class="text-base text-[#1c1c18] font-bold mt-1">
+                        Toplam: <span id="summaryFiyat">0 @currencySymbol</span>
+                        <span id="summaryBirimFiyat" class="text-xs text-[#47473d] font-normal ml-2"></span>
+                    </p>
+                </div>
+
+                <div class="mb-8 flex flex-wrap items-center gap-3 border-y border-[#e5e2dc] py-4">
+                <span class="mr-1 text-xs uppercase tracking-widest text-[#47473d]">Paylaş</span>
+                <a href="https://www.facebook.com/sharer/sharer.php?u=@encodedProductUrl" target="_blank" rel="noopener noreferrer" aria-label="Facebook'ta paylaş" class="flex h-9 w-9 items-center justify-center rounded-full border border-[#e5e2dc] bg-white text-[#313511] transition-colors hover:border-[#b58735] hover:text-[#b58735]">
+                    <i class="fab fa-facebook-f text-sm"></i>
+                </a>
+                <a href="@(string.IsNullOrWhiteSpace(siteSettings.InstagramUrl) ? "https://www.instagram.com/" : siteSettings.InstagramUrl)" target="_blank" rel="noopener noreferrer" aria-label="Instagram'da aç" class="flex h-9 w-9 items-center justify-center rounded-full border border-[#e5e2dc] bg-white text-[#313511] transition-colors hover:border-[#b58735] hover:text-[#b58735]">
+                    <i class="fab fa-instagram text-sm"></i>
+                </a>
+                <a href="https://wa.me/?text=@encodedProductTitle%20@encodedProductUrl" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp ile paylaş" class="flex h-9 w-9 items-center justify-center rounded-full border border-[#e5e2dc] bg-white text-[#313511] transition-colors hover:border-[#b58735] hover:text-[#b58735]">
+                    <i class="fab fa-whatsapp text-sm"></i>
+                </a>
+                <button type="button" onclick="copyProductLink(this)" data-url="@productUrl" class="flex h-9 items-center gap-2 rounded-full border border-[#e5e2dc] bg-white px-4 text-xs uppercase tracking-widest text-[#313511] transition-colors hover:border-[#b58735] hover:text-[#b58735]">
+                    <i class="fas fa-link text-xs"></i>
+                    Linki Kopyala
+                </button>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.MalzemeBilgisi) || !string.IsNullOrWhiteSpace(Model.PaketlemeBilgisi))
+            {
+                <div class="mb-8 border-l-2 border-[#b58735] bg-[#f1ede7] px-5 py-4">
+                    @if (!string.IsNullOrWhiteSpace(Model.MalzemeBilgisi))
+                    {
+                        <p class="mb-2 text-sm text-[#1c1c18]"><span class="font-semibold">Malzeme:</span> @Model.MalzemeBilgisi</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.PaketlemeBilgisi))
+                    {
+                        <p class="text-sm text-[#47473d]"><span class="font-semibold text-[#1c1c18]">Paketleme:</span> @Model.PaketlemeBilgisi</p>
+                    }
+                </div>
+            }
+
+            <div class="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div class="border border-[#e5e2dc] bg-white px-4 py-3">
+                    <p class="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#313511]"><i class="fas fa-industry text-[#b58735]"></i> Üretim</p>
+                    <p id="productionCardText" class="text-sm text-[#47473d]">@(gosterilecekUretimSuresi > 0 ? $"{gosterilecekUretimSuresi} iş günü" : "Siparişe özel hazırlanır")</p>
+                </div>
+                <div class="border border-[#e5e2dc] bg-white px-4 py-3">
+                    <p class="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#313511]"><i class="fas fa-box-open text-[#b58735]"></i> Paketleme</p>
+                    <p class="text-sm text-[#47473d]">Özenli ve korunaklı teslimat</p>
+                </div>
+                <div class="border border-[#e5e2dc] bg-white px-4 py-3">
+                    <p class="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#313511]"><i class="fas fa-route text-[#b58735]"></i> Teslimat</p>
+                    <p class="text-sm text-[#47473d]">Tahmini @gosterilecekTeslimSuresi iş günü</p>
+                </div>
+            </div>
             }
             else
             {
@@ -768,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
             commentModal.classList.remove('hidden');
             commentModal.classList.add('flex');
         }));
-        
+
         const closeCommentBtn = document.getElementById('closeCommentModalBtn');
         if (closeCommentBtn) {
             closeCommentBtn.addEventListener('click', () => {
@@ -777,25 +789,36 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
+
+    setTimeout(updateSelectionSummary, 100);
 });
 
 let currentZoom = 1;
 
 function openProductLightbox() {
     if (window.innerWidth >= 1024) {
-        document.getElementById('desktopLightboxModal').classList.remove('hidden');
-        document.getElementById('desktopLightboxModal').classList.add('flex');
-        resetDesktopZoom();
+        const dm = document.getElementById('desktopLightboxModal');
+        if (dm) {
+            dm.classList.remove('hidden');
+            dm.classList.add('flex');
+            resetDesktopZoom();
+        }
     } else {
-        document.getElementById('mobileLightbox').classList.remove('hidden');
-        document.getElementById('mobileLightbox').classList.add('flex');
-        resetMobileZoom();
+        const mm = document.getElementById('mobileLightbox');
+        if (mm) {
+            mm.classList.remove('hidden');
+            mm.classList.add('flex');
+            resetMobileZoom();
+        }
     }
 }
 
 function closeMobileLightbox() {
-    document.getElementById('mobileLightbox').classList.add('hidden');
-    document.getElementById('mobileLightbox').classList.remove('flex');
+    const mm = document.getElementById('mobileLightbox');
+    if (mm) {
+        mm.classList.add('hidden');
+        mm.classList.remove('flex');
+    }
 }
 
 function resetMobileZoom() {
@@ -851,15 +874,89 @@ function changeProductImage(imageUrl, thumbnailElement, altText) {
     const mobImg = document.getElementById('mobileLightboxImage');
     if (mobImg) mobImg.src = imageUrl;
     
-    document.querySelectorAll('.thumbnail-item').forEach(item => {
-        item.classList.remove('border-[#313511]');
-        item.classList.add('border-transparent');
+    const thumbnails = document.querySelectorAll('.thumbnail-item');
+    thumbnails.forEach(item => {
+        if (item) {
+            item.classList.remove('border-[#313511]');
+            item.classList.add('border-transparent');
+        }
     });
     if (thumbnailElement) {
         thumbnailElement.classList.remove('border-transparent');
         thumbnailElement.classList.add('border-[#313511]');
         thumbnailElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
+}
+
+const FRAME_PRICE_PER_METER = 250;
+
+function parseOlcu(olcuText) {
+    if (!olcuText) return null;
+    var match = olcuText.match(/(\d+(?:[.,]\d+)?)\s*(?:cm)?\s*[xX×]\s*(\d+(?:[.,]\d+)?)/i);
+    if (!match) return null;
+    var w = parseFloat(match[1].replace(',', '.'));
+    var h = parseFloat(match[2].replace(',', '.'));
+    if (isNaN(w) || isNaN(h)) return null;
+    return { width: w, height: h };
+}
+
+function calcFrameFiyat(olcuText, cerceve) {
+    if (!cerceve || cerceve === 'Çerçevesiz') return 0;
+    var dims = parseOlcu(olcuText);
+    if (!dims) return 0;
+    var cevreMetre = ((dims.width + dims.height) * 2) / 100;
+    return cevreMetre * FRAME_PRICE_PER_METER;
+}
+
+function updateSelectionSummary() {
+    var selectedVariant = document.querySelector('.variant-radio:checked');
+    var selectedFrame = document.querySelector('.frame-radio:checked');
+    var summary = document.getElementById('selectionSummary');
+    if (!summary) return;
+
+    if (!selectedVariant && !selectedFrame) {
+        summary.classList.add('hidden');
+        return;
+    }
+
+    var olcu = selectedVariant ? selectedVariant.getAttribute('data-olcu') || selectedVariant.getAttribute('data-label') || '-' : '-';
+    var cerceve = selectedFrame ? selectedFrame.value : null;
+    var temelFiyat = selectedVariant ? parseFloat(selectedVariant.getAttribute('data-price')) || 0 : 0;
+    var adet = parseInt(document.getElementById('productQuantity')?.value) || 1;
+    var cerceveFarki = selectedVariant ? calcFrameFiyat(olcu, cerceve || 'Çerçevesiz') : 0;
+    var toplamBirim = temelFiyat + cerceveFarki;
+    var toplam = toplamBirim * adet;
+
+    document.getElementById('summaryOlcu').textContent = olcu;
+    document.getElementById('summaryCerceve').textContent = cerceve || 'Çerçeve seçiniz';
+    document.getElementById('summaryFiyat').textContent = toplam.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' @currencySymbol';
+    document.getElementById('summaryBirimFiyat').textContent = adet > 1 ? `(birim: ${toplamBirim.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} @currencySymbol)` : '';
+
+    summary.classList.remove('hidden');
+}
+
+function updatePriceWithFrame() {
+    var selectedVariant = document.querySelector('.variant-radio:checked');
+    var selectedFrame = document.querySelector('.frame-radio:checked');
+    if (!selectedVariant) return;
+
+    var basePrice = parseFloat(selectedVariant.getAttribute('data-price')) || 0;
+    var olcu = selectedVariant.getAttribute('data-olcu') || selectedVariant.getAttribute('data-label') || '';
+    var cerceve = selectedFrame ? selectedFrame.value : null;
+    var cerceveFarki = calcFrameFiyat(olcu, cerceve || 'Çerçevesiz');
+    var newPrice = basePrice + cerceveFarki;
+
+    var priceDisplay = document.getElementById('priceDisplay');
+    if (priceDisplay) {
+        priceDisplay.innerHTML = `${newPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} @currencySymbol`;
+    }
+
+    var frameFarkiInput = document.getElementById('selectedFrameFarki');
+    if (frameFarkiInput) {
+        frameFarkiInput.value = cerceveFarki.toFixed(2);
+    }
+
+    updateSelectionSummary();
 }
 
 document.querySelectorAll('.variant-radio').forEach(radio => {
@@ -872,12 +969,11 @@ document.querySelectorAll('.variant-radio').forEach(radio => {
             const isPreorder = this.getAttribute('data-preorder') === 'true';
             const stock = parseInt(this.getAttribute('data-stock')) || 0;
             const productionDays = parseInt(this.getAttribute('data-production')) || 0;
-            
+
             const selectedVariantId = document.getElementById('selectedVariantId');
             if (selectedVariantId) selectedVariantId.value = this.value;
-            
-            const priceDisplay = document.getElementById('priceDisplay');
-            if (priceDisplay) priceDisplay.innerHTML = `${price.toLocaleString('tr-TR', {minimumFractionDigits: 2})} ${PRODUCT_CURRENCY}`;
+
+            updatePriceWithFrame();
             
             const oldPriceDisplay = document.getElementById('oldPriceDisplay');
             const discountBadge = document.getElementById('discountBadge');
@@ -943,12 +1039,19 @@ document.querySelectorAll('.variant-radio').forEach(radio => {
 document.querySelectorAll('.frame-radio').forEach(radio => {
     radio.addEventListener('change', function () {
         const selectedFrameModel = document.getElementById('selectedFrameModel');
+        if (selectedFrameModel) selectedFrameModel.value = this.value;
         const frameSelectionError = document.getElementById('frameSelectionError');
         const frameSelectionBlock = document.getElementById('frameSelectionBlock');
+        if (frameSelectionError) frameSelectionError.classList.add('hidden');
+        if (frameSelectionBlock) frameSelectionBlock.classList.remove('ring-2', 'ring-red-400', 'ring-offset-2');
 
-        if (selectedFrameModel) selectedFrameModel.value = this.value;
-        frameSelectionError?.classList.add('hidden');
-        frameSelectionBlock?.classList.remove('ring-2', 'ring-red-400', 'ring-offset-2');
+        updatePriceWithFrame();
+    });
+});
+
+document.querySelectorAll('.variant-radio').forEach(radio => {
+    radio.addEventListener('change', function () {
+        updatePriceWithFrame();
     });
 });
 
@@ -962,6 +1065,7 @@ function increaseQuantity() {
     if (val < max) {
         input.value = val + 1;
         if (selectedInput) selectedInput.value = val + 1;
+        updateSelectionSummary();
     }
 }
 
@@ -975,22 +1079,22 @@ function decreaseQuantity() {
     if (val > min) {
         input.value = val - 1;
         if (selectedInput) selectedInput.value = val - 1;
+        updateSelectionSummary();
     }
 }
 
 const ajaxSepetBtn = document.getElementById('ajaxSepetBtn');
 if (ajaxSepetBtn) {
-    ajaxSepetBtn.addEventListener('click', function (e) {
+    ajaxSepetBtn.addEventListener('click', async function (e) {
         e.preventDefault();
         const form = document.getElementById('addToCartForm');
-        const formData = new FormData(form);
         const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
         const frameSelectionBlock = document.getElementById('frameSelectionBlock');
         const selectedFrame = document.querySelector('input[name="CerceveModeli"]:checked');
 
         if (frameSelectionBlock && !selectedFrame) {
             const frameSelectionError = document.getElementById('frameSelectionError');
-            frameSelectionError?.classList.remove('hidden');
+            if (frameSelectionError) frameSelectionError.classList.remove('hidden');
             frameSelectionBlock.classList.add('ring-2', 'ring-red-400', 'ring-offset-2');
             frameSelectionBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
@@ -1003,48 +1107,82 @@ if (ajaxSepetBtn) {
             return;
         }
         
-        let url = `/Sepet/Ekle?UrunId=${formData.get('UrunId')}&Adet=${formData.get('Adet')}`;
-        if (formData.get('SecenekId')) url += `&SecenekId=${formData.get('SecenekId')}`;
-        if (selectedFrame) url += `&CerceveModeli=${encodeURIComponent(selectedFrame.value)}`;
+        const url = '/Sepet/Ekle';
+        const urunId = form.querySelector('input[name="UrunId"]')?.value;
+        const adet = form.querySelector('input[name="Adet"]')?.value;
+        const secenekId = document.getElementById('selectedVariantId')?.value;
+        const cerceveModeli = selectedFrame?.value;
+        const cerceveFarki = document.getElementById('selectedFrameFarki')?.value;
+        
+        const params = new URLSearchParams();
+        params.append('UrunId', urunId);
+        params.append('Adet', adet || '1');
+        if (secenekId) params.append('SecenekId', secenekId);
+        if (cerceveModeli) params.append('CerceveModeli', cerceveModeli);
+        if (cerceveFarki && cerceveFarki !== '0') params.append('CerceveFarki', cerceveFarki);
         
         const originalHtml = this.innerHTML;
-        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ekleniyor...';
+        this.innerHTML = '<i class="fas fa-check"></i> Eklendi!';
         this.disabled = true;
 
-        fetch(url, {
+        fetch(url + '?' + params.toString(), {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'RequestVerificationToken': token
             }
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                const btn = this;
+                const icon = btn.querySelector('.add-to-cart-icon');
+                const text = btn.querySelector('.add-to-cart-text');
+                
+                if (icon) {
+                    icon.classList.remove('fa-shopping-bag');
+                    icon.classList.add('fa-check');
+                }
+                if (text) {
+                    text.textContent = 'Eklendi!';
+                }
+                btn.classList.add('bg-green-600');
+
+                // Update cart counter with bounce
+                const cartCounter = document.getElementById('cartItemCount');
+                const cartCounterMobile = document.getElementById('cartItemCountMobile');
+                const cartCounters = [cartCounter, cartCounterMobile].filter(el => el);
+                
+                cartCounters.forEach(counter => {
+                    let current = parseInt(counter.innerText) || 0;
+                    let added = parseInt(adet) || 1;
+                    counter.innerText = current + added;
+                    counter.classList.add('scale-150', 'bounce-animation');
+                    setTimeout(() => {
+                        counter.classList.remove('scale-150', 'bounce-animation');
+                        counter.classList.add('scale-125');
+                        setTimeout(() => counter.classList.remove('scale-125'), 150);
+                    }, 300);
+                });
+
                 if (window.showToast) {
                     window.showToast('Ürün başarıyla sepetinize eklendi.', 'success');
                 }
-
-                setTimeout(function() {
-                    if (data.redirectUrl) {
-                        window.location.href = data.redirectUrl;
-                    } else {
-                        window.location.href = '/Sepet';
+                
+                // 1 saniye sonra butonu sıfırla (tekrar tıklanabilir olsun)
+                setTimeout(() => {
+                    if (icon) {
+                        icon.classList.remove('fa-check');
+                        icon.classList.add('fa-shopping-bag');
                     }
-                }, 600);
-
-                const cartCounter = document.getElementById('cartItemCount');
-                if (cartCounter) {
-                    let current = parseInt(cartCounter.innerText) || 0;
-                    let added = parseInt(formData.get('Adet')) || 1;
-                    cartCounter.innerText = current + added;
-
-                    cartCounter.classList.add('scale-150');
-                    setTimeout(() => cartCounter.classList.remove('scale-150'), 300);
-                }
-
-                this.innerHTML = originalHtml;
-                this.disabled = false;
+                    if (text) text.textContent = 'Sepete Ekle';
+                    btn.classList.remove('bg-green-600');
+                    btn.disabled = false;
+                }, 1000);
+                
+                // 2 saniye sonra sepete yönlendir
+                setTimeout(() => {
+                    window.location.href = '/Sepet';
+                }, 2000);
             } else {
                 if (window.showToast) {
                     window.showToast(data.message || 'Hata oluştu', 'error');
@@ -1115,8 +1253,12 @@ function copyProductLink(button) {
 }
 
 function selectFrameOption(label, value) {
-    document.querySelectorAll('input[name="CerceveModeli"]').forEach(r => r.checked = false);
+    const radios = document.querySelectorAll('input[name="CerceveModeli"]');
+    radios.forEach(r => r.checked = false);
     const radio = label.querySelector('input[name="CerceveModeli"]');
-    if (radio) radio.checked = true;
+    if (radio) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change', { bubbles: true }));
+    }
 }
 </script>

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using KanvasProje.Core.Models;
-using Microsoft.AspNetCore.Hosting;
+using KanvasProje.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace KanvasProje.Service.Services
@@ -16,7 +17,7 @@ namespace KanvasProje.Service.Services
     {
         private const string CacheKey = "site-settings";
 
-        private readonly IWebHostEnvironment _env;
+        private readonly KanvasDbContext _context;
         private readonly IMemoryCache _cache;
         private readonly JsonSerializerOptions _serializerOptions = new()
         {
@@ -24,11 +25,9 @@ namespace KanvasProje.Service.Services
             Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
 
-        private string SettingsPath => Path.Combine(_env.ContentRootPath, "App_Data", "site-settings.json");
-
-        public SiteSettingsService(IWebHostEnvironment env, IMemoryCache cache)
+        public SiteSettingsService(KanvasDbContext context, IMemoryCache cache)
         {
-            _env = env;
+            _context = context;
             _cache = cache;
         }
 
@@ -44,15 +43,62 @@ namespace KanvasProje.Service.Services
         public void SaveSettings(SiteAyarlari settings)
         {
             var normalized = NormalizeSettings(settings);
-            var directory = Path.GetDirectoryName(SettingsPath)!;
 
-            if (!Directory.Exists(directory))
+            var existing = _context.SiteAyarlari.FirstOrDefault();
+            if (existing != null)
             {
-                Directory.CreateDirectory(directory);
+                existing.SiteAdi = normalized.SiteAdi;
+                existing.MarkaAdi = normalized.MarkaAdi;
+                existing.SiteBasligi = normalized.SiteBasligi;
+                existing.SiteAciklamasi = normalized.SiteAciklamasi;
+                existing.SiteLogoUrl = normalized.SiteLogoUrl;
+                existing.FaviconUrl = normalized.FaviconUrl;
+                existing.BaseUrl = normalized.BaseUrl;
+                existing.TemaRengi = normalized.TemaRengi;
+                existing.UstBarMesaji = normalized.UstBarMesaji;
+                existing.KampanyaMesaji = normalized.KampanyaMesaji;
+                existing.FooterAciklamasi = normalized.FooterAciklamasi;
+                existing.Telefon = normalized.Telefon;
+                existing.Email = normalized.Email;
+                existing.Adres = normalized.Adres;
+                existing.WhatsappNumarasi = normalized.WhatsappNumarasi;
+                existing.CalismaSaatleri = normalized.CalismaSaatleri;
+                existing.FacebookUrl = normalized.FacebookUrl;
+                existing.InstagramUrl = normalized.InstagramUrl;
+                existing.TwitterUrl = normalized.TwitterUrl;
+                existing.YoutubeUrl = normalized.YoutubeUrl;
+                existing.TiktokUrl = normalized.TiktokUrl;
+                existing.PinterestUrl = normalized.PinterestUrl;
+                existing.ParaBirimi = normalized.ParaBirimi;
+                existing.KargoBedeli = normalized.KargoBedeli;
+                existing.UcretsizKargoLimiti = normalized.UcretsizKargoLimiti;
+                existing.StokUyariLimiti = normalized.StokUyariLimiti;
+                existing.StoktaYokSatisIzni = normalized.StoktaYokSatisIzni;
+                existing.KargoFirmasi = normalized.KargoFirmasi;
+                existing.KargoTakipUrl = normalized.KargoTakipUrl;
+                existing.SiparisTeslimSuresiGun = normalized.SiparisTeslimSuresiGun;
+                existing.IadeHakkiGun = normalized.IadeHakkiGun;
+                existing.MetaTitle = normalized.MetaTitle;
+                existing.MetaDescription = normalized.MetaDescription;
+                existing.MetaKeywords = normalized.MetaKeywords;
+                existing.GoogleAnalyticsId = normalized.GoogleAnalyticsId;
+                existing.FacebookPixelId = normalized.FacebookPixelId;
+                existing.VarsayilanSosyalPaylasimGorseliUrl = normalized.VarsayilanSosyalPaylasimGorseliUrl;
+                existing.CookieMetni = normalized.CookieMetni;
+                existing.YeniSiparisMailBildirimi = normalized.YeniSiparisMailBildirimi;
+                existing.StokUyarisiMailBildirimi = normalized.StokUyarisiMailBildirimi;
+                existing.IadeTalebiMailBildirimi = normalized.IadeTalebiMailBildirimi;
+                existing.BildirimAliciEmail = normalized.BildirimAliciEmail;
+                existing.BakimModuAktif = normalized.BakimModuAktif;
+                existing.BakimModuMesaji = normalized.BakimModuMesaji;
+            }
+            else
+            {
+                normalized.Id = 1;
+                _context.SiteAyarlari.Add(normalized);
             }
 
-            var json = JsonSerializer.Serialize(normalized, _serializerOptions);
-            File.WriteAllText(SettingsPath, json);
+            _context.SaveChanges();
             _cache.Remove(CacheKey);
         }
 
@@ -81,21 +127,8 @@ namespace KanvasProje.Service.Services
 
         private SiteAyarlari LoadSettings()
         {
-            if (!File.Exists(SettingsPath))
-            {
-                return NormalizeSettings(new SiteAyarlari());
-            }
-
-            try
-            {
-                var json = File.ReadAllText(SettingsPath);
-                var settings = JsonSerializer.Deserialize<SiteAyarlari>(json);
-                return NormalizeSettings(settings ?? new SiteAyarlari());
-            }
-            catch
-            {
-                return NormalizeSettings(new SiteAyarlari());
-            }
+            var settings = _context.SiteAyarlari.FirstOrDefault();
+            return NormalizeSettings(settings ?? new SiteAyarlari());
         }
 
         private static SiteAyarlari NormalizeSettings(SiteAyarlari settings)

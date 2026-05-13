@@ -184,7 +184,7 @@ builder.Services.AddScoped<ZiyaretciTakipAttribute>();
 
 // 7. HTTP Context Accessor
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddSingleton<ISiteSettingsService, SiteSettingsService>();
+builder.Services.AddScoped<ISiteSettingsService, SiteSettingsService>();
 builder.Services.AddSingleton<IHomePageSettingsService, HomePageSettingsService>();
 builder.Services.AddSingleton<IAdminSecurityAuditService, AdminSecurityAuditService>();
 builder.Services.AddSingleton<IAdminSessionStateService, AdminSessionStateService>();

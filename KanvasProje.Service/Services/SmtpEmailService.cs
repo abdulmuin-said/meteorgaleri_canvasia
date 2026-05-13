@@ -312,8 +312,11 @@ private static bool IsBrevoSmtpLoginAddress(string? email)
                 mailMessage.To.Add(toAddress);
 
                 var attachment = new Attachment(filePath, "application/pdf");
-                attachment.ContentDisposition.Inline = false;
-                attachment.ContentDisposition.DispositionType = DispositionTypeNames.Attachment;
+                if (attachment.ContentDisposition != null)
+                {
+                    attachment.ContentDisposition.Inline = false;
+                    attachment.ContentDisposition.DispositionType = DispositionTypeNames.Attachment;
+                }
                 mailMessage.Attachments.Add(attachment);
 
                 await client.SendMailAsync(mailMessage);

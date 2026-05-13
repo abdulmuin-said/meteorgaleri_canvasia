@@ -27,16 +27,16 @@
     },
 
     "playwright": {
-    "type": "local",
-    "command": [
+      "type": "local",
+      "command": [
         "npx",
         "-y",
         "@playwright/mcp@latest",
         "--browser",
         "chrome"
-    ],
-    "enabled": true,
-    "timeout": 30000
+      ],
+      "enabled": true,
+      "timeout": 30000
     },
 
     "github": {
@@ -88,6 +88,24 @@
       ],
       "enabled": true,
       "timeout": 10000
+    },
+
+    "sentry": {
+      "type": "remote",
+      "url": "https://mcp.sentry.dev/mcp",
+      "enabled": true
+    },
+
+    "docker": {
+      "type": "local",
+      "command": [
+        "docker",
+        "mcp",
+        "gateway",
+        "run"
+      ],
+      "enabled": true,
+      "timeout": 30000
     }
   },
 

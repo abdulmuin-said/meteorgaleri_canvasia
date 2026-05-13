@@ -1,11 +1,8 @@
 namespace KanvasProje.Core.Models
 {
-    /// <summary>
-    /// Site genelinde kullanılan vitrin, iletişim, SEO ve operasyon ayarları.
-    /// App_Data/site-settings.json dosyasına kaydedilir.
-    /// </summary>
     public class SiteAyarlari
     {
+        public int Id { get; set; } = 1;
         public string SiteAdi { get; set; } = "Canvasia";
         public string MarkaAdi { get; set; } = "Canvasia";
         public string SiteBasligi { get; set; } = "Canvasia - Online Dekorasyon Mağazası";

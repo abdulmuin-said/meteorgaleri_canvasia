@@ -191,8 +191,18 @@
             from { transform: translateX(0); }
             to { transform: translateX(-50%); }
         }
-        @@media (prefers-reduced-motion: reduce) {
+@@media (prefers-reduced-motion: reduce) {
             .trust-ticker-track { animation: none; transform: translateX(0); }
+        }
+        
+        /* Cart bounce animation */
+        @@keyframes cartBounce {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+        .bounce-animation {
+            animation: cartBounce 0.4s ease-out;
         }
     </style>
     

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using KanvasProje.Data;
 using KanvasProje.Core.Interfaces;
+using KanvasProje.Service.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using System.Net.Mail;
@@ -13,26 +14,22 @@ using System.Threading.Tasks;
 
 namespace KanvasProje.Service.Services
 {
-    public class AbandonedCartService : BackgroundService
+public class AbandonedCartService : BackgroundService
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<AbandonedCartService> _logger;
-        private readonly ISiteSettingsService _siteSettingsService;
         private readonly IConfiguration _config;
 
-        // Test için süreyi kısa tutabiliriz, production için 1 saat
-        private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(60); // Her saat başı kontrol
-        private readonly TimeSpan _abandonmentThreshold = TimeSpan.FromHours(1); // 1 saat hareketsizlik = Terk edilmiş
+        private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(60);
+        private readonly TimeSpan _abandonmentThreshold = TimeSpan.FromHours(1);
 
         public AbandonedCartService(
             IServiceScopeFactory scopeFactory,
             ILogger<AbandonedCartService> logger,
-            ISiteSettingsService siteSettingsService,
             IConfiguration config)
         {
             _scopeFactory = scopeFactory;
             _logger = logger;
-            _siteSettingsService = siteSettingsService;
             _config = config;
         }
 
@@ -58,12 +55,13 @@ namespace KanvasProje.Service.Services
                     continue;
                 }
 
-                try
+try
                 {
                     using (var scope = _scopeFactory.CreateScope())
                     {
                         var context = scope.ServiceProvider.GetRequiredService<KanvasDbContext>();
                         var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                        var siteSettingsService = scope.ServiceProvider.GetRequiredService<ISiteSettingsService>();
 
                         var thresholdTime = DateTime.UtcNow.Subtract(_abandonmentThreshold);
                         
@@ -106,7 +104,7 @@ namespace KanvasProje.Service.Services
                                         <p>Sepetinize ekledi&#287;iniz &uuml;r&uuml;nleri sizin i&ccedil;in ay&#305;rd&#305;k.</p>
                                         <p>Sepetinizde <strong>{itemCount}</strong> adet &uuml;r&uuml;n bekliyor. Sipari&#351;inizi tamamlayarak dekorasyon se&ccedil;imlerinizi kolayca olu&#351;turabilirsiniz.</p>";
 
-                                    string btnLink = _siteSettingsService.BuildAbsoluteUrl("/Sepet");
+                                    string btnLink = siteSettingsService.BuildAbsoluteUrl("/Sepet");
                                     
                                     await emailService.SendTemplateMailAsync(
                                         sepet.AppUser.Email, 

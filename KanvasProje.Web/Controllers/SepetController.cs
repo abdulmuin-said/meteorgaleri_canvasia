@@ -169,7 +169,7 @@ namespace KanvasProje.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Ekle(int UrunId, int? SecenekId, int Adet = 1, string? CerceveModeli = null, string? MusteriNotu = null)
+        public async Task<IActionResult> Ekle(int UrunId, int? SecenekId, int Adet = 1, string? CerceveModeli = null, string? MusteriNotu = null, decimal? CerceveFarki = null)
         {
             if (Adet < 1) Adet = 1;
             if (Adet > 100) Adet = 100;
@@ -182,7 +182,7 @@ namespace KanvasProje.Web.Controllers
             }
             var sessionId = HttpContext.Session.Id;
 
-            var success = await _sepetService.SepeteEkleAsync(userId, sessionId, UrunId, SecenekId, Adet, CerceveModeli, MusteriNotu);
+            var success = await _sepetService.SepeteEkleAsync(userId, sessionId, UrunId, SecenekId, Adet, CerceveModeli, MusteriNotu, CerceveFarki);
 
             if (success)
             {
