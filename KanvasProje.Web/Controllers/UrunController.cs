@@ -44,12 +44,19 @@ namespace KanvasProje.Web.Controllers
                 page = eskiPage.Value;
             }
 
-            ViewBag.Kategoriler = await _context.Kategoriler
+            var kategoriler = await _context.Kategoriler
                 .AsNoTracking()
                 .Where(x => x.AktifMi && !x.SilindiMi)
                 .OrderBy(x => x.Sira)
                 .ThenBy(x => x.Ad)
                 .ToListAsync();
+
+            var kategoriUrunSayilari = await BuildCategoryProductCountsAsync(kategoriler);
+            ViewBag.Kategoriler = kategoriler;
+            ViewBag.KategoriUrunSayilari = kategoriUrunSayilari;
+            ViewBag.ToplamAktifUrunSayisi = kategoriUrunSayilari
+                .Where(x => kategoriler.Any(k => k.Id == x.Key && !k.ParentKategoriId.HasValue))
+                .Sum(x => x.Value);
 
             var query = _context.Urunler
                 .AsNoTracking()
@@ -64,12 +71,12 @@ namespace KanvasProje.Web.Controllers
 
             if (k.HasValue)
             {
-                var kategoriler = await _context.Kategoriler
+                var filtreKategorileri = await _context.Kategoriler
                     .AsNoTracking()
                     .Where(x => !x.SilindiMi)
                     .ToListAsync();
 
-                var kategoriIdleri = CategoryTreeHelper.GetDescendantIds(kategoriler, k.Value);
+                var kategoriIdleri = CategoryTreeHelper.GetDescendantIds(filtreKategorileri, k.Value);
                 if (kategoriIdleri.Count == 0)
                 {
                     kategoriIdleri.Add(k.Value);
@@ -177,6 +184,28 @@ namespace KanvasProje.Web.Controllers
             ViewBag.TotalItems = totalItems;
 
             return View(urunler);
+        }
+
+        private async Task<Dictionary<int, int>> BuildCategoryProductCountsAsync(List<Kategori> kategoriler)
+        {
+            var kategoriIdleri = kategoriler.Select(x => x.Id).ToHashSet();
+            var dogrudanUrunSayilari = await _context.Urunler
+                .AsNoTracking()
+                .Where(x =>
+                    x.AktifMi &&
+                    !x.SilindiMi &&
+                    x.Kategori != null &&
+                    x.Kategori.AktifMi &&
+                    !x.Kategori.SilindiMi &&
+                    kategoriIdleri.Contains(x.KategoriId))
+                .GroupBy(x => x.KategoriId)
+                .Select(x => new { KategoriId = x.Key, UrunSayisi = x.Count() })
+                .ToDictionaryAsync(x => x.KategoriId, x => x.UrunSayisi);
+
+            return kategoriler.ToDictionary(
+                kategori => kategori.Id,
+                kategori => CategoryTreeHelper.GetDescendantIds(kategoriler, kategori.Id)
+                    .Sum(id => dogrudanUrunSayilari.GetValueOrDefault(id)));
         }
 
         [HttpGet]

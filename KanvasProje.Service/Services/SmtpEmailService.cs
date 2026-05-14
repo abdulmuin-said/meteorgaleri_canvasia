@@ -106,16 +106,15 @@ namespace KanvasProje.Service.Services
             var siteSettings = _siteSettingsService.GetSettings();
             var brandName = string.IsNullOrWhiteSpace(siteSettings.MarkaAdi) ? siteSettings.SiteAdi : siteSettings.MarkaAdi;
             var siteUrl = _siteSettingsService.BuildAbsoluteUrl(string.Empty);
-            var logoPath = siteSettings.SiteLogoUrl;
-            if (string.IsNullOrWhiteSpace(logoPath) || logoPath.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
+            var logoCandidates = new[]
             {
-                logoPath = "/yeni_canvasia_logo.svg";
-            }
-
-            var logoFilePath = Path.Combine(_env.WebRootPath, "EmailTemplates", "yeni_canvasia_logo.png");
-            var logoUrl = File.Exists(logoFilePath)
-                ? _siteSettingsService.BuildAbsoluteUrl("/EmailTemplates/yeni_canvasia_logo.png")
-                : _siteSettingsService.BuildAbsoluteUrl(logoPath);
+                (FilePath: Path.Combine(_env.WebRootPath, "EmailTemplates", "canvasia-logo.png"), Url: "/EmailTemplates/canvasia-logo.png"),
+                (FilePath: Path.Combine(_env.WebRootPath, "img", "canvasia-logo.png"), Url: "/img/canvasia-logo.png")
+            };
+            var logoUrl = logoCandidates
+                .Where(x => File.Exists(x.FilePath))
+                .Select(x => _siteSettingsService.BuildAbsoluteUrl(x.Url))
+                .FirstOrDefault() ?? _siteSettingsService.BuildAbsoluteUrl("/EmailTemplates/canvasia-logo.png");
             var instagramUrl = string.IsNullOrWhiteSpace(siteSettings.InstagramUrl) ? siteUrl : siteSettings.InstagramUrl;
             var contactSeparator = !string.IsNullOrWhiteSpace(siteSettings.Email) && !string.IsNullOrWhiteSpace(siteSettings.Telefon)
                 ? "|"

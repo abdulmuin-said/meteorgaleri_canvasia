@@ -72,9 +72,9 @@ try
                         // 4. Sepet boş değil
                         var abandonedCarts = await context.Sepetler
                             .Include(x => x.AppUser)
-                            .Include(x => x.SepetItems)
+                            .Include(x => x.SepetItems.Where(i => !i.SilindiMi))
                             .Where(x => x.AppUserId != null 
-                                     && x.SepetItems.Any() 
+                                     && x.SepetItems.Any(i => !i.SilindiMi) 
                                      && x.SonGuncellemeTarihi < thresholdTime 
                                      && !x.HatirlatmaGonderildi)
                             .ToListAsync(stoppingToken);
@@ -98,11 +98,15 @@ try
 
                                 try
                                 {
-                                    var itemCount = sepet.SepetItems.Sum(x => x.Adet);
-                                    string subject = "Sepetinizde \u00FCr\u00FCnler sizi bekliyor";
+                                    var activeItems = sepet.SepetItems.Where(x => !x.SilindiMi).ToList();
+                                    var itemCount = activeItems.Sum(x => x.Adet);
+                                    var productList = string.Join("", activeItems.Take(4).Select(x => $"<li>{System.Net.WebUtility.HtmlEncode(x.UrunBaslik)} - {x.Adet} adet</li>"));
+                                    string subject = "Sepetinizdeki ürünler sizi bekliyor";
                                     string body = $@"
-                                        <p>Sepetinize ekledi&#287;iniz &uuml;r&uuml;nleri sizin i&ccedil;in ay&#305;rd&#305;k.</p>
-                                        <p>Sepetinizde <strong>{itemCount}</strong> adet &uuml;r&uuml;n bekliyor. Sipari&#351;inizi tamamlayarak dekorasyon se&ccedil;imlerinizi kolayca olu&#351;turabilirsiniz.</p>";
+                                        <p>Sepetinize eklediğiniz ürünleri sizin için ayırdık.</p>
+                                        <p>Sepetinizde <strong>{itemCount}</strong> adet ürün bekliyor. Siparişinizi tamamlayarak seçtiğiniz tabloları güvenle satın alabilirsiniz.</p>
+                                        {(string.IsNullOrWhiteSpace(productList) ? string.Empty : $"<ul>{productList}</ul>")}
+                                        <p>Stok ve kampanya koşulları değişmeden sepetinizi tamamlamak için aşağıdaki butonu kullanabilirsiniz.</p>";
 
                                     string btnLink = siteSettingsService.BuildAbsoluteUrl("/Sepet");
                                     

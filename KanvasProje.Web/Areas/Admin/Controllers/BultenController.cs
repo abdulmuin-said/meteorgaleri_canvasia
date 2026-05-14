@@ -1,10 +1,14 @@
 using KanvasProje.Core.Models;
+using KanvasProje.Core.Interfaces;
 using KanvasProje.Core.Varliklar;
 using KanvasProje.Data;
+using KanvasProje.Service.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
+using System.Net;
+using System.Net.Mail;
 
 namespace KanvasProje.Web.Areas.Admin.Controllers
 {
@@ -12,10 +16,14 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
     public class BultenController : AdminBaseController
     {
         private readonly KanvasDbContext _context;
+        private readonly IEmailService _emailService;
+        private readonly ISiteSettingsService _siteSettingsService;
 
-        public BultenController(KanvasDbContext context)
+        public BultenController(KanvasDbContext context, IEmailService emailService, ISiteSettingsService siteSettingsService)
         {
             _context = context;
+            _emailService = emailService;
+            _siteSettingsService = siteSettingsService;
         }
 
         public async Task<IActionResult> Index(int durum = 1, string? q = null, int page = 1, int pageSize = 20)
@@ -164,6 +172,107 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
             return RedirectToAction(nameof(Index), new { durum, q, page, pageSize });
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TopluMailGonder(
+            string baslik,
+            string icerik,
+            string? butonLink,
+            string? butonYazi,
+            string hedef = "aktif",
+            List<int>? mailAboneIds = null,
+            int durum = 1,
+            string? q = null,
+            int page = 1,
+            int pageSize = 20)
+        {
+            baslik = (baslik ?? string.Empty).Trim();
+            icerik = (icerik ?? string.Empty).Trim();
+            butonLink = (butonLink ?? string.Empty).Trim();
+            butonYazi = (butonYazi ?? string.Empty).Trim();
+
+            if (string.IsNullOrWhiteSpace(baslik) || string.IsNullOrWhiteSpace(icerik))
+            {
+                TempData["Hata"] = "Mail başlığı ve mesaj içeriği zorunludur.";
+                TempData["Durum"] = "warning";
+                return RedirectToAction(nameof(Index), new { durum, q, page, pageSize });
+            }
+
+            IQueryable<BultenAboneligi> query;
+            if (hedef == "secili")
+            {
+                mailAboneIds = (mailAboneIds ?? new List<int>()).Where(x => x > 0).Distinct().ToList();
+                if (!mailAboneIds.Any())
+                {
+                    TempData["Hata"] = "Seçili abonelere mail göndermek için en az bir abone seçin.";
+                    TempData["Durum"] = "warning";
+                    return RedirectToAction(nameof(Index), new { durum, q, page, pageSize });
+                }
+
+                query = _context.BultenAbonelikleri.Where(x => x.AktifMi && mailAboneIds.Contains(x.Id));
+            }
+            else if (hedef == "filtre")
+            {
+                query = BuildSubscriberQuery(durum, q).Where(x => x.AktifMi);
+            }
+            else
+            {
+                query = _context.BultenAbonelikleri.Where(x => x.AktifMi);
+            }
+
+            var aboneler = await query
+                .AsNoTracking()
+                .Select(x => x.Email)
+                .Distinct()
+                .ToListAsync();
+
+            if (!aboneler.Any())
+            {
+                TempData["Hata"] = "Gönderilecek aktif bülten abonesi bulunamadı.";
+                TempData["Durum"] = "warning";
+                return RedirectToAction(nameof(Index), new { durum, q, page, pageSize });
+            }
+
+            var htmlIcerik = BuildNewsletterHtml(icerik);
+            var normalizedButtonLink = string.IsNullOrWhiteSpace(butonLink)
+                ? string.Empty
+                : _siteSettingsService.BuildAbsoluteUrl(butonLink);
+            var sent = 0;
+            var failed = 0;
+
+            foreach (var email in aboneler)
+            {
+                if (!IsValidEmail(email))
+                {
+                    failed++;
+                    continue;
+                }
+
+                try
+                {
+                    await _emailService.SendTemplateMailAsync(
+                        email,
+                        baslik,
+                        "Değerli Canvasia Abonesi",
+                        htmlIcerik,
+                        normalizedButtonLink,
+                        string.IsNullOrWhiteSpace(butonYazi) ? "Koleksiyonu İncele" : butonYazi);
+                    sent++;
+                }
+                catch
+                {
+                    failed++;
+                }
+            }
+
+            TempData["Mesaj"] = failed == 0
+                ? $"Bülten maili {sent} aktif aboneye gönderildi."
+                : $"Bülten maili {sent} aboneye gönderildi, {failed} gönderim başarısız oldu.";
+            TempData["Durum"] = failed == 0 ? "success" : "warning";
+
+            return RedirectToAction(nameof(Index), new { durum, q, page, pageSize });
+        }
+
         private IQueryable<BultenAboneligi> BuildSubscriberQuery(int durum, string? q)
         {
             var query = _context.BultenAbonelikleri.AsNoTracking().AsQueryable();
@@ -184,6 +293,35 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
             }
 
             return query;
+        }
+
+        private static string BuildNewsletterHtml(string content)
+        {
+            var encoded = WebUtility.HtmlEncode(content.Trim());
+            var paragraphs = encoded
+                .Replace("\r\n", "\n")
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(x => $"<p>{x}</p>");
+
+            return string.Join("", paragraphs);
+        }
+
+        private static bool IsValidEmail(string? email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return false;
+            }
+
+            try
+            {
+                _ = new MailAddress(email.Trim());
+                return true;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
         }
 
         private async Task<List<BultenListViewModel>> BuildSubscriberListAsync(List<BultenAboneligi> aboneler)

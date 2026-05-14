@@ -31,7 +31,6 @@ namespace KanvasProje.Web.Security
                 ["Search"] = DashboardRoles,
                 ["Rapor"] = DashboardRoles,
                 ["Ziyaretci"] = DashboardRoles,
-                ["Yardim"] = DashboardRoles,
                 ["Siparis"] = new[]
                 {
                     AdminSecurityRoles.LegacyAdmin,

@@ -6,11 +6,85 @@
     var currencySymbol = string.IsNullOrWhiteSpace(siteSettings.ParaBirimi) ? "TL" : siteSettings.ParaBirimi;
     var brandName = string.IsNullOrWhiteSpace(siteSettings.MarkaAdi) ? siteSettings.SiteAdi : siteSettings.MarkaAdi;
     ViewData["Title"] = "Ana Sayfa";
+    ViewData["SeoTitle"] = $"{brandName} | Kanvas Tablo, Cam Tablo ve Dekoratif Duvar Sanatı";
+    ViewData["MetaDescription"] = $"{brandName}; kanvas tablo, cam tablo, 5 parçalı tablolar, İslami hat sanatı, Osmanlı tuğra ve modern duvar dekorasyonu ürünlerini güvenli alışverişle sunar.";
+    ViewData["MetaKeywords"] = "kanvas tablo, cam tablo, 5 parçalı tablo, duvar dekorasyonu, islami tablo, hat sanatı, osmanlı tuğra tablo, modern tablo, Canvasia";
+    ViewData["OgType"] = "website";
     var homePageSettings = Model.HomePageSettings ?? new KanvasProje.Core.Models.HomePageSettingsModel();
     var aktifSlaytlar = Model.AktifSlaytlar ?? new List<KanvasProje.Core.Varliklar.Slayt>();
+    var siteUrl = SiteSettingsService.BuildAbsoluteUrl(string.Empty);
+    var popularCategoryNames = new[]
+    {
+        "Kanvas Tablo",
+        "Cam Tablo",
+        "Parçalı Tablolar",
+        "İslami Sanat & Hat",
+        "Dini ve Hat Sanatı",
+        "Osmanlı ve Tuğra",
+        "Modern & Soyut",
+        "Soyut ve Sanatsal"
+    };
+    var popularCategories = (Model.Kategoriler ?? new List<KanvasProje.Core.Varliklar.Kategori>())
+        .Where(k => popularCategoryNames.Contains(k.Ad))
+        .OrderBy(k => Array.IndexOf(popularCategoryNames, k.Ad))
+        .ToList();
 
     string BuildProductUrl(KanvasProje.Core.Varliklar.Urun urun)
         => "/Urun/Detay/" + (string.IsNullOrEmpty(urun.Slug) ? urun.Id.ToString() : urun.Slug + "-" + urun.Id);
+
+    string BuildCategoryUrl(KanvasProje.Core.Varliklar.Kategori kategori)
+        => "/Urun?k=" + kategori.Id;
+
+    var websiteSchema = new Dictionary<string, object?>
+    {
+        ["@context"] = "https://schema.org",
+        ["@type"] = "WebSite",
+        ["name"] = brandName,
+        ["url"] = siteUrl,
+        ["potentialAction"] = new Dictionary<string, object?>
+        {
+            ["@type"] = "SearchAction",
+            ["target"] = SiteSettingsService.BuildAbsoluteUrl("/Urun?s={search_term_string}"),
+            ["query-input"] = "required name=search_term_string"
+        }
+    };
+
+    var organizationSchema = new Dictionary<string, object?>
+    {
+        ["@context"] = "https://schema.org",
+        ["@type"] = "Organization",
+        ["name"] = brandName,
+        ["url"] = siteUrl,
+        ["logo"] = SiteSettingsService.BuildAbsoluteUrl(string.IsNullOrWhiteSpace(siteSettings.SiteLogoUrl) ? "/logo_svg.svg" : siteSettings.SiteLogoUrl),
+        ["description"] = ViewData["MetaDescription"]
+    };
+
+    var itemListSchema = new Dictionary<string, object?>
+    {
+        ["@context"] = "https://schema.org",
+        ["@type"] = "ItemList",
+        ["name"] = "Canvasia popüler kategoriler",
+        ["itemListElement"] = popularCategories.Select((kategori, index) => new Dictionary<string, object?>
+        {
+            ["@type"] = "ListItem",
+            ["position"] = index + 1,
+            ["name"] = kategori.Ad,
+            ["url"] = SiteSettingsService.BuildAbsoluteUrl(BuildCategoryUrl(kategori))
+        }).ToArray()
+    };
+}
+
+<script type="application/ld+json">
+@Html.Raw(System.Text.Json.JsonSerializer.Serialize(websiteSchema))
+</script>
+<script type="application/ld+json">
+@Html.Raw(System.Text.Json.JsonSerializer.Serialize(organizationSchema))
+</script>
+@if (popularCategories.Any())
+{
+    <script type="application/ld+json">
+    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(itemListSchema))
+    </script>
 }
 
 @if (aktifSlaytlar.Any())
@@ -254,6 +328,74 @@ goTo(0);
 })();
 </script>
 
+@if (popularCategories.Any())
+{
+    <section class="border-b border-[#e5e2dc] bg-[#fcf9f3] py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <h2 class="font-serif text-2xl text-[#313511]">Popüler Kategoriler</h2>
+                    <p class="mt-1 text-sm text-[#47473d]">Kanvas tablo, cam tablo ve seçili duvar dekorasyonu koleksiyonlarını keşfedin.</p>
+                </div>
+                <div class="flex flex-wrap gap-2 md:justify-end">
+                    @foreach (var kategori in popularCategories)
+                    {
+                        <a href="@BuildCategoryUrl(kategori)" class="rounded-full border border-[#d8d3c8] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wider text-[#313511] transition-colors hover:border-[#b58735] hover:text-[#b58735]">
+                            @kategori.Ad
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+@if (Model.BesParcaliKoleksiyon != null && Model.BesParcaliKoleksiyon.Any())
+{
+    <section class="bg-[#fcf9f3] py-14 md:py-16">
+        <div class="container mx-auto px-4">
+            <div class="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div>
+                    <h2 class="font-serif text-3xl text-[#313511]">Öne Çıkan Ürünler</h2>
+                    <p class="mt-2 max-w-2xl text-sm text-[#47473d]">Yaşam alanlarına güçlü bir karakter kazandıran seçili çok parçalı kanvas tablo koleksiyonu.</p>
+                </div>
+                <a href="/Urun?s=5%20Par%C3%A7a" class="inline-flex items-center gap-2 self-start border-b border-[#313511] pb-1 text-xs uppercase tracking-widest text-[#313511] transition-colors hover:text-[#b58735] md:self-auto">
+                    Tüm 5 Parçalıları Gör
+                    <i class="fas fa-arrow-right text-[10px]"></i>
+                </a>
+            </div>
+            <div class="grid grid-cols-2 gap-5 md:grid-cols-4 lg:grid-cols-5">
+                @foreach (var urun in Model.BesParcaliKoleksiyon.Take(15))
+                {
+                    var gorsel = !string.IsNullOrWhiteSpace(urun.AnaGorselUrl)
+                        ? urun.AnaGorselUrl
+                        : urun.UrunResimleri?.OrderBy(r => r.Sira).FirstOrDefault()?.ResimYolu;
+
+                    <article class="group">
+                        <a href="@BuildProductUrl(urun)" class="block">
+                            <div class="relative mb-3 aspect-square overflow-hidden bg-[#f1ede7]">
+                                <span class="absolute left-2 top-2 z-10 bg-white/90 px-2 py-1 text-[9px] uppercase tracking-widest text-[#313511] shadow-sm">5 Parça</span>
+                                @if (!string.IsNullOrWhiteSpace(gorsel))
+                                {
+                                    <img src="@gorsel" alt="@urun.Baslik" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" />
+                                }
+                                else
+                                {
+                                    <div class="flex h-full w-full items-center justify-center text-gray-300">
+                                        <i class="fas fa-image fa-2x"></i>
+                                    </div>
+                                }
+                            </div>
+                            <h3 class="mb-1 line-clamp-2 text-xs font-semibold tracking-wide text-[#1c1c18] transition-colors group-hover:text-[#b58735]">@urun.Baslik</h3>
+                            <p class="text-xs text-[#47473d]">@urun.EtkinFiyat.ToString("N0") @currencySymbol</p>
+                        </a>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+}
+
 
 <!-- BEGIN: Öne Çıkan Eserler (Vitrin) -->
 @if (Model.VitrinUrunleri != null && Model.VitrinUrunleri.Any())
@@ -265,7 +407,7 @@ goTo(0);
             <hr class="w-1/4 border-[#e5e2dc] hidden md:block"/>
         </div>
         <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
-            @foreach (var urun in Model.VitrinUrunleri.Take(5))
+            @foreach (var urun in Model.VitrinUrunleri.Take(10))
             {
                 <div class="group cursor-pointer flex flex-col">
                     <div class="relative overflow-hidden mb-4 aspect-square bg-[#f1ede7]">
@@ -327,7 +469,7 @@ goTo(0);
             </a>
         </div>
         <div class="grid grid-cols-2 gap-6 md:grid-cols-4">
-            @foreach (var urun in Model.CokSatanlar.Take(4))
+            @foreach (var urun in Model.CokSatanlar.Take(8))
             {
                 var gorsel = !string.IsNullOrWhiteSpace(urun.AnaGorselUrl)
                     ? urun.AnaGorselUrl
@@ -372,7 +514,7 @@ goTo(0);
                 </a>
             </div>
             <div class="grid grid-cols-2 gap-6 md:grid-cols-4">
-                @foreach (var urun in Model.FirsatUrunleri.Take(4))
+                @foreach (var urun in Model.FirsatUrunleri.Take(8))
                 {
                     var gorsel = !string.IsNullOrWhiteSpace(urun.AnaGorselUrl)
                         ? urun.AnaGorselUrl

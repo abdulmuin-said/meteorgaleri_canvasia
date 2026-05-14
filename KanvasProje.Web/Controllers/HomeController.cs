@@ -51,12 +51,52 @@ namespace KanvasProje.Web.Controllers
 
             var secilenUrunler = new HashSet<int>();
 
+            var besParcaliKoleksiyon = await aktifUrunler
+                .Where(u =>
+                    (EF.Functions.ILike(u.Baslik, "%5 Parça%") ||
+                     EF.Functions.ILike(u.Baslik, "%5 Parçalı%") ||
+                     EF.Functions.ILike(u.Aciklama ?? string.Empty, "%5 Parça%") ||
+                     EF.Functions.ILike(u.Etiketler ?? string.Empty, "%5 Parça%")) &&
+                    (EF.Functions.ILike(u.Baslik, "%güzel ahlak%") ||
+                     EF.Functions.ILike(u.Baslik, "%islam%") ||
+                     EF.Functions.ILike(u.Baslik, "%islami%") ||
+                     EF.Functions.ILike(u.Baslik, "%tarihi%") ||
+                     EF.Functions.ILike(u.Baslik, "%osmanlı%") ||
+                     EF.Functions.ILike(u.Baslik, "%ayet%") ||
+                     EF.Functions.ILike(u.Baslik, "%hadis%") ||
+                     EF.Functions.ILike(u.Etiketler ?? string.Empty, "%islam%") ||
+                     EF.Functions.ILike(u.Etiketler ?? string.Empty, "%tarihi%") ||
+                     (u.Kategori != null &&
+                      (EF.Functions.ILike(u.Kategori.Ad, "%islam%") ||
+                       EF.Functions.ILike(u.Kategori.Ad, "%tarihi%")))))
+                .OrderBy(u => u.Sira)
+                .ThenByDescending(u => u.OneCikanMi)
+                .ThenByDescending(u => u.GoruntulenmeSayisi)
+                .ThenByDescending(u => u.OlusturulmaTarihi)
+                .Take(15)
+                .ToListAsync();
+
+            secilenUrunler.UnionWith(besParcaliKoleksiyon.Select(x => x.Id));
+            await TamamlayiciUrunleriEkleAsync(
+                besParcaliKoleksiyon,
+                aktifUrunler
+                    .Where(u =>
+                        EF.Functions.ILike(u.Baslik, "%5 Parça%") ||
+                        EF.Functions.ILike(u.Baslik, "%5 Parçalı%") ||
+                        EF.Functions.ILike(u.Aciklama ?? string.Empty, "%5 Parça%") ||
+                        EF.Functions.ILike(u.Etiketler ?? string.Empty, "%5 Parça%"))
+                    .OrderBy(u => u.Sira)
+                    .ThenByDescending(u => u.GoruntulenmeSayisi)
+                    .ThenByDescending(u => u.OlusturulmaTarihi),
+                secilenUrunler,
+                15);
+
             var vitrinUrunleri = await aktifUrunler
-                .Where(u => u.AnaSayfadaGoster || u.OneCikanMi || u.YeniUrunMu)
+                .Where(u => (u.AnaSayfadaGoster || u.OneCikanMi || u.YeniUrunMu) && !secilenUrunler.Contains(u.Id))
                 .OrderBy(u => u.Sira)
                 .ThenByDescending(u => u.OneCikanMi)
                 .ThenByDescending(u => u.OlusturulmaTarihi)
-                .Take(8)
+                .Take(10)
                 .ToListAsync();
 
             secilenUrunler.UnionWith(vitrinUrunleri.Select(x => x.Id));
@@ -64,7 +104,7 @@ namespace KanvasProje.Web.Controllers
                 vitrinUrunleri,
                 aktifUrunler.OrderBy(u => u.Sira).ThenByDescending(u => u.OlusturulmaTarihi),
                 secilenUrunler,
-                8);
+                10);
 
             var cokSatanlar = await aktifUrunler
                 .Where(u => (u.SatisSayisi > 0 || u.OneCikanMi) && !secilenUrunler.Contains(u.Id))
@@ -103,7 +143,7 @@ var kategoriler = await _context.Kategoriler
                 .Where(k => k.AktifMi && !k.SilindiMi && k.ParentKategoriId == null)
                 .OrderBy(k => k.Sira)
                 .ThenBy(k => k.Ad)
-                .Take(12)
+                .Take(18)
                 .ToListAsync();
 
             var aktifSlaytlar = await _context.Slaytlar
@@ -116,6 +156,7 @@ var kategoriler = await _context.Kategoriler
             {
                 VitrinUrunleri = vitrinUrunleri,
                 CokSatanlar = cokSatanlar,
+                BesParcaliKoleksiyon = besParcaliKoleksiyon,
                 FirsatUrunleri = firsatUrunleri,
                 Kategoriler = kategoriler,
                 HomePageSettings = _homePageSettingsService.GetSettings(),

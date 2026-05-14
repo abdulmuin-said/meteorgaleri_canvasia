@@ -6,6 +6,7 @@ namespace KanvasProje.Web.Models
     public class HomeViewModel
     {
         public List<Urun> VitrinUrunleri { get; set; } = new List<Urun>();
+        public List<Urun> BesParcaliKoleksiyon { get; set; } = new List<Urun>();
         public List<Urun> CokSatanlar { get; set; } = new List<Urun>();
         public List<Urun> FirsatUrunleri { get; set; } = new List<Urun>();
         public List<Kategori> Kategoriler { get; set; } = new List<Kategori>();

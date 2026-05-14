@@ -135,7 +135,7 @@ namespace KanvasProje.Service
                     _context.SepetItems.Add(yeniItem);
                 }
 
-                sepet.SonGuncellemeTarihi = DateTime.UtcNow;
+                MarkCartAsUpdated(sepet);
                 await _context.SaveChangesAsync();
                 return true;
             }
@@ -151,6 +151,7 @@ namespace KanvasProje.Service
             try
             {
                 var item = await _context.SepetItems
+                    .Include(x => x.Sepet)
                     .Include(x => x.Urun)
                         .ThenInclude(x => x.Kategori!)
                             .ThenInclude(x => x.ParentKategori)
@@ -172,6 +173,7 @@ namespace KanvasProje.Service
                 }
 
                 item.Adet = yeniAdet;
+                MarkCartAsUpdated(item.Sepet);
                 await _context.SaveChangesAsync();
                 return true;
             }
@@ -186,13 +188,16 @@ namespace KanvasProje.Service
         {
             try
             {
-                var item = await _context.SepetItems.FindAsync(sepetItemId);
+                var item = await _context.SepetItems
+                    .Include(x => x.Sepet)
+                    .FirstOrDefaultAsync(x => x.Id == sepetItemId);
                 if (item == null)
                 {
                     return false;
                 }
 
                 item.SilindiMi = true;
+                MarkCartAsUpdated(item.Sepet);
                 await _context.SaveChangesAsync();
                 return true;
             }
@@ -338,7 +343,7 @@ namespace KanvasProje.Service
                 }
 
                 item.MusteriNotu = NormalizeCustomerNote(musteriNotu);
-                item.Sepet.SonGuncellemeTarihi = DateTime.UtcNow;
+                MarkCartAsUpdated(item.Sepet);
                 await _context.SaveChangesAsync();
                 return true;
             }
@@ -346,6 +351,14 @@ namespace KanvasProje.Service
             {
                 return false;
             }
+        }
+
+        private static void MarkCartAsUpdated(Sepet sepet)
+        {
+            sepet.SonGuncellemeTarihi = DateTime.UtcNow;
+            sepet.HatirlatmaGonderildi = false;
+            sepet.TerkEdildi = false;
+            sepet.TerkEdilmeTarihi = null;
         }
 
         private static UrunSecenek? ResolveSelectedVariant(Urun urun, int? requestedVariantId)

@@ -3,6 +3,7 @@ using KanvasProje.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 using KanvasProje.Service.Services;
+using System.Net;
 
 namespace KanvasProje.Web.Controllers
 {
@@ -20,14 +21,14 @@ namespace KanvasProje.Web.Controllers
         [Route("sitemap.xml")]
         public async Task<IActionResult> Index()
         {
-            var baseUrl = _siteSettingsService.BuildAbsoluteUrl(string.Empty);
+            var baseUrl = _siteSettingsService.BuildAbsoluteUrl(string.Empty).TrimEnd('/');
             var sitemap = new StringBuilder();
             sitemap.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
             sitemap.AppendLine("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">");
 
             // Ana sayfa
             sitemap.AppendLine("  <url>");
-            sitemap.AppendLine($"    <loc>{baseUrl}/</loc>");
+            sitemap.AppendLine($"    <loc>{XmlEncode(baseUrl + "/")}</loc>");
             sitemap.AppendLine($"    <lastmod>{DateTime.UtcNow:yyyy-MM-dd}</lastmod>");
             sitemap.AppendLine("    <changefreq>daily</changefreq>");
             sitemap.AppendLine("    <priority>1.0</priority>");
@@ -43,7 +44,7 @@ namespace KanvasProje.Web.Controllers
             foreach (var kategori in kategoriler)
             {
                 sitemap.AppendLine("  <url>");
-                sitemap.AppendLine($"    <loc>{baseUrl}/Urun/Index?k={kategori.Id}</loc>");
+                sitemap.AppendLine($"    <loc>{XmlEncode($"{baseUrl}/Urun?k={kategori.Id}")}</loc>");
                 sitemap.AppendLine($"    <lastmod>{DateTime.UtcNow:yyyy-MM-dd}</lastmod>");
                 sitemap.AppendLine("    <changefreq>weekly</changefreq>");
                 sitemap.AppendLine("    <priority>0.8</priority>");
@@ -60,9 +61,9 @@ namespace KanvasProje.Web.Controllers
 
             foreach (var urun in urunler)
             {
-                var detailSegment = string.IsNullOrWhiteSpace(urun.Slug) ? urun.Id.ToString() : urun.Slug;
+                var detailSegment = string.IsNullOrWhiteSpace(urun.Slug) ? urun.Id.ToString() : $"{urun.Slug}-{urun.Id}";
                 sitemap.AppendLine("  <url>");
-                sitemap.AppendLine($"    <loc>{baseUrl}/Urun/Detay/{detailSegment}</loc>");
+                sitemap.AppendLine($"    <loc>{XmlEncode($"{baseUrl}/Urun/Detay/{detailSegment}")}</loc>");
                 sitemap.AppendLine($"    <lastmod>{urun.OlusturulmaTarihi:yyyy-MM-dd}</lastmod>");
                 sitemap.AppendLine("    <changefreq>monthly</changefreq>");
                 sitemap.AppendLine("    <priority>0.7</priority>");
@@ -73,5 +74,7 @@ namespace KanvasProje.Web.Controllers
 
             return Content(sitemap.ToString(), "application/xml", Encoding.UTF8);
         }
+
+        private static string XmlEncode(string value) => WebUtility.HtmlEncode(value);
     }
 }

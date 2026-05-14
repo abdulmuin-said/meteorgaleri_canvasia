@@ -20,6 +20,15 @@
     var seciliOzellikler = ViewBag.SeciliOzellikler as Dictionary<int, string> ?? new Dictionary<int, string>();
 
     var kategoriler = ViewBag.Kategoriler as List<KanvasProje.Core.Varliklar.Kategori>;
+    var kategoriUrunSayilari = ViewBag.KategoriUrunSayilari as Dictionary<int, int> ?? new Dictionary<int, int>();
+    int toplamAktifUrunSayisi = ViewBag.ToplamAktifUrunSayisi != null ? (int)ViewBag.ToplamAktifUrunSayisi : totalItems;
+    var kategoriIdSet = kategoriler?.Select(x => x.Id).ToHashSet() ?? new HashSet<int>();
+    var anaKategoriler = kategoriler?
+        .Where(x => !x.SilindiMi && x.AktifMi && (!x.ParentKategoriId.HasValue || !kategoriIdSet.Contains(x.ParentKategoriId.Value)))
+        .OrderBy(x => x.Sira)
+        .ThenBy(x => x.Ad)
+        .ToList() ?? new List<KanvasProje.Core.Varliklar.Kategori>();
+    var kategoriLookup = kategoriler?.ToDictionary(x => x.Id) ?? new Dictionary<int, KanvasProje.Core.Varliklar.Kategori>();
 
     var sortOptions = new Dictionary<string, string>
     {
@@ -38,6 +47,25 @@
 
     string BuildProductUrl(KanvasProje.Core.Varliklar.Urun urun)
         => "/Urun/Detay/" + (string.IsNullOrEmpty(urun.Slug) ? urun.Id.ToString() : urun.Slug + "-" + urun.Id);
+
+    int GetKategoriUrunSayisi(int kategoriId)
+        => kategoriUrunSayilari.TryGetValue(kategoriId, out var count) ? count : 0;
+
+    bool AktifKategoriDalindaMi(KanvasProje.Core.Varliklar.Kategori kategori)
+    {
+        var currentId = aktifKategori;
+        while (currentId.HasValue && kategoriLookup.TryGetValue(currentId.Value, out var current))
+        {
+            if (current.Id == kategori.Id)
+            {
+                return true;
+            }
+
+            currentId = current.ParentKategoriId;
+        }
+
+        return false;
+    }
 
     string BuildFilterUrl(string key, string val)
     {
@@ -82,23 +110,60 @@
         <!-- Sidebar Filtreler -->
         <aside class="hidden lg:block w-56 flex-shrink-0">
             <h3 class="font-serif text-lg text-[#313511] mb-4 border-b border-[#e5e2dc] pb-2">Kategoriler</h3>
-            <ul class="space-y-1 text-sm mb-8">
+            <ul class="space-y-2 text-sm mb-8">
                 <li>
-                    <a href="/Urun" class="block py-1 @(!aktifKategori.HasValue ? "text-[#b58735] font-semibold" : "text-[#47473d] hover:text-[#313511]") transition-colors">
-                        Tümü <span class="text-xs text-gray-400">(@totalItems)</span>
+                    <a href="/Urun" class="flex items-center justify-between rounded-lg px-3 py-2 @(!aktifKategori.HasValue ? "bg-[#313511] text-white font-semibold" : "text-[#47473d] hover:bg-[#f1ede7] hover:text-[#313511]") transition-colors">
+                        <span>Tüm Koleksiyonlar</span>
+                        <span class="text-xs @(!aktifKategori.HasValue ? "text-white/75" : "text-[#9a958c]")">(@toplamAktifUrunSayisi)</span>
                     </a>
                 </li>
-                @if (kategoriler != null)
+                @foreach (var anaKategori in anaKategoriler)
                 {
-                    foreach (var kat in kategoriler.Where(x => !x.SilindiMi && x.AktifMi))
+                    var altKategoriler = kategoriler?
+                        .Where(x => !x.SilindiMi && x.AktifMi && x.ParentKategoriId == anaKategori.Id)
+                        .OrderBy(x => x.Sira)
+                        .ThenBy(x => x.Ad)
+                        .ToList() ?? new List<KanvasProje.Core.Varliklar.Kategori>();
+                    var anaAktif = aktifKategori.HasValue && aktifKategori.Value == anaKategori.Id;
+                    var grupAcik = anaAktif || AktifKategoriDalindaMi(anaKategori);
+                    var anaUrunSayisi = GetKategoriUrunSayisi(anaKategori.Id);
+
+                    <li>
+                    @if (altKategoriler.Count == 0)
                     {
-                        bool isActive = aktifKategori.HasValue && aktifKategori.Value == kat.Id;
-                        <li>
-                            <a href="/Urun?k=@kat.Id" class="block py-1 @(isActive ? "text-[#b58735] font-semibold" : "text-[#47473d] hover:text-[#313511]") transition-colors">
-                                @kat.Ad
+                            <a href="/Urun?k=@anaKategori.Id" class="flex items-center justify-between rounded-lg px-3 py-2 @(anaAktif ? "bg-[#f6efe3] text-[#b58735] font-semibold" : "text-[#47473d] hover:bg-[#f1ede7] hover:text-[#313511]") transition-colors">
+                                <span>@anaKategori.Ad</span>
+                                <span class="text-xs @(anaUrunSayisi == 0 ? "text-red-400" : "text-[#9a958c]")">(@anaUrunSayisi)</span>
                             </a>
-                        </li>
                     }
+                    else
+                    {
+                            <details class="group rounded-xl border border-[#e5e2dc] bg-white/70" open="@grupAcik">
+                                <summary class="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-[#313511] transition-colors group-open:border-b group-open:border-[#eee8df] [&::-webkit-details-marker]:hidden">
+                                    <span class="font-medium">@anaKategori.Ad</span>
+                                    <span class="flex items-center gap-2 text-xs text-[#9a958c]">
+                                        (@anaUrunSayisi)
+                                        <i class="fas fa-chevron-down text-[10px] transition-transform group-open:rotate-180"></i>
+                                    </span>
+                                </summary>
+                                <div class="space-y-1 px-2 py-2">
+                                    <a href="/Urun?k=@anaKategori.Id" class="flex items-center justify-between rounded-lg px-2 py-1.5 text-xs @(anaAktif ? "bg-[#313511] text-white font-semibold" : "text-[#6a665e] hover:bg-[#f1ede7] hover:text-[#313511]") transition-colors">
+                                        <span>Tüm @anaKategori.Ad</span>
+                                        <span class="@(anaAktif ? "text-white/75" : "text-[#9a958c]")">(@anaUrunSayisi)</span>
+                                    </a>
+                                    @foreach (var altKategori in altKategoriler)
+                                    {
+                                        var altAktif = aktifKategori.HasValue && aktifKategori.Value == altKategori.Id;
+                                        var altUrunSayisi = GetKategoriUrunSayisi(altKategori.Id);
+                                        <a href="/Urun?k=@altKategori.Id" class="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-xs @(altAktif ? "bg-[#f6efe3] text-[#b58735] font-semibold" : "text-[#47473d] hover:bg-[#f1ede7] hover:text-[#313511]") transition-colors">
+                                            <span class="truncate">@altKategori.Ad</span>
+                                            <span class="shrink-0 @(altUrunSayisi == 0 ? "text-red-400" : "text-[#9a958c]")">(@altUrunSayisi)</span>
+                                        </a>
+                                    }
+                                </div>
+                            </details>
+                    }
+                    </li>
                 }
             </ul>
 
