@@ -214,21 +214,25 @@ var touchIconUrl = "/favicon.svg";
         @Html.AntiForgeryToken()
     </form>
 
-    <!-- BEGIN: AnnouncementBar -->
-    <div class="trust-ticker relative z-50 overflow-hidden bg-[#b58735] py-2 text-xs font-light tracking-wider text-white">
-        <div class="trust-ticker-track flex items-center">
-            @for (var repeat = 0; repeat < 2; repeat++)
-            {
-                foreach (var message in trustMessages)
+<!-- BEGIN: AnnouncementBar -->
+    @if (siteSettings.UstBarEtkin)
+    {
+        var tickerSpeed = siteSettings.UstBarHizi > 0 ? siteSettings.UstBarHizi : 34;
+        <div class="trust-ticker relative z-50 overflow-hidden bg-[#b58735] py-2 text-xs font-light tracking-wider text-white">
+            <div class="trust-ticker-track flex items-center" style="animation-duration: @tickerSpeed.ToString("0", System.Globalization.CultureInfo.InvariantCulture)s;">
+                @for (var repeat = 0; repeat < 2; repeat++)
                 {
-                    <span class="mx-5 flex shrink-0 items-center gap-2 whitespace-nowrap">
-                        <i class="fas fa-check text-[10px] text-[#f7ead8]"></i>
-                        @message
-                    </span>
+                    foreach (var message in trustMessages)
+                    {
+                        <span class="mx-5 flex shrink-0 items-center gap-2 whitespace-nowrap">
+                            <i class="fas fa-check text-[10px] text-[#f7ead8]"></i>
+                            @message
+                        </span>
+                    }
                 }
-            }
+            </div>
         </div>
-    </div>
+    }
     <!-- END: AnnouncementBar -->
 
 <!-- BEGIN: MainHeader -->

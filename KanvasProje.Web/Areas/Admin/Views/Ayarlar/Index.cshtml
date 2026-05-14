@@ -277,6 +277,18 @@
                                         <label class="ca-label">Kampanya Mesajı</label>
                                         <input asp-for="KampanyaMesaji" class="ca-input" placeholder="Vade farksız 3 taksit" />
                                     </div>
+                                    <div class="col-md-4">
+                                        <label class="ca-label">Üst Bar Etkin</label>
+                                        <select asp-for="UstBarEtkin" class="ca-input">
+                                            <option value="True">Aktif</option>
+                                            <option value="False">Pasif</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="ca-label">Kayma Hızı (saniye)</label>
+                                        <input asp-for="UstBarHizi" class="ca-input" type="number" step="1" min="10" max="100" placeholder="34" />
+                                        <small class="text-muted">Animasyon süresi (10-100 arası)</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>

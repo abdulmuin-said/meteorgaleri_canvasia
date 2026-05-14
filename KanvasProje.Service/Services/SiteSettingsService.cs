@@ -57,6 +57,8 @@ namespace KanvasProje.Service.Services
                 existing.TemaRengi = normalized.TemaRengi;
                 existing.UstBarMesaji = normalized.UstBarMesaji;
                 existing.KampanyaMesaji = normalized.KampanyaMesaji;
+                existing.UstBarEtkin = normalized.UstBarEtkin;
+                existing.UstBarHizi = normalized.UstBarHizi;
                 existing.FooterAciklamasi = normalized.FooterAciklamasi;
                 existing.Telefon = normalized.Telefon;
                 existing.Email = normalized.Email;

@@ -13,6 +13,8 @@ namespace KanvasProje.Core.Models
         public string TemaRengi { get; set; } = "#313511";
         public string UstBarMesaji { get; set; } = "500 TL üzeri ücretsiz kargo";
         public string KampanyaMesaji { get; set; } = "Vade farksız 3 taksit";
+        public bool UstBarEtkin { get; set; } = true;
+        public double UstBarHizi { get; set; } = 34;
         public string FooterAciklamasi { get; set; } = "Premium duvar dekorasyonu ve özel tasarım ürünleri.";
 
         public string Telefon { get; set; } = string.Empty;
