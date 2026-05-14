@@ -471,20 +471,19 @@ ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTit
                     </button>
                 </div>
 
-                <div id="selectionSummary" class="hidden mb-4 bg-gradient-to-r from-[#fcf9f3] to-[#f5f0e6] border-2 border-[#b58735] rounded-xl px-4 py-3 sm:px-5 sm:py-4">
-                    <div class="flex items-center justify-center flex-wrap gap-2 sm:gap-4 text-center">
-                        <div class="flex items-center gap-1 sm:gap-2">
-                            <i class="fas fa-ruler-combined text-[#b58735] text-sm sm:text-lg"></i>
-                            <span id="summaryOlcu" class="text-base sm:text-lg font-bold text-[#1c1c18]">-</span>
+                <div id="selectionSummary" class="hidden mb-4 bg-gradient-to-r from-[#fcf9f3] to-[#f5f0e6] border-2 border-[#b58735] rounded-xl px-3 py-3 sm:px-5 sm:py-4">
+                    <div class="flex items-center justify-center gap-1.5 overflow-hidden text-center sm:gap-2">
+                        <div class="flex shrink-0 items-center gap-1 sm:gap-2">
+                            <i class="fas fa-ruler-combined hidden sm:inline text-[#b58735] text-sm sm:text-lg"></i>
+                            <span id="summaryOlcu" class="whitespace-nowrap text-sm sm:text-lg font-bold text-[#1c1c18]">-</span>
                         </div>
-                        <span class="text-[#b58735] text-lg sm:text-xl font-light">|</span>
-                        <div class="flex items-center gap-1 sm:gap-2">
-                            <i class="fas fa-border-all text-[#b58735] text-sm sm:text-lg"></i>
-                            <span id="summaryCerceve" class="text-base sm:text-lg font-bold text-[#313511]">Çerçeve seçiniz</span>
+                        <span class="shrink-0 text-[#b58735] text-sm sm:text-lg font-light">|</span>
+                        <div class="min-w-0 max-w-[42%] sm:max-w-none">
+                            <span id="summaryCerceve" class="block truncate text-sm sm:text-lg font-bold text-[#313511]">Çerçeve seçiniz</span>
                         </div>
-                        <span class="text-[#b58735] text-lg sm:text-xl font-light">|</span>
-                        <div class="flex items-center gap-1 sm:gap-2">
-                            <span id="summaryFiyat" class="text-lg sm:text-xl font-extrabold text-[#313511]">0 @currencySymbol</span>
+                        <span class="shrink-0 text-[#b58735] text-sm sm:text-lg font-light">|</span>
+                        <div class="flex shrink-0 items-center">
+                            <span id="summaryFiyat" class="whitespace-nowrap text-sm sm:text-xl font-extrabold text-[#313511]">0 @currencySymbol</span>
                             <span id="summaryBirimFiyat" class="hidden sm:inline text-xs text-[#47473d] font-normal ml-1"></span>
                         </div>
                     </div>
@@ -937,8 +936,8 @@ function updateSelectionSummary() {
 
     document.getElementById('summaryOlcu').textContent = olcu;
     document.getElementById('summaryCerceve').textContent = cerceve || 'Çerçeve seçiniz';
-    document.getElementById('summaryFiyat').textContent = toplam.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' @currencySymbol';
-    document.getElementById('summaryBirimFiyat').textContent = adet > 1 ? `(birim: ${toplamBirim.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} @currencySymbol)` : '';
+    document.getElementById('summaryFiyat').textContent = toplam.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' @currencySymbol';
+    document.getElementById('summaryBirimFiyat').textContent = adet > 1 ? `(birim: ${toplamBirim.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} @currencySymbol)` : '';
 
     summary.classList.remove('hidden');
 }
@@ -956,7 +955,7 @@ function updatePriceWithFrame() {
 
     var priceDisplay = document.getElementById('priceDisplay');
     if (priceDisplay) {
-        priceDisplay.innerHTML = `${newPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} @currencySymbol`;
+        priceDisplay.innerHTML = `${newPrice.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} @currencySymbol`;
     }
 
     var frameFarkiInput = document.getElementById('selectedFrameFarki');

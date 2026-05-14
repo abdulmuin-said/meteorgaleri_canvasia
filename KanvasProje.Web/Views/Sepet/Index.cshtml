@@ -63,8 +63,22 @@
 </div>
 
 <div class="container mx-auto px-4 py-10">
-    <h1 class="font-serif text-3xl text-[#313511] mb-1">Sepetim</h1>
-    <p class="text-xs text-[#47473d] mb-8">@Model.Count ürün</p>
+    <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <h1 class="font-serif text-3xl text-[#313511] mb-1">Sepetim</h1>
+            <p class="text-xs text-[#47473d]">@Model.Count ürün</p>
+        </div>
+        @if (Model.Any())
+        {
+            <form method="post" action="/Sepet/Temizle" onsubmit="return confirm('Sepetinizdeki tüm ürünler kaldırılacak. Devam etmek istiyor musunuz?');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-full border border-red-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest text-red-600 transition-colors hover:border-red-300 hover:bg-red-50">
+                    <i class="fas fa-trash-alt text-[11px]"></i>
+                    Sepeti Boşalt
+                </button>
+            </form>
+        }
+    </div>
 
     @if (TempData["SepetBasari"] != null)
     {

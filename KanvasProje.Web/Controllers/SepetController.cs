@@ -254,8 +254,18 @@ namespace KanvasProje.Web.Controllers
         {
             var userId = User.Identity?.IsAuthenticated == true ? _userManager.GetUserId(User) : null;
             var sessionId = HttpContext.Session.Id;
-            
-            await _sepetService.SepetTemizleAsync(userId, sessionId);
+
+            var success = await _sepetService.SepetTemizleAsync(userId, sessionId);
+            if (success)
+            {
+                HttpContext.Session.Remove("UygulananKupon");
+                TempData["SepetBasari"] = "Sepetiniz boşaltıldı.";
+            }
+            else
+            {
+                TempData["SepetHata"] = "Sepet boşaltılırken bir hata oluştu.";
+            }
+
             return RedirectToAction("Index");
         }
     }
