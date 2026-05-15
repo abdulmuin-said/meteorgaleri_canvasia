@@ -13,27 +13,8 @@
     var homePageSettings = Model.HomePageSettings ?? new KanvasProje.Core.Models.HomePageSettingsModel();
     var aktifSlaytlar = Model.AktifSlaytlar ?? new List<KanvasProje.Core.Varliklar.Slayt>();
     var siteUrl = SiteSettingsService.BuildAbsoluteUrl(string.Empty);
-    var popularCategoryNames = new[]
-    {
-        "Kanvas Tablo",
-        "Cam Tablo",
-        "Parçalı Tablolar",
-        "İslami Sanat & Hat",
-        "Dini ve Hat Sanatı",
-        "Osmanlı ve Tuğra",
-        "Modern & Soyut",
-        "Soyut ve Sanatsal"
-    };
-    var popularCategories = (Model.Kategoriler ?? new List<KanvasProje.Core.Varliklar.Kategori>())
-        .Where(k => popularCategoryNames.Contains(k.Ad))
-        .OrderBy(k => Array.IndexOf(popularCategoryNames, k.Ad))
-        .ToList();
-
     string BuildProductUrl(KanvasProje.Core.Varliklar.Urun urun)
         => "/Urun/Detay/" + (string.IsNullOrEmpty(urun.Slug) ? urun.Id.ToString() : urun.Slug + "-" + urun.Id);
-
-    string BuildCategoryUrl(KanvasProje.Core.Varliklar.Kategori kategori)
-        => "/Urun?k=" + kategori.Id;
 
     var websiteSchema = new Dictionary<string, object?>
     {
@@ -58,20 +39,6 @@
         ["logo"] = SiteSettingsService.BuildAbsoluteUrl(string.IsNullOrWhiteSpace(siteSettings.SiteLogoUrl) ? "/logo_svg.svg" : siteSettings.SiteLogoUrl),
         ["description"] = ViewData["MetaDescription"]
     };
-
-    var itemListSchema = new Dictionary<string, object?>
-    {
-        ["@context"] = "https://schema.org",
-        ["@type"] = "ItemList",
-        ["name"] = "Canvasia popüler kategoriler",
-        ["itemListElement"] = popularCategories.Select((kategori, index) => new Dictionary<string, object?>
-        {
-            ["@type"] = "ListItem",
-            ["position"] = index + 1,
-            ["name"] = kategori.Ad,
-            ["url"] = SiteSettingsService.BuildAbsoluteUrl(BuildCategoryUrl(kategori))
-        }).ToArray()
-    };
 }
 
 <script type="application/ld+json">
@@ -80,13 +47,6 @@
 <script type="application/ld+json">
 @Html.Raw(System.Text.Json.JsonSerializer.Serialize(organizationSchema))
 </script>
-@if (popularCategories.Any())
-{
-    <script type="application/ld+json">
-    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(itemListSchema))
-    </script>
-}
-
 @if (aktifSlaytlar.Any())
 {
 <!-- BEGIN: HeroSection - Otomatik Slider -->
@@ -327,28 +287,6 @@
 goTo(0);
 })();
 </script>
-
-@if (popularCategories.Any())
-{
-    <section class="border-b border-[#e5e2dc] bg-[#fcf9f3] py-8">
-        <div class="container mx-auto px-4">
-            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <h2 class="font-serif text-2xl text-[#313511]">Popüler Kategoriler</h2>
-                    <p class="mt-1 text-sm text-[#47473d]">Kanvas tablo, cam tablo ve seçili duvar dekorasyonu koleksiyonlarını keşfedin.</p>
-                </div>
-                <div class="flex flex-wrap gap-2 md:justify-end">
-                    @foreach (var kategori in popularCategories)
-                    {
-                        <a href="@BuildCategoryUrl(kategori)" class="rounded-full border border-[#d8d3c8] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wider text-[#313511] transition-colors hover:border-[#b58735] hover:text-[#b58735]">
-                            @kategori.Ad
-                        </a>
-                    }
-                </div>
-            </div>
-        </div>
-    </section>
-}
 
 @if (Model.BesParcaliKoleksiyon != null && Model.BesParcaliKoleksiyon.Any())
 {
