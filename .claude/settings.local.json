@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_navigate",
+      "Bash(docker exec *)",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_fill_form",
+      "Bash(git checkout *)",
+      "Bash(dotnet build *)",
+      "Bash(git reset *)",
+      "Bash(dotnet watch run *)",
+      "Bash(pkill *)",
+      "Bash(taskkill *)",
+      "Bash(dotnet run *)",
+      "Bash(timeout 15 bash *)",
+      "mcp__playwright__browser_select_option",
+      "Bash(tasklist)",
+      "Bash(findstr dotnet *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5002/)",
+      "Bash(dotnet ef *)",
+      "mcp__filesystem__read_text_file",
+      "Bash(touch *)",
+      "Bash(python *)",
+      "Bash(kill 32000)",
+      "Bash(taskkill.exe /PID 32000 /F)",
+      "Bash(powershell.exe -NoProfile -Command \"Stop-Process -Id 32000 -Force\")",
+      "Bash(docker-compose up *)"
+    ]
+  }
+}

@@ -1,4 +1,4 @@
-@model IEnumerable<KanvasProje.Core.Varliklar.Urun>
+@model IEnumerable<KanvasProje.Core.Varliklar.Favori>
 @inject KanvasProje.Service.Services.ISiteSettingsService SiteSettingsService
 @{
     ViewData["Title"] = "Favorilerim";
@@ -40,25 +40,58 @@
     else
     {
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="favoriListesi">
-            @foreach (var urun in Model)
+            @foreach (var favori in Model)
             {
+                var urun = favori.Urun;
+                if (urun == null) continue;
                 var urlSlug = string.IsNullOrEmpty(urun.Slug) ? urun.Id.ToString() : $"{urun.Slug}-{urun.Id}";
+                var bildirimAktif = favori.FiyatDustugundaBildir;
                 <div class="favori-item group relative flex flex-col bg-white border border-[#e5e2dc] hover:border-[#b58735] transition-colors rounded-lg overflow-hidden">
                     <div class="relative aspect-[4/5] bg-[#fcf9f3] overflow-hidden">
                         <a href="/Urun/Detay/@urlSlug" class="block w-full h-full">
                     <img src="@urun.AnaGorselUrl" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="@urun.Baslik" loading="lazy" decoding="async">
                         </a>
-                        
+
                         <button onclick="favoridenCikar(this, @urun.Id)" class="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full text-red-500 flex items-center justify-center hover:bg-white transition-colors shadow-sm" title="Favorilerden Çıkar">
                             <i class="fas fa-heart"></i>
                         </button>
+
+                        @if (urun.IndirimVarMi)
+                        {
+                            var indirimYuzde = Math.Round((1 - urun.EtkinFiyat / urun.Fiyat) * 100, 0);
+                            <span class="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded">
+                                %@indirimYuzde İNDİRİM
+                            </span>
+                        }
                     </div>
 
                     <div class="p-4 flex flex-col flex-1">
                         <h6 class="font-semibold text-sm text-[#1c1c18] mb-1 line-clamp-1">
                             <a href="/Urun/Detay/@urlSlug" class="hover:text-[#b58735] transition-colors">@urun.Baslik</a>
                         </h6>
-                        <p class="text-sm text-[#47473d] mb-4">@urun.Fiyat.ToString("N2") @currencySymbol</p>
+                        <div class="mb-3">
+                            @if (urun.IndirimVarMi)
+                            {
+                                <span class="text-xs text-[#999] line-through mr-1">@urun.Fiyat.ToString("N2") @currencySymbol</span>
+                                <span class="text-sm font-bold text-[#b58735]">@urun.EtkinFiyat.ToString("N2") @currencySymbol</span>
+                            }
+                            else
+                            {
+                                <span class="text-sm text-[#47473d]">@urun.Fiyat.ToString("N2") @currencySymbol</span>
+                            }
+                        </div>
+
+                        <!-- Fiyat Düşüş Bildirimi Butonu -->
+                        <button type="button"
+                                class="mb-2 w-full flex items-center justify-center gap-2 py-2 text-xs rounded transition-all duration-300
+                                       @(bildirimAktif
+                                           ? "bg-emerald-50 border border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+                                           : "bg-[#fcf9f3] border border-[#e5e2dc] text-[#47473d] hover:border-[#b58735] hover:text-[#b58735]")"
+                                onclick="togglePriceNotification(this, @urun.Id)"
+                                title="@(bildirimAktif ? "Fiyat düşüş bildirimi açık" : "Fiyat düştüğünde bana haber ver")">
+                            <i class="fas @(bildirimAktif ? "fa-bell" : "fa-bell-slash") text-xs"></i>
+                            <span>@(bildirimAktif ? "Bildirim Açık" : "Fiyat Düşünce Bildir")</span>
+                        </button>
 
                         <button type="button" class="mt-auto w-full border border-[#313511] text-[#313511] hover:bg-[#313511] hover:text-white py-2 text-xs tracking-widest uppercase rounded transition-colors" onclick="favoriSepeteEkle(this, @urun.Id)">
                             Sepete Ekle
@@ -108,6 +141,43 @@
         });
     }
 
+    function togglePriceNotification(btn, urunId) {
+        var originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i> <span>İşleniyor...</span>';
+        btn.disabled = true;
+
+        fetch('/Favori/TogglePriceNotification?urunId=' + urunId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': getAntiForgeryToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.isEnabled) {
+                    btn.className = 'mb-2 w-full flex items-center justify-center gap-2 py-2 text-xs rounded transition-all duration-300 bg-emerald-50 border border-emerald-300 text-emerald-700 hover:bg-emerald-100';
+                    btn.innerHTML = '<i class="fas fa-bell text-xs"></i> <span>Bildirim Açık</span>';
+                } else {
+                    btn.className = 'mb-2 w-full flex items-center justify-center gap-2 py-2 text-xs rounded transition-all duration-300 bg-[#fcf9f3] border border-[#e5e2dc] text-[#47473d] hover:border-[#b58735] hover:text-[#b58735]';
+                    btn.innerHTML = '<i class="fas fa-bell-slash text-xs"></i> <span>Fiyat Düşünce Bildir</span>';
+                }
+                if (window.showToast) window.showToast(data.message, 'success');
+            } else {
+                btn.innerHTML = originalHtml;
+                if (window.showToast) window.showToast(data.message || 'İşlem başarısız.', 'error');
+            }
+            btn.disabled = false;
+        })
+        .catch(err => {
+            console.error(err);
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+            if (window.showToast) window.showToast('Bağlantı hatası.', 'error');
+        });
+    }
+
     function favoriSepeteEkle(btn, urunId) {
         var originalHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -125,7 +195,7 @@
             if (data.success) {
                 btn.innerHTML = '<i class="fas fa-check"></i>';
                 btn.classList.add('bg-[#313511]', 'text-white');
-                
+
                 if (window.showToast) window.showToast('Ürün sepetinize eklendi.', 'success');
 
                 var cartBadge = document.getElementById('cartItemCount');

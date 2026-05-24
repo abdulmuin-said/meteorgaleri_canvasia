@@ -10,31 +10,23 @@ namespace KanvasProje.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<bool>(
-                name: "UstBarEtkin",
-                table: "SiteAyarlari",
-                type: "boolean",
-                nullable: false,
-                defaultValue: false);
+            migrationBuilder.Sql(@"
+ALTER TABLE public.""SiteAyarlari""
+ADD COLUMN IF NOT EXISTS ""UstBarEtkin"" boolean NOT NULL DEFAULT FALSE;
 
-            migrationBuilder.AddColumn<double>(
-                name: "UstBarHizi",
-                table: "SiteAyarlari",
-                type: "double precision",
-                nullable: false,
-                defaultValue: 0.0);
+ALTER TABLE public.""SiteAyarlari""
+ADD COLUMN IF NOT EXISTS ""UstBarHizi"" double precision NOT NULL DEFAULT 0.0;");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "UstBarEtkin",
-                table: "SiteAyarlari");
+            migrationBuilder.Sql(@"
+ALTER TABLE public.""SiteAyarlari""
+DROP COLUMN IF EXISTS ""UstBarEtkin"";
 
-            migrationBuilder.DropColumn(
-                name: "UstBarHizi",
-                table: "SiteAyarlari");
+ALTER TABLE public.""SiteAyarlari""
+DROP COLUMN IF EXISTS ""UstBarHizi"";");
         }
     }
 }

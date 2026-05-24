@@ -236,8 +236,8 @@ var touchIconUrl = "/favicon.svg";
     <!-- END: AnnouncementBar -->
 
 <!-- BEGIN: MainHeader -->
-    <header class="sticky top-0 bg-[#fcf9f3] z-40 border-b border-[#e5e2dc]">
-        <div class="container mx-auto px-4 py-2 flex flex-col items-center relative">
+    <header class="sticky top-0 bg-[#fcf9f3] z-[100] border-b border-[#e5e2dc]">
+        <div class="w-full max-w-[1360px] mx-auto px-4 py-2 flex flex-col items-center relative">
             <!-- Logo -->
             <a class="mb-1 mt-1 inline-block leading-none" href="/" aria-label="@brandName" id="siteLogo">
                 @if (!string.IsNullOrEmpty(logoUrl)) {
@@ -328,66 +328,123 @@ var touchIconUrl = "/favicon.svg";
             </div>
 
             <!-- Desktop Navigation -->
-            <nav class="w-full hidden md:block z-50">
-                <ul class="flex justify-center space-x-8 text-xs tracking-widest text-[#47473d] font-light uppercase">
+            <nav class="w-full hidden md:block z-50" data-desktop-nav>
+                <ul class="flex justify-center space-x-4 text-xs tracking-widest text-[#47473d] font-light uppercase" data-desktop-nav-list>
                     @foreach (var kategori in tumKategoriler.Where(x => x.ParentKategoriId == null).OrderBy(x => x.Sira).ThenBy(x => x.Ad))
                     {
                         var altKategoriler = tumKategoriler.Where(x => x.ParentKategoriId == kategori.Id).OrderBy(x => x.Sira).ToList();
+                        var kategoriPreviewGorsel = GetCategoryMenuImage(kategori);
+                        var kategoriPreviewMetin = !string.IsNullOrWhiteSpace(kategori.KisaAciklama)
+                            ? kategori.KisaAciklama
+                            : "Seçili koleksiyondaki ürünleri keşfedin.";
                         
-                        <li class="relative group cursor-pointer flex items-center hover:text-[#1c1c18] transition-colors py-2" data-category-menu-item>
-                            <a href="/Urun?k=@kategori.Id" class="flex items-center gap-1">
+                        <li class="relative group cursor-pointer hover:text-[#1c1c18] transition-colors py-2" data-category-menu-item>
+                            <a href="/Urun?k=@kategori.Id" class="flex items-center gap-1 whitespace-nowrap">
                                 @kategori.Ad
-                                @if (altKategoriler.Any())
-                                {
-                                    <i class="fas fa-chevron-down text-[10px] opacity-70 group-hover:rotate-180 transition-transform"></i>
-                                }
+                                <i class="fas fa-chevron-down text-[10px] opacity-70 group-hover:rotate-180 transition-transform"></i>
                             </a>
                             
-                            @if (altKategoriler.Any())
-                            {
-                                <!-- Dropdown Menü -->
-                                <div class="absolute left-1/2 -translate-x-1/2 top-full pt-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-300 w-[min(760px,calc(100vw-32px))] z-50" data-category-dropdown>
-                                    <div class="bg-[#f7f1e6] border border-[#c9b58a]/60 shadow-xl rounded-sm p-5 ring-1 ring-[#313511]/5">
-                                        <div class="mb-4 flex items-center justify-between border-b border-[#d8c9aa] pb-3">
-                                            <div>
-                                                <div class="font-serif text-lg normal-case tracking-normal text-[#313511]">@kategori.Ad</div>
-                                                <div class="mt-1 text-[11px] font-light normal-case tracking-normal text-[#6f6a5e]">Alt kategoriler</div>
-                                            </div>
-                                            <a href="/Urun?k=@kategori.Id" class="text-[11px] font-medium tracking-widest text-[#9a6d24] hover:text-[#313511]">TÜMÜNÜ GÖR</a>
+                            <!-- Dropdown Menü -->
+                            <div class="absolute left-1/2 top-full pt-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-300 w-[min(820px,calc(100vw-32px))] z-[9999]" style="transform:translateX(-50%) translateZ(1px);isolation:isolate" data-category-dropdown>
+                                <div class="bg-[#f7f1e6] border border-[#c9b58a]/60 shadow-xl rounded-sm p-5 ring-1 ring-[#313511]/5">
+                                    <div class="mb-4 flex items-center justify-between border-b border-[#d8c9aa] pb-3">
+                                        <div>
+                                            <div class="font-serif text-lg normal-case tracking-normal text-[#313511]">@kategori.Ad</div>
+                                            <div class="mt-1 text-[11px] font-light normal-case tracking-normal text-[#6f6a5e]">@(altKategoriler.Any() ? "Alt kategoriler" : "Kategori detayı")</div>
                                         </div>
-                                        <div class="grid grid-cols-3 gap-x-5 gap-y-1 lg:grid-cols-4">
-                                        @foreach (var alt in altKategoriler)
-                                        {
-                                            var altGorsel = GetCategoryMenuImage(alt);
-                                            <a href="/Urun?k=@alt.Id" class="flex items-center gap-3 border-b border-[#dfd3ba]/70 px-1 py-2 text-left text-[11px] leading-snug text-[#47473d] transition-colors hover:text-[#9a6d24]">
-                                                <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden bg-[#efe4cf] text-[#b58735]">
-                                                    @if (!string.IsNullOrWhiteSpace(altGorsel))
+                                        <a href="/Urun?k=@kategori.Id" class="text-[11px] font-medium tracking-widest text-[#9a6d24] hover:text-[#313511]">TÜMÜNÜ GÖR</a>
+                                    </div>
+
+                                    @if (altKategoriler.Any())
+                                    {
+                                        <div class="grid gap-5 lg:grid-cols-[1.35fr_0.65fr]">
+                                            <div class="grid grid-cols-2 gap-x-5 gap-y-1 sm:grid-cols-3">
+                                                @foreach (var alt in altKategoriler)
+                                                {
+                                                    var altGorsel = GetCategoryMenuImage(alt);
+                                                    var altPreviewMetin = !string.IsNullOrWhiteSpace(alt.KisaAciklama)
+                                                        ? alt.KisaAciklama
+                                                        : (!string.IsNullOrWhiteSpace(alt.SeoDescription) ? alt.SeoDescription : "Bu koleksiyondaki öne çıkan tasarımları inceleyin.");
+                                                    <a href="/Urun?k=@alt.Id"
+                                                       class="flex items-center gap-3 border-b border-[#dfd3ba]/70 px-1 py-2 text-left text-[11px] leading-snug text-[#47473d] transition-colors hover:text-[#9a6d24]"
+                                                       data-category-preview-src="@altGorsel"
+                                                       data-category-preview-title="@alt.Ad"
+                                                       data-category-preview-text="@altPreviewMetin">
+                                                        <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden bg-[#efe4cf] text-[#b58735]">
+                                                            @if (!string.IsNullOrWhiteSpace(altGorsel))
+                                                            {
+                                                                <img src="@altGorsel" alt="@alt.Ad" class="h-full w-full object-cover" loading="lazy" decoding="async" />
+                                                            }
+                                                            else
+                                                            {
+                                                                <i class="fas fa-layer-group text-xs"></i>
+                                                            }
+                                                        </span>
+                                                        <span>@alt.Ad</span>
+                                                    </a>
+                                                }
+                                            </div>
+                                            <div class="category-preview-panel hidden overflow-hidden bg-[#efe4cf] lg:block" data-category-preview-panel>
+                                                <div class="category-preview-media aspect-[4/5] bg-[#e5d6ba]">
+                                                    @if (!string.IsNullOrWhiteSpace(kategoriPreviewGorsel))
                                                     {
-                                                        <img src="@altGorsel" alt="@alt.Ad" class="h-full w-full object-cover" loading="lazy" decoding="async" />
+                                                        <img src="@kategoriPreviewGorsel" alt="@kategori.Ad" class="h-full w-full object-cover" data-category-preview-image loading="lazy" decoding="async" />
                                                     }
                                                     else
                                                     {
-                                                        <i class="fas fa-layer-group text-xs"></i>
+                                                        <div class="flex h-full w-full items-center justify-center text-[#b58735]" data-category-preview-placeholder>
+                                                            <i class="fas fa-layer-group text-xl"></i>
+                                                        </div>
                                                     }
-                                                </span>
-                                                <span>@alt.Ad</span>
-                                            </a>
-                                        }
+                                                </div>
+                                                <div class="px-4 py-4">
+                                                    <p class="mb-1 text-[10px] uppercase tracking-[0.22em] text-[#9a6d24]">Koleksiyon</p>
+                                                    <h4 class="category-preview-title font-serif text-xl normal-case tracking-normal text-[#313511]" data-category-preview-title>@kategori.Ad</h4>
+                                                    <p class="category-preview-text mt-2 line-clamp-3 text-xs normal-case leading-5 tracking-normal text-[#6f6a5e]" data-category-preview-text>@kategoriPreviewMetin</p>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
+                                            <div class="overflow-hidden bg-[#efe4cf]">
+                                                <div class="aspect-[4/3] bg-[#e5d6ba]">
+                                                    @if (!string.IsNullOrWhiteSpace(kategoriPreviewGorsel))
+                                                    {
+                                                        <img src="@kategoriPreviewGorsel" alt="@kategori.Ad" class="h-full w-full object-cover" loading="lazy" decoding="async" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="flex h-full w-full items-center justify-center text-[#b58735]">
+                                                            <i class="fas fa-layer-group text-xl"></i>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-col justify-center text-left normal-case tracking-normal">
+                                                <p class="mb-3 text-[10px] uppercase tracking-[0.22em] text-[#9a6d24]">Kategori</p>
+                                                <h4 class="font-serif text-2xl text-[#313511]">@kategori.Ad</h4>
+                                                <p class="mt-3 text-sm leading-6 text-[#6f6a5e]">@kategoriPreviewMetin</p>
+                                                <a href="/Urun?k=@kategori.Id" class="mt-5 inline-flex w-fit items-center gap-2 border-b border-[#313511] pb-1 text-[11px] font-medium uppercase tracking-widest text-[#313511] transition-colors hover:text-[#9a6d24]">
+                                                    Kategoriyi İncele
+                                                    <i class="fas fa-arrow-right text-[10px]"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    }
                                 </div>
-                            }
+                            </div>
                         </li>
                     }
-                    <li class="cursor-pointer hover:text-[#1c1c18] transition-colors py-2"><a href="/Urun">TÜM ÜRÜNLER</a></li>
-                    <li class="cursor-pointer hover:text-[#1c1c18] transition-colors py-2"><a href="/Kurumsal/Iletisim">İLETİŞİM</a></li>
+                    <li class="cursor-pointer hover:text-[#1c1c18] transition-colors py-2 whitespace-nowrap"><a href="/Kurumsal/Iletisim">İLETİŞİM</a></li>
                 </ul>
             </nav>
         </div>
 
         <!-- Mobile Navigation Drawer -->
-        <div id="mobileNavBackdrop" class="fixed inset-0 z-[80] hidden bg-[#1c1c18]/45 md:hidden" onclick="window.toggleMobileNav(false)"></div>
-        <div id="mobileNav" class="fixed left-0 top-0 z-[90] hidden h-dvh w-[88vw] max-w-[380px] overflow-y-auto overscroll-contain border-r border-[#d8c9aa] bg-[#f7f1e6] px-5 py-5 shadow-2xl md:hidden">
+        <div id="mobileNavBackdrop" class="mobile-nav-backdrop fixed inset-0 z-[80] hidden bg-[#1c1c18]/45 md:hidden" onclick="window.toggleMobileNav(false)"></div>
+        <div id="mobileNav" class="mobile-nav-panel fixed left-0 top-0 z-[90] hidden h-dvh w-[88vw] max-w-[380px] overflow-y-auto overscroll-contain border-r border-[#d8c9aa] bg-[#f7f1e6] px-5 py-5 shadow-2xl md:hidden">
             <div class="mb-5 flex items-center justify-between border-b border-[#d8c9aa] pb-4">
                 <a href="/" class="font-serif text-xl tracking-widest text-[#313511]">@brandName</a>
                 <button type="button" aria-label="Menüyü kapat" onclick="window.toggleMobileNav(false)" class="flex h-9 w-9 items-center justify-center rounded-full border border-[#c9b58a] text-[#313511]">
@@ -395,28 +452,28 @@ var touchIconUrl = "/favicon.svg";
                 </button>
             </div>
 
-            <ul class="space-y-3 text-sm tracking-widest text-[#47473d] font-light uppercase">
-                <li class="border-b border-[#d8c9aa] pb-3"><a href="/Urun" class="block w-full">TÜM ÜRÜNLER</a></li>
+            <ul class="space-y-3 text-sm tracking-widest text-[#47473d] font-light uppercase" data-mobile-nav-list>
+                <li class="border-b border-[#d8c9aa] pb-3" data-mobile-nav-item><a href="/Urun" class="block w-full">TÜM ÜRÜNLER</a></li>
                 @foreach (var kategori in tumKategoriler.Where(x => x.ParentKategoriId == null).OrderBy(x => x.Sira).ThenBy(x => x.Ad))
                 {
                     var altKategoriler = tumKategoriler.Where(x => x.ParentKategoriId == kategori.Id).OrderBy(x => x.Sira).ToList();
-                    <li class="border-b border-[#d8c9aa] pb-3">
+                    <li class="border-b border-[#d8c9aa] pb-3" data-mobile-nav-item>
                         @if (altKategoriler.Any())
                         {
-                            <details class="group">
+                            <details class="group" data-mobile-category>
                                 <summary class="flex justify-between items-center cursor-pointer list-none w-full py-1">
                                     <span class="hover:text-[#313511]">@kategori.Ad</span>
                                     <span class="transition group-open:rotate-180 p-1 text-[#9a6d24]"><i class="fas fa-chevron-down"></i></span>
                                 </summary>
                                 <ul class="mt-3 max-h-[52vh] space-y-1 overflow-y-auto border-l-2 border-[#c9b58a] pl-4 pr-1 text-xs normal-case tracking-normal">
-                                    <li>
+                                    <li data-mobile-subitem>
                                         <a href="/Urun?k=@kategori.Id" class="mb-2 block rounded-sm bg-[#313511] px-3 py-2 text-center font-medium tracking-widest text-white">
                                             Tümünü Gör
                                         </a>
                                     </li>
                                     @foreach (var alt in altKategoriler)
                                     {
-                                        <li><a href="/Urun?k=@alt.Id" class="block w-full rounded-sm px-2 py-2 text-[#5f594e] hover:bg-[#efe4cf] hover:text-[#313511]">@alt.Ad</a></li>
+                                        <li data-mobile-subitem><a href="/Urun?k=@alt.Id" class="block w-full rounded-sm px-2 py-2 text-[#5f594e] hover:bg-[#efe4cf] hover:text-[#313511]">@alt.Ad</a></li>
                                     }
                                 </ul>
                             </details>
@@ -427,15 +484,15 @@ var touchIconUrl = "/favicon.svg";
                         }
                     </li>
                 }
-                <li class="border-b border-[#d8c9aa] pb-3"><a href="/Kurumsal/Iletisim" class="block w-full">İLETİŞİM</a></li>
-                <li class="border-b border-[#d8c9aa] pb-3"><a href="/Favori" class="block w-full flex items-center gap-2"><i class="far fa-heart text-red-400"></i> FAVORİLERİM</a></li>
+                <li class="border-b border-[#d8c9aa] pb-3" data-mobile-nav-item><a href="/Kurumsal/Iletisim" class="block w-full">İLETİŞİM</a></li>
+                <li class="border-b border-[#d8c9aa] pb-3" data-mobile-nav-item><a href="/Favori" class="block w-full flex items-center gap-2"><i class="far fa-heart text-red-400"></i> FAVORİLERİM</a></li>
                 @if (SignInManager.IsSignedIn(User))
                 {
-                    <li><a href="/Profil" class="block w-full">HESABIM</a></li>
+                    <li data-mobile-nav-item><a href="/Profil" class="block w-full">HESABIM</a></li>
                 }
                 else
                 {
-                    <li><a href="/Hesap/GirisYap" class="block w-full">GİRİŞ YAP / KAYIT OL</a></li>
+                    <li data-mobile-nav-item><a href="/Hesap/GirisYap" class="block w-full">GİRİŞ YAP / KAYIT OL</a></li>
                 }
             </ul>
         </div>
@@ -574,8 +631,21 @@ var touchIconUrl = "/favicon.svg";
             if (!drawer || !backdrop) return;
 
             const shouldOpen = typeof open === 'boolean' ? open : drawer.classList.contains('hidden');
-            drawer.classList.toggle('hidden', !shouldOpen);
-            backdrop.classList.toggle('hidden', !shouldOpen);
+            if (shouldOpen) {
+                drawer.classList.remove('hidden');
+                backdrop.classList.remove('hidden');
+                requestAnimationFrame(() => {
+                    drawer.classList.add('is-open');
+                    backdrop.classList.add('is-open');
+                });
+            } else {
+                drawer.classList.remove('is-open');
+                backdrop.classList.remove('is-open');
+                setTimeout(() => {
+                    drawer.classList.add('hidden');
+                    backdrop.classList.add('hidden');
+                }, 430);
+            }
             document.documentElement.classList.toggle('overflow-hidden', shouldOpen);
             document.body.classList.toggle('overflow-hidden', shouldOpen);
         };
@@ -728,6 +798,7 @@ document.addEventListener('keydown', function(event) {
         };
 
     </script>
+    <script src="~/js/premium-motion.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 
     

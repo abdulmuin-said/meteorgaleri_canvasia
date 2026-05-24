@@ -110,7 +110,6 @@
     var tumMedya = ViewBag.TumMedya as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
     var galeriMedyalari = ViewBag.Galeri as List<KanvasProje.Core.Varliklar.UrunResim> ?? tumMedya.Where(x => !x.VideoMu).ToList();
     var videoMedyalari = ViewBag.VideoMedyalari as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
-    var mockupMedyalari = ViewBag.MockupMedyalari as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
     var yakinDetayMedyalari = ViewBag.YakinDetayMedyalari as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
     var uretimMedyalari = ViewBag.UretimMedyalari as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
     var kullanimMedyalari = ViewBag.KullanimMedyalari as List<KanvasProje.Core.Varliklar.UrunResim> ?? new List<KanvasProje.Core.Varliklar.UrunResim>();
@@ -130,11 +129,7 @@
         .ToDictionary(
             x => x.Key,
             x => x.OrderByDescending(y => y.VarsayilanMi).ThenBy(y => y.Sira).Select(y => y.ResimYolu).First());
-    var mockupGruplari = mockupMedyalari
-        .GroupBy(x => x.MedyaAlani)
-        .OrderBy(x => UrunMedyaCatalog.GetAreaLabel(x.Key))
-        .ToList();
-    bool medyaVitriniVar = videoMedyalari.Any() || mockupMedyalari.Any() || yakinDetayMedyalari.Any() || uretimMedyalari.Any() || kullanimMedyalari.Any();
+    bool medyaVitriniVar = videoMedyalari.Any() || yakinDetayMedyalari.Any() || uretimMedyalari.Any() || kullanimMedyalari.Any();
 
     List<KanvasProje.Core.Varliklar.Yorum> yorumlar = ViewBag.Yorumlar ?? new List<KanvasProje.Core.Varliklar.Yorum>();
     double ortalamaPuan = ViewBag.OrtalamaPuan != null ? (double)ViewBag.OrtalamaPuan : 0;
@@ -234,6 +229,7 @@ ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTit
         <img id="desktopLightboxImage" src="@varsayilanGaleriGorseli" class="max-w-full max-h-full object-contain transition-transform duration-200" alt="@varsayilanGaleriAltMetni" loading="lazy" decoding="async">
     </div>
 </div>
+
 
 <!-- Yorum Yapma Modal -->
 <div class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 items-center justify-center" id="commentModal">
@@ -637,23 +633,6 @@ ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTit
                             </div>
                         }
 
-                        @if (mockupGruplari.Any())
-                        {
-                            @foreach (var grup in mockupGruplari)
-                            {
-                                <div class="mb-8">
-                                    <h3 class="text-lg font-semibold text-[#1c1c18] mb-4">@UrunMedyaCatalog.GetAreaLabel(grup.Key)</h3>
-                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                        @foreach (var medya in grup)
-                                        {
-                                            <div class="rounded-lg overflow-hidden border border-[#e5e2dc] aspect-square">
-                                                <img src="@medya.EtkinKaynak" alt="@medya.AltMetin" class="w-full h-full object-cover" loading="lazy" decoding="async" />
-                                            </div>
-                                        }
-                                    </div>
-                                </div>
-                            }
-                        }
                     </div>
                 }
             </div>
@@ -765,6 +744,7 @@ ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTit
         </div>
     </section>
 }
+
 
 <script>
 const PRODUCT_CURRENCY = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(currencySymbol));

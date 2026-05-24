@@ -177,7 +177,8 @@ builder.Services.AddScoped<ISeoService, SeoService>();
 builder.Services.AddScoped<ISepetService, KanvasProje.Service.SepetService>(); // ğŸ›’ Database Cart Service
 if (isDatabaseAvailableAtStartup)
 {
-    builder.Services.AddHostedService<AbandonedCartService>(); // ğŸ“§ Abandoned Cart Background Job
+    builder.Services.AddHostedService<AbandonedCartService>(); // 📧 Abandoned Cart Background Job
+    builder.Services.AddHostedService<FavoriPriceDropService>(); // 🔔 Favori Fiyat Düşüş Bildirimi
 }
 
 builder.Services.AddScoped<ZiyaretciTakipAttribute>();
@@ -185,7 +186,9 @@ builder.Services.AddScoped<ZiyaretciTakipAttribute>();
 // 7. HTTP Context Accessor
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ISiteSettingsService, SiteSettingsService>();
-builder.Services.AddSingleton<IHomePageSettingsService, HomePageSettingsService>();
+builder.Services.AddScoped<IHomePageSettingsService, HomePageSettingsService>();
+builder.Services.AddScoped<IHomePageSectionService, HomePageSectionService>();
+builder.Services.AddScoped<IFavoriService, FavoriService>();
 builder.Services.AddSingleton<IAdminSecurityAuditService, AdminSecurityAuditService>();
 builder.Services.AddSingleton<IAdminSessionStateService, AdminSessionStateService>();
 // Health Checks (Docker / Load Balancer / Monitoring)
@@ -614,6 +617,7 @@ BEGIN
         ALTER TABLE "SepetItems" ADD COLUMN IF NOT EXISTS "MusteriNotu" character varying(500) NULL;
     END IF;
 
+
     IF to_regclass('public."SiparisDetaylari"') IS NOT NULL THEN
         IF EXISTS (
             SELECT 1 FROM information_schema.columns
@@ -659,6 +663,13 @@ INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
 SELECT '20260508204726_Fix_NullableUrunSecenekId_And_SlugIndex', '8.0.0'
 WHERE NOT EXISTS (SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260508204726_Fix_NullableUrunSecenekId_And_SlugIndex')
   AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'SiparisDetaylari' AND column_name = 'UrunSecenekId' AND is_nullable = 'YES');
+
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+SELECT '20260523223159_AddFavoriPriceDropFields', '8.0.0'
+WHERE NOT EXISTS (SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260523223159_AddFavoriPriceDropFields')
+  AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'Favoriler' AND column_name = 'FiyatDustugundaBildir')
+  AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'Favoriler' AND column_name = 'EskiFiyat')
+  AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'Favoriler' AND column_name = 'SonBildirimTarihi');
 """;
 
     await context.Database.ExecuteSqlRawAsync(sql);
@@ -770,6 +781,12 @@ BEGIN
     ALTER TABLE "UrunResimleri" ADD COLUMN IF NOT EXISTS "ThumbnailYolu" text NOT NULL DEFAULT '';
     ALTER TABLE "UrunResimleri" ADD COLUMN IF NOT EXISTS "UrunSecenekId" integer NULL;
     ALTER TABLE "UrunResimleri" ADD COLUMN IF NOT EXISTS "VideoUrl" text NOT NULL DEFAULT '';
+
+    -- Favori fiyat düşüş bildirimi alanları
+    ALTER TABLE "Favoriler" ADD COLUMN IF NOT EXISTS "FiyatDustugundaBildir" boolean NOT NULL DEFAULT false;
+    ALTER TABLE "Favoriler" ADD COLUMN IF NOT EXISTS "EskiFiyat" numeric NULL;
+    ALTER TABLE "Favoriler" ADD COLUMN IF NOT EXISTS "SonBildirimTarihi" timestamp with time zone NULL;
+
 
     IF NOT EXISTS (
         SELECT 1

@@ -382,7 +382,6 @@ namespace KanvasProje.Web.Controllers
                 .Where(x => !x.VideoMu && (x.MedyaAlani == UrunMedyaCatalog.Galeri || x.VarsayilanMi || x.MedyaAlani == UrunMedyaCatalog.YakinDetay))
                 .ToList();
             ViewBag.VideoMedyalari = tumMedya.Where(x => x.VideoMu).ToList();
-            ViewBag.MockupMedyalari = tumMedya.Where(x => UrunMedyaCatalog.IsMockupArea(x.MedyaAlani)).ToList();
             ViewBag.YakinDetayMedyalari = tumMedya.Where(x => x.MedyaAlani == UrunMedyaCatalog.YakinDetay).ToList();
             ViewBag.UretimMedyalari = tumMedya.Where(x => x.MedyaAlani == UrunMedyaCatalog.Uretim).ToList();
             ViewBag.KullanimMedyalari = tumMedya

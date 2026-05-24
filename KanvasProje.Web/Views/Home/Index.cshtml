@@ -1,3 +1,4 @@
+@using KanvasProje.Core.Varliklar
 @model KanvasProje.Web.Models.HomeViewModel
 @inject KanvasProje.Service.Services.ISiteSettingsService SiteSettingsService
 
@@ -10,7 +11,6 @@
     ViewData["MetaDescription"] = $"{brandName}; kanvas tablo, cam tablo, 5 parçalı tablolar, İslami hat sanatı, Osmanlı tuğra ve modern duvar dekorasyonu ürünlerini güvenli alışverişle sunar.";
     ViewData["MetaKeywords"] = "kanvas tablo, cam tablo, 5 parçalı tablo, duvar dekorasyonu, islami tablo, hat sanatı, osmanlı tuğra tablo, modern tablo, Canvasia";
     ViewData["OgType"] = "website";
-    var homePageSettings = Model.HomePageSettings ?? new KanvasProje.Core.Models.HomePageSettingsModel();
     var aktifSlaytlar = Model.AktifSlaytlar ?? new List<KanvasProje.Core.Varliklar.Slayt>();
     var siteUrl = SiteSettingsService.BuildAbsoluteUrl(string.Empty);
     string BuildProductUrl(KanvasProje.Core.Varliklar.Urun urun)
@@ -288,205 +288,307 @@ goTo(0);
 })();
 </script>
 
-@if (Model.BesParcaliKoleksiyon != null && Model.BesParcaliKoleksiyon.Any())
+@* Dynamic Homepage Sections *@
+@if (Model.Sections != null && Model.Sections.Any())
 {
-    <section class="bg-[#fcf9f3] py-14 md:py-16">
-        <div class="container mx-auto px-4">
-            <div class="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                <div>
-                    <h2 class="font-serif text-3xl text-[#313511]">Öne Çıkan Ürünler</h2>
-                    <p class="mt-2 max-w-2xl text-sm text-[#47473d]">Yaşam alanlarına güçlü bir karakter kazandıran seçili çok parçalı kanvas tablo koleksiyonu.</p>
-                </div>
-                <a href="/Urun?s=5%20Par%C3%A7a" class="inline-flex items-center gap-2 self-start border-b border-[#313511] pb-1 text-xs uppercase tracking-widest text-[#313511] transition-colors hover:text-[#b58735] md:self-auto">
-                    Tüm 5 Parçalıları Gör
-                    <i class="fas fa-arrow-right text-[10px]"></i>
-                </a>
-            </div>
-            <div class="grid grid-cols-2 gap-5 md:grid-cols-4 lg:grid-cols-5">
-                @foreach (var urun in Model.BesParcaliKoleksiyon.Take(15))
-                {
-                    var gorsel = !string.IsNullOrWhiteSpace(urun.AnaGorselUrl)
-                        ? urun.AnaGorselUrl
-                        : urun.UrunResimleri?.OrderBy(r => r.Sira).FirstOrDefault()?.ResimYolu;
+    foreach (var homeSection in Model.Sections)
+    {
+        // -------------------------------------------------------------
+        // 1. MANUEL ÜRÜN BLOĞU
+        // -------------------------------------------------------------
+        if (homeSection.SectionType == HomePageSectionType.ProductBlock)
+        {
+            var sectionProducts = (homeSection.SectionProducts?
+                .OrderBy(sp => sp.SortOrder)
+                .Select(sp => sp.Urun)
+                .Where(u => u != null && u.AktifMi && !u.SilindiMi)
+                .ToList()) ?? new List<Urun>();
 
-                    <article class="group">
-                        <a href="@BuildProductUrl(urun)" class="block">
-                            <div class="relative mb-3 aspect-square overflow-hidden bg-[#f1ede7]">
-                                <span class="absolute left-2 top-2 z-10 bg-white/90 px-2 py-1 text-[9px] uppercase tracking-widest text-[#313511] shadow-sm">5 Parça</span>
-                                @if (!string.IsNullOrWhiteSpace(gorsel))
+            if (sectionProducts.Any())
+            {
+                <section class="bg-[#fcf9f3] py-14 md:py-16" data-motion-section>
+                    <div class="container mx-auto px-4">
+                        <div class="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                            <div>
+                                @if (!string.IsNullOrWhiteSpace(homeSection.Title))
                                 {
-                                    <img src="@gorsel" alt="@urun.Baslik" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" />
+                                    <h2 class="font-serif text-3xl text-[#313511]">@(homeSection.Title)</h2>
                                 }
-                                else
+                                @if (!string.IsNullOrWhiteSpace(homeSection.Subtitle))
                                 {
-                                    <div class="flex h-full w-full items-center justify-center text-gray-300">
-                                        <i class="fas fa-image fa-2x"></i>
-                                    </div>
+                                    <p class="mt-2 max-w-2xl text-sm text-[#47473d]">@(homeSection.Subtitle)</p>
                                 }
                             </div>
-                            <h3 class="mb-1 line-clamp-2 text-xs font-semibold tracking-wide text-[#1c1c18] transition-colors group-hover:text-[#b58735]">@urun.Baslik</h3>
-                            <p class="text-xs text-[#47473d]">@urun.EtkinFiyat.ToString("N0") @currencySymbol</p>
-                        </a>
-                    </article>
-                }
-            </div>
-        </div>
-    </section>
-}
+                            @if (!string.IsNullOrWhiteSpace(homeSection.ViewAllUrl))
+                            {
+                                <a href="@(homeSection.ViewAllUrl)" class="inline-flex items-center gap-2 self-start border-b border-[#313511] pb-1 text-xs uppercase tracking-widest text-[#313511] transition-colors hover:text-[#b58735] md:self-auto">
+                                    @(string.IsNullOrWhiteSpace(homeSection.ViewAllText) ? "Tümünü Gör" : homeSection.ViewAllText)
+                                    <i class="fas fa-arrow-right text-[10px]"></i>
+                                </a>
+                            }
+                        </div>
+                        <div class="grid grid-cols-2 gap-5 md:grid-cols-4 lg:grid-cols-5" data-motion-stagger>
+                            @foreach (var urun in sectionProducts.Take(15))
+                            {
+                                var gorsel = !string.IsNullOrWhiteSpace(urun.AnaGorselUrl)
+                                    ? urun.AnaGorselUrl
+                                    : urun.UrunResimleri?.OrderBy(r => r.Sira).FirstOrDefault()?.ResimYolu;
 
-
-<!-- BEGIN: Öne Çıkan Eserler (Vitrin) -->
-@if (Model.VitrinUrunleri != null && Model.VitrinUrunleri.Any())
-{
-    <section class="py-16 container mx-auto px-4">
-        <div class="flex items-center justify-center mb-10">
-            <hr class="w-1/4 border-[#e5e2dc] hidden md:block"/>
-            <h2 class="font-serif text-3xl mx-8 text-center text-[#313511]">Öne Çıkan Eserler</h2>
-            <hr class="w-1/4 border-[#e5e2dc] hidden md:block"/>
-        </div>
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
-            @foreach (var urun in Model.VitrinUrunleri.Take(10))
-            {
-                <div class="group cursor-pointer flex flex-col">
-                    <div class="relative overflow-hidden mb-4 aspect-square bg-[#f1ede7]">
-                        <a href="@BuildProductUrl(urun)" class="block w-full h-full">
-                        @if (urun.YeniUrunMu || urun.IndirimVarMi)
+                                <article class="group" data-motion-item>
+                                    <a href="@BuildProductUrl(urun)" class="block">
+                                        <div class="relative mb-3 aspect-square overflow-hidden bg-[#f1ede7]">
+                                            @if (!string.IsNullOrWhiteSpace(gorsel))
+                                            {
+                                                <img src="@gorsel" alt="@urun.Baslik" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" />
+                                            }
+                                            else
+                                            {
+                                                <div class="flex h-full w-full items-center justify-center text-gray-300">
+                                                    <i class="fas fa-image fa-2x"></i>
+                                                </div>
+                                            }
+                                        </div>
+                                        <h3 class="mb-1 line-clamp-2 text-xs font-semibold tracking-wide text-[#1c1c18] transition-colors group-hover:text-[#b58735]">@urun.Baslik</h3>
+                                        <p class="text-xs text-[#47473d]">@urun.EtkinFiyat.ToString("N0") @currencySymbol</p>
+                                    </a>
+                                </article>
+                            }
+                        </div>
+                    </div>
+                </section>
+            }
+        }
+        // -------------------------------------------------------------
+        // 2. ÖZEL BANNER
+        // -------------------------------------------------------------
+        else if (homeSection.SectionType == HomePageSectionType.CustomBanner && !string.IsNullOrWhiteSpace(homeSection.ImageUrl))
+        {
+            <section class="py-8" data-motion-section>
+                <div class="container mx-auto px-4">
+                    <a href="@(string.IsNullOrWhiteSpace(homeSection.ButtonUrl) ? "#" : homeSection.ButtonUrl)" class="block relative group overflow-hidden">
+                        <img src="@(homeSection.ImageUrl)" alt="@(homeSection.Title)" class="w-full h-auto transition-transform duration-700 group-hover:scale-105" loading="lazy" decoding="async" />
+                        @if (!string.IsNullOrWhiteSpace(homeSection.Title) || !string.IsNullOrWhiteSpace(homeSection.Subtitle))
                         {
-                            <span class="absolute top-2 left-2 bg-white px-2 py-1 text-[10px] uppercase tracking-wider z-10 shadow-sm text-[#313511]">
-                                @(urun.YeniUrunMu ? "Yeni" : "Fırsat")
-                            </span>
+                            <div class="absolute inset-0 bg-black/30 flex flex-col justify-center items-center text-center p-4">
+                                <h3 class="text-white font-serif text-3xl md:text-5xl mb-2 drop-shadow-md">@homeSection.Title</h3>
+                                <p class="text-white/90 text-sm md:text-base drop-shadow-md">@homeSection.Subtitle</p>
+                            </div>
                         }
-                        @{
+                    </a>
+                </div>
+            </section>
+        }
+        // -------------------------------------------------------------
+        // 3. AUTO: 5 PARÇALI KOLEKSİYON
+        // -------------------------------------------------------------
+        else if (homeSection.SectionType == HomePageSectionType.AutoBesParcali && Model.BesParcaliKoleksiyon != null && Model.BesParcaliKoleksiyon.Any())
+        {
+            <section class="bg-[#fcf9f3] py-14 md:py-16">
+                <div class="container mx-auto px-4">
+                    <div class="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                        <div>
+                            <h2 class="font-serif text-3xl text-[#313511]">@(string.IsNullOrWhiteSpace(homeSection.Title) ? "Öne Çıkan Ürünler" : homeSection.Title)</h2>
+                            <p class="mt-2 max-w-2xl text-sm text-[#47473d]">@(string.IsNullOrWhiteSpace(homeSection.Subtitle) ? "Yaşam alanlarına güçlü bir karakter kazandıran seçili çok parçalı kanvas tablo koleksiyonu." : homeSection.Subtitle)</p>
+                        </div>
+                        <a href="@(string.IsNullOrWhiteSpace(homeSection.ViewAllUrl) ? "/Urun?s=5%20Par%C3%A7a" : homeSection.ViewAllUrl)" class="inline-flex items-center gap-2 self-start border-b border-[#313511] pb-1 text-xs uppercase tracking-widest text-[#313511] transition-colors hover:text-[#b58735] md:self-auto">
+                            @(string.IsNullOrWhiteSpace(homeSection.ViewAllText) ? "Tüm 5 Parçalıları Gör" : homeSection.ViewAllText)
+                            <i class="fas fa-arrow-right text-[10px]"></i>
+                        </a>
+                    </div>
+                    <div class="grid grid-cols-2 gap-5 md:grid-cols-4 lg:grid-cols-5">
+                        @foreach (var urun in Model.BesParcaliKoleksiyon.Take(15))
+                        {
                             var gorsel = !string.IsNullOrWhiteSpace(urun.AnaGorselUrl)
                                 ? urun.AnaGorselUrl
                                 : urun.UrunResimleri?.OrderBy(r => r.Sira).FirstOrDefault()?.ResimYolu;
+
+                            <article class="group">
+                                <a href="@BuildProductUrl(urun)" class="block">
+                                    <div class="relative mb-3 aspect-square overflow-hidden bg-[#f1ede7]">
+                                        <span class="absolute left-2 top-2 z-10 bg-white/90 px-2 py-1 text-[9px] uppercase tracking-widest text-[#313511] shadow-sm">5 Parça</span>
+                                        @if (!string.IsNullOrWhiteSpace(gorsel))
+                                        {
+                                            <img src="@gorsel" alt="@urun.Baslik" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" />
+                                        }
+                                        else
+                                        {
+                                            <div class="flex h-full w-full items-center justify-center text-gray-300">
+                                                <i class="fas fa-image fa-2x"></i>
+                                            </div>
+                                        }
+                                    </div>
+                                    <h3 class="mb-1 line-clamp-2 text-xs font-semibold tracking-wide text-[#1c1c18] transition-colors group-hover:text-[#b58735]">@urun.Baslik</h3>
+                                    <p class="text-xs text-[#47473d]">@urun.EtkinFiyat.ToString("N0") @currencySymbol</p>
+                                </a>
+                            </article>
                         }
-                        @if (!string.IsNullOrWhiteSpace(gorsel))
-                        {
-                        <img alt="@urun.Baslik" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="@gorsel" loading="lazy" decoding="async"/>
-                        }
-                        else
-                        {
-                            <div class="w-full h-full flex items-center justify-center text-gray-300">
-                                <i class="fas fa-image fa-2x"></i>
-                            </div>
-                        }
-                        </a>
-                        <!-- Kalp / Favori Butonu -->
-                        <button type="button" onclick="window.toggleFavori(this, @urun.Id)" class="group/btn absolute top-2 right-2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 shadow-sm z-20 hover:scale-110" title="Favorilere Ekle">
-                            <i class="far fa-heart text-sm text-[#47473d] group-hover/btn:text-red-500 transition-colors"></i>
-                        </button>
                     </div>
-                    <h3 class="text-xs font-semibold mb-1 text-[#1c1c18] tracking-wide line-clamp-2">
-                        <a href="@BuildProductUrl(urun)" class="hover:text-[#b58735] transition-colors">@urun.Baslik</a>
-                    </h3>
-                    <p class="text-xs text-[#47473d]">@urun.EtkinFiyat.ToString("N0") @currencySymbol</p>
                 </div>
-            }
-        </div>
-        <div class="text-center mt-12">
-            <a href="/Urun" class="inline-block border border-[#313511] text-[#313511] px-8 py-3 text-xs tracking-widest hover:bg-[#313511] hover:text-white transition-colors uppercase rounded-full">
-                Tümünü Gör
-            </a>
-        </div>
-    </section>
-}
-<!-- END: Öne Çıkan Eserler -->
-
-@if (Model.CokSatanlar != null && Model.CokSatanlar.Any())
-{
-    <section class="container mx-auto px-4 pb-16">
-        <div class="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-                <p class="mb-2 text-xs uppercase tracking-[0.25em] text-[#b58735]">Çok satanlar</p>
-                <h2 class="font-serif text-3xl text-[#313511]">En çok tercih edilenler</h2>
-            </div>
-            <a href="/Urun?sort=popularity" class="inline-flex items-center gap-2 self-start border-b border-[#313511] pb-1 text-xs uppercase tracking-widest text-[#313511] transition-colors hover:text-[#b58735] md:self-auto">
-                Tümünü Gör
-                <i class="fas fa-arrow-right text-[10px]"></i>
-            </a>
-        </div>
-        <div class="grid grid-cols-2 gap-6 md:grid-cols-4">
-            @foreach (var urun in Model.CokSatanlar.Take(8))
-            {
-                var gorsel = !string.IsNullOrWhiteSpace(urun.AnaGorselUrl)
-                    ? urun.AnaGorselUrl
-                    : urun.UrunResimleri?.OrderBy(r => r.Sira).FirstOrDefault()?.ResimYolu;
-
-                <article class="group">
-                    <a href="@BuildProductUrl(urun)" class="block">
-                        <div class="relative mb-4 aspect-[4/5] overflow-hidden bg-[#f1ede7]">
-                            <span class="absolute left-3 top-3 z-10 bg-white/90 px-2.5 py-1 text-[10px] uppercase tracking-widest text-[#313511]">Çok satan</span>
-                            @if (!string.IsNullOrWhiteSpace(gorsel))
-                            {
-                                <img src="@gorsel" alt="@urun.Baslik" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" />
-                            }
-                            else
-                            {
-                                <div class="flex h-full w-full items-center justify-center text-gray-300">
-                                    <i class="fas fa-image fa-2x"></i>
-                                </div>
-                            }
-                        </div>
-                        <h3 class="mb-1 line-clamp-2 text-sm font-semibold tracking-wide text-[#1c1c18] transition-colors group-hover:text-[#b58735]">@urun.Baslik</h3>
-                        <p class="text-xs text-[#47473d]">@urun.EtkinFiyat.ToString("N0") @currencySymbol</p>
-                    </a>
-                </article>
-            }
-        </div>
-    </section>
-}
-
-@if (Model.FirsatUrunleri != null && Model.FirsatUrunleri.Any())
-{
-    <section class="bg-[#f1ede7] py-16">
-        <div class="container mx-auto px-4">
-            <div class="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                <div>
-                    <p class="mb-2 text-xs uppercase tracking-[0.25em] text-[#b58735]">Fırsat ürünleri</p>
-                    <h2 class="font-serif text-3xl text-[#313511]">Kampanyalı seçimler</h2>
+            </section>
+        }
+        // -------------------------------------------------------------
+        // 4. AUTO: VİTRİN / ÖNE ÇIKAN ESERLER
+        // -------------------------------------------------------------
+        else if (homeSection.SectionType == HomePageSectionType.AutoVitrin && Model.VitrinUrunleri != null && Model.VitrinUrunleri.Any())
+        {
+            <section class="py-16 container mx-auto px-4">
+                <div class="flex items-center justify-center mb-10">
+                    <hr class="w-1/4 border-[#e5e2dc] hidden md:block"/>
+                    <h2 class="font-serif text-3xl mx-8 text-center text-[#313511]">@(string.IsNullOrWhiteSpace(homeSection.Title) ? "Öne Çıkan Eserler" : homeSection.Title)</h2>
+                    <hr class="w-1/4 border-[#e5e2dc] hidden md:block"/>
                 </div>
-                <a href="/Urun?sort=price_asc" class="inline-flex items-center gap-2 self-start border-b border-[#313511] pb-1 text-xs uppercase tracking-widest text-[#313511] transition-colors hover:text-[#b58735] md:self-auto">
-                    Fırsatları Gör
-                    <i class="fas fa-arrow-right text-[10px]"></i>
-                </a>
-            </div>
-            <div class="grid grid-cols-2 gap-6 md:grid-cols-4">
-                @foreach (var urun in Model.FirsatUrunleri.Take(8))
+                @if (!string.IsNullOrWhiteSpace(homeSection.Subtitle))
                 {
-                    var gorsel = !string.IsNullOrWhiteSpace(urun.AnaGorselUrl)
-                        ? urun.AnaGorselUrl
-                        : urun.UrunResimleri?.OrderBy(r => r.Sira).FirstOrDefault()?.ResimYolu;
-
-                    <article class="group">
-                        <a href="@BuildProductUrl(urun)" class="block">
-                            <div class="relative mb-4 aspect-[4/5] overflow-hidden bg-[#fcf9f3]">
-                                <span class="absolute left-3 top-3 z-10 bg-[#b58735] px-2.5 py-1 text-[10px] uppercase tracking-widest text-white">Fırsat</span>
+                    <p class="text-center text-sm text-[#47473d] mb-8 -mt-4">@homeSection.Subtitle</p>
+                }
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
+                    @foreach (var urun in Model.VitrinUrunleri.Take(10))
+                    {
+                        <div class="group cursor-pointer flex flex-col">
+                            <div class="relative overflow-hidden mb-4 aspect-square bg-[#f1ede7]">
+                                <a href="@BuildProductUrl(urun)" class="block w-full h-full">
+                                @if (urun.YeniUrunMu || urun.IndirimVarMi)
+                                {
+                                    <span class="absolute top-2 left-2 bg-white px-2 py-1 text-[10px] uppercase tracking-wider z-10 shadow-sm text-[#313511]">
+                                        @(urun.YeniUrunMu ? "Yeni" : "Fırsat")
+                                    </span>
+                                }
+                                @{
+                                    var gorsel = !string.IsNullOrWhiteSpace(urun.AnaGorselUrl)
+                                        ? urun.AnaGorselUrl
+                                        : urun.UrunResimleri?.OrderBy(r => r.Sira).FirstOrDefault()?.ResimYolu;
+                                }
                                 @if (!string.IsNullOrWhiteSpace(gorsel))
                                 {
-                                <img src="@gorsel" alt="@urun.Baslik" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" />
+                                <img alt="@urun.Baslik" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="@gorsel" loading="lazy" decoding="async"/>
                                 }
                                 else
                                 {
-                                    <div class="flex h-full w-full items-center justify-center text-gray-300">
+                                    <div class="w-full h-full flex items-center justify-center text-gray-300">
                                         <i class="fas fa-image fa-2x"></i>
                                     </div>
                                 }
+                                </a>
+                                <!-- Kalp / Favori Butonu -->
+                                <button type="button" onclick="window.toggleFavori(this, @urun.Id)" class="group/btn absolute top-2 right-2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-200 shadow-sm z-20 hover:scale-110" title="Favorilere Ekle">
+                                    <i class="far fa-heart text-sm text-[#47473d] group-hover/btn:text-red-500 transition-colors"></i>
+                                </button>
                             </div>
-                            <h3 class="mb-1 line-clamp-2 text-sm font-semibold tracking-wide text-[#1c1c18] transition-colors group-hover:text-[#b58735]">@urun.Baslik</h3>
-                            <div class="flex flex-wrap items-baseline gap-2">
+                            <h3 class="text-xs font-semibold mb-1 text-[#1c1c18] tracking-wide line-clamp-2">
+                                <a href="@BuildProductUrl(urun)" class="hover:text-[#b58735] transition-colors">@urun.Baslik</a>
+                            </h3>
+                            <p class="text-xs text-[#47473d]">@urun.EtkinFiyat.ToString("N0") @currencySymbol</p>
+                        </div>
+                    }
+                </div>
+                <div class="text-center mt-12">
+                    <a href="@(string.IsNullOrWhiteSpace(homeSection.ViewAllUrl) ? "/Urun" : homeSection.ViewAllUrl)" class="inline-block border border-[#313511] text-[#313511] px-8 py-3 text-xs tracking-widest hover:bg-[#313511] hover:text-white transition-colors uppercase rounded-full">
+                        @(string.IsNullOrWhiteSpace(homeSection.ViewAllText) ? "Tümünü Gör" : homeSection.ViewAllText)
+                    </a>
+                </div>
+            </section>
+        }
+        // -------------------------------------------------------------
+        // 5. AUTO: ÇOK SATANLAR
+        // -------------------------------------------------------------
+        else if (homeSection.SectionType == HomePageSectionType.AutoCokSatanlar && Model.CokSatanlar != null && Model.CokSatanlar.Any())
+        {
+            <section class="container mx-auto px-4 pb-16">
+                <div class="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                    <div>
+                        <p class="mb-2 text-xs uppercase tracking-[0.25em] text-[#b58735]">@(string.IsNullOrWhiteSpace(homeSection.Subtitle) ? "Çok satanlar" : homeSection.Subtitle)</p>
+                        <h2 class="font-serif text-3xl text-[#313511]">@(string.IsNullOrWhiteSpace(homeSection.Title) ? "En çok tercih edilenler" : homeSection.Title)</h2>
+                    </div>
+                    <a href="@(string.IsNullOrWhiteSpace(homeSection.ViewAllUrl) ? "/Urun?sort=popularity" : homeSection.ViewAllUrl)" class="inline-flex items-center gap-2 self-start border-b border-[#313511] pb-1 text-xs uppercase tracking-widest text-[#313511] transition-colors hover:text-[#b58735] md:self-auto">
+                        @(string.IsNullOrWhiteSpace(homeSection.ViewAllText) ? "Tümünü Gör" : homeSection.ViewAllText)
+                        <i class="fas fa-arrow-right text-[10px]"></i>
+                    </a>
+                </div>
+                <div class="grid grid-cols-2 gap-6 md:grid-cols-4">
+                    @foreach (var urun in Model.CokSatanlar.Take(8))
+                    {
+                        var gorsel = !string.IsNullOrWhiteSpace(urun.AnaGorselUrl)
+                            ? urun.AnaGorselUrl
+                            : urun.UrunResimleri?.OrderBy(r => r.Sira).FirstOrDefault()?.ResimYolu;
+
+                        <article class="group">
+                            <a href="@BuildProductUrl(urun)" class="block">
+                                <div class="relative mb-4 aspect-[4/5] overflow-hidden bg-[#f1ede7]">
+                                    <span class="absolute left-3 top-3 z-10 bg-white/90 px-2.5 py-1 text-[10px] uppercase tracking-widest text-[#313511]">Çok satan</span>
+                                    @if (!string.IsNullOrWhiteSpace(gorsel))
+                                    {
+                                        <img src="@gorsel" alt="@urun.Baslik" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" />
+                                    }
+                                    else
+                                    {
+                                        <div class="flex h-full w-full items-center justify-center text-gray-300">
+                                            <i class="fas fa-image fa-2x"></i>
+                                        </div>
+                                    }
+                                </div>
+                                <h3 class="mb-1 line-clamp-2 text-sm font-semibold tracking-wide text-[#1c1c18] transition-colors group-hover:text-[#b58735]">@urun.Baslik</h3>
                                 <p class="text-xs text-[#47473d]">@urun.EtkinFiyat.ToString("N0") @currencySymbol</p>
-                                @if (urun.IndirimVarMi)
-                                {
-                                    <p class="text-[11px] text-[#777267] line-through">@urun.Fiyat.ToString("N0") @currencySymbol</p>
-                                }
-                            </div>
+                            </a>
+                        </article>
+                    }
+                </div>
+            </section>
+        }
+        // -------------------------------------------------------------
+        // 6. AUTO: FIRSAT ÜRÜNLERİ
+        // -------------------------------------------------------------
+        else if (homeSection.SectionType == HomePageSectionType.AutoFirsatUrunleri && Model.FirsatUrunleri != null && Model.FirsatUrunleri.Any())
+        {
+            <section class="bg-[#f1ede7] py-16">
+                <div class="container mx-auto px-4">
+                    <div class="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                        <div>
+                            <p class="mb-2 text-xs uppercase tracking-[0.25em] text-[#b58735]">@(string.IsNullOrWhiteSpace(homeSection.Subtitle) ? "Fırsat ürünleri" : homeSection.Subtitle)</p>
+                            <h2 class="font-serif text-3xl text-[#313511]">@(string.IsNullOrWhiteSpace(homeSection.Title) ? "Kampanyalı seçimler" : homeSection.Title)</h2>
+                        </div>
+                        <a href="@(string.IsNullOrWhiteSpace(homeSection.ViewAllUrl) ? "/Urun?sort=price_asc" : homeSection.ViewAllUrl)" class="inline-flex items-center gap-2 self-start border-b border-[#313511] pb-1 text-xs uppercase tracking-widest text-[#313511] transition-colors hover:text-[#b58735] md:self-auto">
+                            @(string.IsNullOrWhiteSpace(homeSection.ViewAllText) ? "Fırsatları Gör" : homeSection.ViewAllText)
+                            <i class="fas fa-arrow-right text-[10px]"></i>
                         </a>
-                    </article>
-                }
-            </div>
-        </div>
-    </section>
+                    </div>
+                    <div class="grid grid-cols-2 gap-6 md:grid-cols-4">
+                        @foreach (var urun in Model.FirsatUrunleri.Take(8))
+                        {
+                            var gorsel = !string.IsNullOrWhiteSpace(urun.AnaGorselUrl)
+                                ? urun.AnaGorselUrl
+                                : urun.UrunResimleri?.OrderBy(r => r.Sira).FirstOrDefault()?.ResimYolu;
+
+                            <article class="group">
+                                <a href="@BuildProductUrl(urun)" class="block">
+                                    <div class="relative mb-4 aspect-[4/5] overflow-hidden bg-[#fcf9f3]">
+                                        <span class="absolute left-3 top-3 z-10 bg-[#b58735] px-2.5 py-1 text-[10px] uppercase tracking-widest text-white">Fırsat</span>
+                                        @if (!string.IsNullOrWhiteSpace(gorsel))
+                                        {
+                                        <img src="@gorsel" alt="@urun.Baslik" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" />
+                                        }
+                                        else
+                                        {
+                                            <div class="flex h-full w-full items-center justify-center text-gray-300">
+                                                <i class="fas fa-image fa-2x"></i>
+                                            </div>
+                                        }
+                                    </div>
+                                    <h3 class="mb-1 line-clamp-2 text-sm font-semibold tracking-wide text-[#1c1c18] transition-colors group-hover:text-[#b58735]">@urun.Baslik</h3>
+                                    <div class="flex flex-wrap items-baseline gap-2">
+                                        <p class="text-xs text-[#47473d]">@urun.EtkinFiyat.ToString("N0") @currencySymbol</p>
+                                        @if (urun.IndirimVarMi)
+                                        {
+                                            <p class="text-[11px] text-[#777267] line-through">@urun.Fiyat.ToString("N0") @currencySymbol</p>
+                                        }
+                                    </div>
+                                </a>
+                            </article>
+                        }
+                    </div>
+                </div>
+            </section>
+        }
+    }
 }
 
 <!-- BEGIN: Features -->

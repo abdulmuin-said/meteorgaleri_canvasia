@@ -251,6 +251,8 @@ namespace KanvasProje.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AppUserId");
+
                     b.ToTable("Adresler");
                 });
 
@@ -370,11 +372,20 @@ namespace KanvasProje.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<decimal?>("EskiFiyat")
+                        .HasColumnType("numeric");
+
+                    b.Property<bool>("FiyatDustugundaBildir")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime>("OlusturulmaTarihi")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("SilindiMi")
                         .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("SonBildirimTarihi")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("UrunId")
                         .HasColumnType("integer");
@@ -386,6 +397,80 @@ namespace KanvasProje.Data.Migrations
                     b.HasIndex("UrunId");
 
                     b.ToTable("Favoriler");
+                });
+
+            modelBuilder.Entity("KanvasProje.Core.Varliklar.HomePageSection", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ButtonText")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ButtonUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("text");
+
+                    b.Property<int>("SectionType")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Subtitle")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ViewAllText")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ViewAllUrl")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("HomePageSections");
+                });
+
+            modelBuilder.Entity("KanvasProje.Core.Varliklar.HomePageSectionProduct", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("SectionId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UrunId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SectionId");
+
+                    b.HasIndex("UrunId");
+
+                    b.ToTable("HomePageSectionProducts");
                 });
 
             modelBuilder.Entity("KanvasProje.Core.Varliklar.IadeTalebi", b =>
@@ -1677,6 +1762,17 @@ namespace KanvasProje.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("KanvasProje.Core.Varliklar.Adres", b =>
+                {
+                    b.HasOne("KanvasProje.Core.Varliklar.AppUser", "AppUser")
+                        .WithMany()
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+                });
+
             modelBuilder.Entity("KanvasProje.Core.Varliklar.Favori", b =>
                 {
                     b.HasOne("KanvasProje.Core.Varliklar.AppUser", "AppUser")
@@ -1692,6 +1788,25 @@ namespace KanvasProje.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("AppUser");
+
+                    b.Navigation("Urun");
+                });
+
+            modelBuilder.Entity("KanvasProje.Core.Varliklar.HomePageSectionProduct", b =>
+                {
+                    b.HasOne("KanvasProje.Core.Varliklar.HomePageSection", "Section")
+                        .WithMany("SectionProducts")
+                        .HasForeignKey("SectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("KanvasProje.Core.Varliklar.Urun", "Urun")
+                        .WithMany()
+                        .HasForeignKey("UrunId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Section");
 
                     b.Navigation("Urun");
                 });
@@ -1897,6 +2012,11 @@ namespace KanvasProje.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("KanvasProje.Core.Varliklar.HomePageSection", b =>
+                {
+                    b.Navigation("SectionProducts");
                 });
 
             modelBuilder.Entity("KanvasProje.Core.Varliklar.Kategori", b =>

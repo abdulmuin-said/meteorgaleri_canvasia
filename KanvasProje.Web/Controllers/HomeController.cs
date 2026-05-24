@@ -20,20 +20,20 @@ namespace KanvasProje.Web.Controllers
         private readonly KanvasDbContext _context;
         private readonly IEmailService _emailService;
         private readonly ISiteSettingsService _siteSettingsService;
-        private readonly IHomePageSettingsService _homePageSettingsService;
+        private readonly IHomePageSectionService _homePageSectionService;
 
         public HomeController(
             ILogger<HomeController> logger,
             KanvasDbContext context,
             IEmailService emailService,
             ISiteSettingsService siteSettingsService,
-            IHomePageSettingsService homePageSettingsService)
+            IHomePageSectionService homePageSectionService)
         {
             _logger = logger;
             _context = context;
             _emailService = emailService;
             _siteSettingsService = siteSettingsService;
-            _homePageSettingsService = homePageSettingsService;
+            _homePageSectionService = homePageSectionService;
         }
 
         public async Task<IActionResult> Index()
@@ -152,6 +152,8 @@ var kategoriler = await _context.Kategoriler
                 .OrderBy(s => s.Sira)
                 .ToListAsync();
 
+            var sections = await _homePageSectionService.GetActiveSectionsAsync();
+
             var viewModel = new HomeViewModel
             {
                 VitrinUrunleri = vitrinUrunleri,
@@ -159,7 +161,7 @@ var kategoriler = await _context.Kategoriler
                 BesParcaliKoleksiyon = besParcaliKoleksiyon,
                 FirsatUrunleri = firsatUrunleri,
                 Kategoriler = kategoriler,
-                HomePageSettings = _homePageSettingsService.GetSettings(),
+                Sections = sections,
                 AktifSlaytlar = aktifSlaytlar
             };
 

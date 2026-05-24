@@ -10,7 +10,7 @@ namespace KanvasProje.Web.Models
         public List<Urun> CokSatanlar { get; set; } = new List<Urun>();
         public List<Urun> FirsatUrunleri { get; set; } = new List<Urun>();
         public List<Kategori> Kategoriler { get; set; } = new List<Kategori>();
-        public HomePageSettingsModel HomePageSettings { get; set; } = new HomePageSettingsModel();
+        public IEnumerable<KanvasProje.Core.Varliklar.HomePageSection> Sections { get; set; } = new List<KanvasProje.Core.Varliklar.HomePageSection>();
         public List<Slayt> AktifSlaytlar { get; set; } = new List<Slayt>();
     }
 }

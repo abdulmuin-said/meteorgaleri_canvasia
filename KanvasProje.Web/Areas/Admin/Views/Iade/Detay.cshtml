@@ -45,19 +45,19 @@
                     <div class="row g-3">
                         <div class="col-md-3">
                             <div class="ca-text-muted small">Sipariş Tarihi</div>
-                            <div class="ca-fw-semi">@siparis.OlusturulmaTarihi.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
+                            <div class="ca-fw-semi">@siparis?.OlusturulmaTarihi.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
                         </div>
                         <div class="col-md-3">
                             <div class="ca-text-muted small">Toplam Tutar</div>
-                            <div class="ca-fw-semi">@siparis.ToplamTutar.ToString("N2") TL</div>
+                            <div class="ca-fw-semi">@(siparis?.ToplamTutar.ToString("N2") ?? "0,00") TL</div>
                         </div>
                         <div class="col-md-3">
                             <div class="ca-text-muted small">Kargo</div>
-                            <div class="ca-fw-semi">@(string.IsNullOrWhiteSpace(siparis.KargoFirmasi) ? "-" : siparis.KargoFirmasi)</div>
+                            <div class="ca-fw-semi">@(string.IsNullOrWhiteSpace(siparis?.KargoFirmasi) ? "-" : siparis.KargoFirmasi)</div>
                         </div>
                         <div class="col-md-3">
                             <div class="ca-text-muted small">Takip No</div>
-                            <div class="ca-fw-semi">@(string.IsNullOrWhiteSpace(siparis.KargoTakipNo) ? "-" : siparis.KargoTakipNo)</div>
+                            <div class="ca-fw-semi">@(string.IsNullOrWhiteSpace(siparis?.KargoTakipNo) ? "-" : siparis.KargoTakipNo)</div>
                         </div>
                     </div>
                 </div>
@@ -117,13 +117,13 @@
                 <div class="ca-card-body">
                     <dl class="row mb-0 gy-3">
                         <dt class="col-4 ca-text-muted">Ad Soyad</dt>
-                        <dd class="col-8 ca-fw-semi">@siparis.MusteriAdSoyad</dd>
+                        <dd class="col-8 ca-fw-semi">@siparis?.MusteriAdSoyad</dd>
                         <dt class="col-4 ca-text-muted">Telefon</dt>
-                        <dd class="col-8">@siparis.Telefon</dd>
+                        <dd class="col-8">@siparis?.Telefon</dd>
                         <dt class="col-4 ca-text-muted">E-posta</dt>
-                        <dd class="col-8">@siparis.Eposta</dd>
+                        <dd class="col-8">@siparis?.Eposta</dd>
                         <dt class="col-4 ca-text-muted">Adres</dt>
-                        <dd class="col-8">@siparis.AcikAdres @siparis.Ilce / @siparis.Sehir</dd>
+                        <dd class="col-8">@(siparis?.AcikAdres) @(siparis?.Ilce) / @(siparis?.Sehir)</dd>
                     </dl>
                 </div>
             </div>

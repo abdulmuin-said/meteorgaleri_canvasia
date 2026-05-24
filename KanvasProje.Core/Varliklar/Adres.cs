@@ -14,5 +14,7 @@ namespace KanvasProje.Core.Varliklar
         public string AcikAdres { get; set; } = string.Empty;
 
         public string AppUserId { get; set; } = string.Empty;
+
+public AppUser AppUser { get; set; } = default!;
     }
 }
