@@ -1,6 +1,7 @@
 using System.Text.Json;
 using KanvasProje.Core.Models;
 using KanvasProje.Data;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -10,25 +11,31 @@ namespace KanvasProje.Service.Services
     {
         SiteAyarlari GetSettings();
         void SaveSettings(SiteAyarlari settings);
+        void SaveSettings(SiteAyarlari settings, string? paytrMerchantKey, string? paytrMerchantSalt);
+        bool HasPaytrMerchantKey();
+        bool HasPaytrMerchantSalt();
         string BuildAbsoluteUrl(string? path);
     }
 
     public class SiteSettingsService : ISiteSettingsService
     {
         private const string CacheKey = "site-settings";
+        private const string PaytrProtectorPurpose = "Canvasia.PayTR.Settings.v1";
 
         private readonly KanvasDbContext _context;
         private readonly IMemoryCache _cache;
+        private readonly IDataProtector _paytrProtector;
         private readonly JsonSerializerOptions _serializerOptions = new()
         {
             WriteIndented = true,
             Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
 
-        public SiteSettingsService(KanvasDbContext context, IMemoryCache cache)
+        public SiteSettingsService(KanvasDbContext context, IMemoryCache cache, IDataProtectionProvider dataProtectionProvider)
         {
             _context = context;
             _cache = cache;
+            _paytrProtector = dataProtectionProvider.CreateProtector(PaytrProtectorPurpose);
         }
 
         public SiteAyarlari GetSettings()
@@ -41,6 +48,11 @@ namespace KanvasProje.Service.Services
         }
 
         public void SaveSettings(SiteAyarlari settings)
+        {
+            SaveSettings(settings, null, null);
+        }
+
+        public void SaveSettings(SiteAyarlari settings, string? paytrMerchantKey, string? paytrMerchantSalt)
         {
             var normalized = NormalizeSettings(settings);
 
@@ -76,6 +88,13 @@ namespace KanvasProje.Service.Services
                 existing.UcretsizKargoLimiti = normalized.UcretsizKargoLimiti;
                 existing.StokUyariLimiti = normalized.StokUyariLimiti;
                 existing.StoktaYokSatisIzni = normalized.StoktaYokSatisIzni;
+                existing.PaytrAktifMi = normalized.PaytrAktifMi;
+                existing.PaytrTestModu = normalized.PaytrTestModu;
+                existing.PaytrMerchantId = normalized.PaytrMerchantId;
+                existing.PaytrCallbackUrl = normalized.PaytrCallbackUrl;
+                existing.PaytrBasariliDonusUrl = normalized.PaytrBasariliDonusUrl;
+                existing.PaytrBasarisizDonusUrl = normalized.PaytrBasarisizDonusUrl;
+                ApplyPaytrSecrets(existing, paytrMerchantKey, paytrMerchantSalt);
                 existing.KargoFirmasi = normalized.KargoFirmasi;
                 existing.KargoTakipUrl = normalized.KargoTakipUrl;
                 existing.SiparisTeslimSuresiGun = normalized.SiparisTeslimSuresiGun;
@@ -97,11 +116,22 @@ namespace KanvasProje.Service.Services
             else
             {
                 normalized.Id = 1;
+                ApplyPaytrSecrets(normalized, paytrMerchantKey, paytrMerchantSalt);
                 _context.SiteAyarlari.Add(normalized);
             }
 
             _context.SaveChanges();
             _cache.Remove(CacheKey);
+        }
+
+        public bool HasPaytrMerchantKey()
+        {
+            return _context.SiteAyarlari.Any(x => !string.IsNullOrWhiteSpace(x.PaytrMerchantKeyProtected));
+        }
+
+        public bool HasPaytrMerchantSalt()
+        {
+            return _context.SiteAyarlari.Any(x => !string.IsNullOrWhiteSpace(x.PaytrMerchantSaltProtected));
         }
 
         public string BuildAbsoluteUrl(string? path)
@@ -168,6 +198,12 @@ namespace KanvasProje.Service.Services
             settings.KargoBedeli = Math.Max(0, settings.KargoBedeli);
             settings.UcretsizKargoLimiti = Math.Max(0, settings.UcretsizKargoLimiti);
             settings.StokUyariLimiti = Math.Max(0, settings.StokUyariLimiti);
+            settings.PaytrMerchantId = settings.PaytrMerchantId?.Trim() ?? string.Empty;
+            settings.PaytrMerchantKeyProtected = settings.PaytrMerchantKeyProtected?.Trim() ?? string.Empty;
+            settings.PaytrMerchantSaltProtected = settings.PaytrMerchantSaltProtected?.Trim() ?? string.Empty;
+            settings.PaytrCallbackUrl = NormalizeOptionalUrl(settings.PaytrCallbackUrl);
+            settings.PaytrBasariliDonusUrl = NormalizeOptionalUrl(settings.PaytrBasariliDonusUrl);
+            settings.PaytrBasarisizDonusUrl = NormalizeOptionalUrl(settings.PaytrBasarisizDonusUrl);
             settings.KargoFirmasi = string.IsNullOrWhiteSpace(settings.KargoFirmasi) ? "Aras Kargo" : settings.KargoFirmasi.Trim();
             settings.KargoTakipUrl = settings.KargoTakipUrl?.Trim() ?? string.Empty;
             settings.SiparisTeslimSuresiGun = settings.SiparisTeslimSuresiGun <= 0 ? 5 : settings.SiparisTeslimSuresiGun;
@@ -202,6 +238,29 @@ namespace KanvasProje.Service.Services
                 : settings.BakimModuMesaji.Trim();
 
             return settings;
+        }
+
+        private void ApplyPaytrSecrets(SiteAyarlari settings, string? paytrMerchantKey, string? paytrMerchantSalt)
+        {
+            if (!string.IsNullOrWhiteSpace(paytrMerchantKey))
+            {
+                settings.PaytrMerchantKeyProtected = _paytrProtector.Protect(paytrMerchantKey.Trim());
+            }
+
+            if (!string.IsNullOrWhiteSpace(paytrMerchantSalt))
+            {
+                settings.PaytrMerchantSaltProtected = _paytrProtector.Protect(paytrMerchantSalt.Trim());
+            }
+        }
+
+        private static string NormalizeOptionalUrl(string? url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                return string.Empty;
+            }
+
+            return url.Trim();
         }
 
         private static string NormalizeBaseUrl(string? baseUrl)

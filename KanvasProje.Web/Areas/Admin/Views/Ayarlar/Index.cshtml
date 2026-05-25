@@ -4,6 +4,8 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Site Ayarları";
     var kargoFirmalari = ViewBag.KargoFirmalari as List<KargoFirmasi> ?? new List<KargoFirmasi>();
+    var paytrMerchantKeyKayitli = ViewBag.PaytrMerchantKeyKayitli as bool? ?? false;
+    var paytrMerchantSaltKayitli = ViewBag.PaytrMerchantSaltKayitli as bool? ?? false;
 }
 
 <style>
@@ -215,6 +217,7 @@
                 <button type="button" class="ca-settings-tab" data-target="iletisim"><i class="fas fa-address-card"></i> İletişim</button>
                 <button type="button" class="ca-settings-tab" data-target="sosyal"><i class="fas fa-share-nodes"></i> Sosyal</button>
                 <button type="button" class="ca-settings-tab" data-target="satis"><i class="fas fa-cart-shopping"></i> Satış</button>
+                <button type="button" class="ca-settings-tab" data-target="odeme"><i class="fas fa-credit-card"></i> Ödeme</button>
                 <button type="button" class="ca-settings-tab" data-target="seo"><i class="fas fa-magnifying-glass-chart"></i> SEO</button>
                 <button type="button" class="ca-settings-tab" data-target="mail"><i class="fas fa-envelope"></i> Mail</button>
                 <button type="button" class="ca-settings-tab" data-target="bakim"><i class="fas fa-screwdriver-wrench"></i> Bakım</button>
@@ -421,6 +424,77 @@
                         </div>
                     </section>
 
+                    <section class="ca-settings-panel" id="panel-odeme">
+                        <div class="ca-card">
+                            <div class="ca-card-body">
+                                <div class="ca-section-heading">
+                                    <i class="fas fa-credit-card"></i>
+                                    <div>
+                                        <h2>PayTR Ödeme Ayarları</h2>
+                                        <p>PayTR POS bilgileri ve dönüş adresleri burada yönetilir.</p>
+                                    </div>
+                                </div>
+                                <div class="ca-alert ca-alert-warning mb-3">
+                                    <i class="fas fa-shield-halved"></i>
+                                    <span>Merchant Key ve Merchant Salt güvenlik nedeniyle görüntülenmez. Boş bırakırsanız mevcut kayıtlı değer korunur.</span>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="ca-label">PayTR Durumu</label>
+                                        <div class="ca-toggle-box">
+                                            <div class="form-check form-switch d-flex align-items-center w-100 ps-0">
+                                                <span>
+                                                    <strong>PayTR ile ödeme al</strong><br>
+                                                    <small class="text-muted">Aktif olduğunda ödeme akışı PayTR bilgilerini kullanacak şekilde hazırlanır.</small>
+                                                </span>
+                                                <input asp-for="PaytrAktifMi" class="form-check-input ms-auto" type="checkbox" style="width:3em; height:1.5em;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="ca-label">Test Modu</label>
+                                        <div class="ca-toggle-box">
+                                            <div class="form-check form-switch d-flex align-items-center w-100 ps-0">
+                                                <span>
+                                                    <strong>PayTR test modunda çalışsın</strong><br>
+                                                    <small class="text-muted">Canlıya geçmeden önce açık kalmalıdır.</small>
+                                                </span>
+                                                <input asp-for="PaytrTestModu" class="form-check-input ms-auto" type="checkbox" style="width:3em; height:1.5em;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="ca-label">Merchant ID</label>
+                                        <input asp-for="PaytrMerchantId" class="ca-input" autocomplete="off" placeholder="PayTR mağaza numarası" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="ca-label">Merchant Key</label>
+                                        <input name="paytrMerchantKey" class="ca-input" type="password" autocomplete="new-password" placeholder="@(paytrMerchantKeyKayitli ? "Kayıtlı değeri korumak için boş bırakın" : "PayTR Merchant Key")" />
+                                        <small class="text-muted">@(paytrMerchantKeyKayitli ? "Merchant Key kayıtlı." : "Merchant Key henüz kayıtlı değil.")</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="ca-label">Merchant Salt</label>
+                                        <input name="paytrMerchantSalt" class="ca-input" type="password" autocomplete="new-password" placeholder="@(paytrMerchantSaltKayitli ? "Kayıtlı değeri korumak için boş bırakın" : "PayTR Merchant Salt")" />
+                                        <small class="text-muted">@(paytrMerchantSaltKayitli ? "Merchant Salt kayıtlı." : "Merchant Salt henüz kayıtlı değil.")</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="ca-label">Callback URL</label>
+                                        <input asp-for="PaytrCallbackUrl" class="ca-input" placeholder="https://www.canvasia.com.tr/Siparis/PaytrCallback" />
+                                        <small class="text-muted">PayTR panelinde bildirilecek sunucu dönüş adresi.</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="ca-label">Başarılı Dönüş URL</label>
+                                        <input asp-for="PaytrBasariliDonusUrl" class="ca-input" placeholder="https://www.canvasia.com.tr/Siparis/Basarili" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="ca-label">Başarısız Dönüş URL</label>
+                                        <input asp-for="PaytrBasarisizDonusUrl" class="ca-input" placeholder="https://www.canvasia.com.tr/Siparis/OdemeBasarisiz" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                     <section class="ca-settings-panel" id="panel-seo">
                         <div class="ca-card">
                             <div class="ca-card-body">
@@ -543,6 +617,7 @@
                                 <li><i class="fas fa-check-circle"></i><span>Logo, marka adı, üst bar ve footer vitrinde görünür.</span></li>
                                 <li><i class="fas fa-check-circle"></i><span>İletişim ve sosyal medya bilgileri footer, mail ve iletişim alanlarında kullanılır.</span></li>
                                 <li><i class="fas fa-check-circle"></i><span>SEO alanları arama motorları ve sosyal paylaşım bilgilerini besler.</span></li>
+                                <li><i class="fas fa-check-circle"></i><span>PayTR ayarları ödeme altyapısı yapılandırmasında kullanılır.</span></li>
                                 <li><i class="fas fa-check-circle"></i><span>Mail bildirimleri sipariş ve operasyon süreçlerinde kullanılır.</span></li>
                             </ul>
                         </div>

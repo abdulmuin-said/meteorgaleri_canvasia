@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using KanvasProje.Core.Interfaces;
 using KanvasProje.Data.Repositories;
 using KanvasProje.Service.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using KanvasProje.Core.Varliklar;
 using System.Globalization;
@@ -46,6 +47,10 @@ if (!isDatabaseAvailableAtStartup && !string.IsNullOrWhiteSpace(databaseAvailabi
 // 1. VeritabanÄ± BaÄŸlantÄ±sÄ±
 builder.Services.AddDbContext<KanvasDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddDataProtection()
+    .SetApplicationName("Canvasia")
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtectionKeys")));
 
 // 2. Identity (Ãœyelik) Servisi
 builder.Services.AddIdentity<AppUser, IdentityRole>(options => 
@@ -171,8 +176,7 @@ builder.Services.AddSession(options =>
     options.Cookie.Name = ".KanvasProje.Session";
 });
 
-// Ã–deme ve SEO Servisleri
-builder.Services.AddScoped<IPaymentService, IyzicoPaymentService>();
+// SEO Servisleri
 builder.Services.AddScoped<ISeoService, SeoService>();
 builder.Services.AddScoped<ISepetService, KanvasProje.Service.SepetService>(); // ğŸ›’ Database Cart Service
 if (isDatabaseAvailableAtStartup)

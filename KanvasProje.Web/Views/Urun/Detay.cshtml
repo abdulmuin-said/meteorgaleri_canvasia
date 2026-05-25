@@ -201,31 +201,32 @@ ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTit
 
 
 <!-- Mobile Lightbox -->
-<div id="mobileLightbox" class="fixed inset-0 z-50 hidden bg-black bg-opacity-95 items-center justify-center">
-    <button class="absolute top-4 right-4 text-white p-2" onclick="closeMobileLightbox()">
+<div id="mobileLightbox" class="fixed inset-0 z-[99990] hidden bg-black/95 items-center justify-center" role="dialog" aria-modal="true" aria-label="Ürün görseli">
+    <button type="button" class="absolute top-4 right-4 z-[100000] text-white bg-black/50 hover:bg-black/70 rounded-full w-12 h-12 flex items-center justify-center" onclick="closeMobileLightbox()" aria-label="Görseli kapat">
         <i class="fas fa-times text-2xl"></i>
     </button>
-    <div class="w-full h-full flex items-center justify-center overflow-hidden" id="lightboxImgContainer">
-        <img id="mobileLightboxImage" class="max-w-full max-h-full object-contain" src="" alt="" decoding="async">
+    <div class="relative z-[99991] w-full h-full flex items-center justify-center overflow-hidden px-4 py-20" id="lightboxImgContainer">
+        <img id="mobileLightboxImage" class="max-w-full max-h-full object-contain transition-transform duration-200" src="@varsayilanGaleriGorseli" alt="@varsayilanGaleriAltMetni" decoding="async">
     </div>
-    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center gap-4 bg-black bg-opacity-50 text-white rounded-full px-4 py-2">
-        <button onclick="zoomOutMobile()"><i class="fas fa-search-minus"></i></button>
-        <span id="zoomLevel" class="text-sm">100%</span>
-        <button onclick="zoomInMobile()"><i class="fas fa-search-plus"></i></button>
+    <div class="absolute bottom-8 left-1/2 z-[100000] transform -translate-x-1/2 flex items-center gap-4 bg-black/60 text-white rounded-full px-4 py-2">
+        <button type="button" class="w-10 h-10 flex items-center justify-center" onclick="rotateMobileImage()" aria-label="Döndür"><i class="fas fa-redo"></i></button>
+        <button type="button" class="w-10 h-10 flex items-center justify-center" onclick="zoomOutMobile()" aria-label="Uzaklaştır"><i class="fas fa-search-minus"></i></button>
+        <span id="zoomLevel" class="text-sm min-w-[42px] text-center">100%</span>
+        <button type="button" class="w-10 h-10 flex items-center justify-center" onclick="zoomInMobile()" aria-label="Yakınlaştır"><i class="fas fa-search-plus"></i></button>
     </div>
 </div>
 
 <!-- Desktop Lightbox Modal -->
-<div class="fixed inset-0 z-50 hidden bg-black bg-opacity-95 items-center justify-center" id="desktopLightboxModal">
-    <button class="absolute top-4 right-4 text-white p-2" id="closeDesktopModalBtn">
+<div class="fixed inset-0 z-[99990] hidden bg-black/95 items-center justify-center" id="desktopLightboxModal" role="dialog" aria-modal="true" aria-label="Ürün görseli">
+    <button type="button" class="absolute top-4 right-4 z-[100000] text-white bg-black/50 hover:bg-black/70 rounded-full w-12 h-12 flex items-center justify-center" id="closeDesktopModalBtn" aria-label="Görseli kapat">
         <i class="fas fa-times text-2xl"></i>
     </button>
-    <div class="absolute top-4 left-1/2 transform -translate-x-1/2 flex items-center gap-4 bg-black bg-opacity-50 text-white rounded-full px-4 py-2">
-        <button onclick="resetDesktopZoom()"><i class="fas fa-redo"></i></button>
-        <button onclick="zoomOutDesktop()"><i class="fas fa-search-minus"></i></button>
-        <button onclick="zoomInDesktop()"><i class="fas fa-search-plus"></i></button>
+    <div class="absolute top-4 left-1/2 z-[100000] transform -translate-x-1/2 flex items-center gap-3 bg-black/60 text-white rounded-full px-4 py-2">
+        <button type="button" class="w-10 h-10 flex items-center justify-center" onclick="rotateDesktopImage()" aria-label="Döndür"><i class="fas fa-redo"></i></button>
+        <button type="button" class="w-10 h-10 flex items-center justify-center" onclick="zoomOutDesktop()" aria-label="Uzaklaştır"><i class="fas fa-search-minus"></i></button>
+        <button type="button" class="w-10 h-10 flex items-center justify-center" onclick="zoomInDesktop()" aria-label="Yakınlaştır"><i class="fas fa-search-plus"></i></button>
     </div>
-    <div class="w-full h-full flex items-center justify-center overflow-hidden">
+    <div class="relative z-[99991] w-full h-full flex items-center justify-center overflow-hidden px-6 py-20">
         <img id="desktopLightboxImage" src="@varsayilanGaleriGorseli" class="max-w-full max-h-full object-contain transition-transform duration-200" alt="@varsayilanGaleriAltMetni" loading="lazy" decoding="async">
     </div>
 </div>
@@ -292,7 +293,7 @@ ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTit
         <!-- Left: Image Gallery -->
         <div class="space-y-4">
             <div class="relative bg-[#f1ede7] aspect-square rounded-lg overflow-hidden group cursor-zoom-in" onclick="openProductLightbox()">
-                                    <img id="mainProductImage" src="@varsayilanGaleriGorseli" data-default-src="@(varsayilanMedya?.ResimYolu ?? Model.AnaGorselUrl)" data-default-alt="@varsayilanGaleriAltMetni" data-product-name="@Model.Baslik" class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 main-product-image" alt="@varsayilanGaleriAltMetni" decoding="async" fetchpriority="high">
+                                    <img id="mainProductImage" src="@varsayilanGaleriGorseli" data-default-src="@(varsayilanMedya?.ResimYolu ?? Model.AnaGorselUrl)" data-default-alt="@varsayilanGaleriAltMetni" data-product-name="@Model.Baslik" class="w-full h-full object-contain transition-transform duration-700 ease-out group-hover:scale-110 main-product-image" alt="@varsayilanGaleriAltMetni" decoding="async" fetchpriority="high">
                 
                 <button type="button" class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm w-10 h-10 rounded-full shadow-sm text-[#313511] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white z-10" onclick="navigateGallery('prev', event)">
                     <i class="fas fa-chevron-left"></i>
@@ -752,13 +753,34 @@ const PRODUCT_CURRENCY = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(cur
 // Modal event listeners
 document.addEventListener('DOMContentLoaded', function() {
     const desktopModal = document.getElementById('desktopLightboxModal');
+    const mobileModal = document.getElementById('mobileLightbox');
     const closeBtn = document.getElementById('closeDesktopModalBtn');
+
+    [desktopModal, mobileModal].forEach(modal => {
+        if (modal && modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
+        }
+    });
+
     if (closeBtn && desktopModal) {
-        closeBtn.addEventListener('click', () => {
-            desktopModal.classList.add('hidden');
-            desktopModal.classList.remove('flex');
-        });
+        closeBtn.addEventListener('click', closeDesktopLightbox);
     }
+
+    [desktopModal, mobileModal].forEach(modal => {
+        if (modal) {
+            modal.addEventListener('click', event => {
+                if (event.target === modal) {
+                    closeProductLightbox();
+                }
+            });
+        }
+    });
+
+    window.addEventListener('keydown', event => {
+        if (event.key === 'Escape' || event.code === 'Escape') {
+            closeProductLightbox();
+        }
+    }, true);
 
     const commentModal = document.getElementById('commentModal');
     if (commentModal) {
@@ -781,8 +803,42 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 let currentZoom = 1;
+let currentRotation = 0;
+let previousBodyOverflow = '';
+
+function syncLightboxImage() {
+    const mainImage = document.getElementById('mainProductImage');
+    if (!mainImage) return;
+
+    const imageSrc = mainImage.currentSrc || mainImage.src;
+    const imageAlt = mainImage.alt || mainImage.getAttribute('data-product-name') || '';
+
+    const desktopImage = document.getElementById('desktopLightboxImage');
+    if (desktopImage && imageSrc) {
+        desktopImage.src = imageSrc;
+        desktopImage.alt = imageAlt;
+    }
+
+    const mobileImage = document.getElementById('mobileLightboxImage');
+    if (mobileImage && imageSrc) {
+        mobileImage.src = imageSrc;
+        mobileImage.alt = imageAlt;
+    }
+}
+
+function lockLightboxScroll() {
+    previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+}
+
+function unlockLightboxScroll() {
+    document.body.style.overflow = previousBodyOverflow;
+}
 
 function openProductLightbox() {
+    syncLightboxImage();
+    lockLightboxScroll();
+
     if (window.innerWidth >= 1024) {
         const dm = document.getElementById('desktopLightboxModal');
         if (dm) {
@@ -800,51 +856,80 @@ function openProductLightbox() {
     }
 }
 
+function closeProductLightbox() {
+    closeDesktopLightbox();
+    closeMobileLightbox();
+}
+
+function closeDesktopLightbox() {
+    const dm = document.getElementById('desktopLightboxModal');
+    if (dm) {
+        dm.classList.add('hidden');
+        dm.classList.remove('flex');
+        resetDesktopZoom();
+    }
+    unlockLightboxScroll();
+}
+
 function closeMobileLightbox() {
     const mm = document.getElementById('mobileLightbox');
     if (mm) {
         mm.classList.add('hidden');
         mm.classList.remove('flex');
+        resetMobileZoom();
     }
+    unlockLightboxScroll();
 }
 
 function resetMobileZoom() {
     currentZoom = 1;
-    updateMobileZoom();
+    currentRotation = 0;
+    updateMobileTransform();
 }
 
 function zoomInMobile() {
-    if (currentZoom < 3) { currentZoom += 0.5; updateMobileZoom(); }
+    if (currentZoom < 3) { currentZoom += 0.5; updateMobileTransform(); }
 }
 
 function zoomOutMobile() {
-    if (currentZoom > 1) { currentZoom -= 0.5; updateMobileZoom(); }
+    if (currentZoom > 1) { currentZoom -= 0.5; updateMobileTransform(); }
 }
 
-function updateMobileZoom() {
+function rotateMobileImage() {
+    currentRotation = (currentRotation + 90) % 360;
+    updateMobileTransform();
+}
+
+function updateMobileTransform() {
     const img = document.getElementById('mobileLightboxImage');
-    if (img) img.style.transform = `scale(${currentZoom})`;
+    if (img) img.style.transform = `scale(${currentZoom}) rotate(${currentRotation}deg)`;
     const zl = document.getElementById('zoomLevel');
     if (zl) zl.innerText = `${Math.round(currentZoom * 100)}%`;
 }
 
 function resetDesktopZoom() {
     currentZoom = 1;
-    updateDesktopZoom();
+    currentRotation = 0;
+    updateDesktopTransform();
 }
 
 function zoomInDesktop() {
-    if (currentZoom < 3) { currentZoom += 0.5; updateDesktopZoom(); }
+    if (currentZoom < 3) { currentZoom += 0.5; updateDesktopTransform(); }
 }
 
 function zoomOutDesktop() {
-    if (currentZoom > 1) { currentZoom -= 0.5; updateDesktopZoom(); }
+    if (currentZoom > 1) { currentZoom -= 0.5; updateDesktopTransform(); }
 }
 
-function updateDesktopZoom() {
+function rotateDesktopImage() {
+    currentRotation = (currentRotation + 90) % 360;
+    updateDesktopTransform();
+}
+
+function updateDesktopTransform() {
     const img = document.getElementById('desktopLightboxImage');
     if (img) {
-        img.style.transform = `scale(${currentZoom})`;
+        img.style.transform = `scale(${currentZoom}) rotate(${currentRotation}deg)`;
     }
 }
 

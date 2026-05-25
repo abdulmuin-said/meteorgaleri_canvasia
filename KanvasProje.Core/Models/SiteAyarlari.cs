@@ -36,6 +36,15 @@ namespace KanvasProje.Core.Models
         public int StokUyariLimiti { get; set; } = 5;
         public bool StoktaYokSatisIzni { get; set; } = false;
 
+        public bool PaytrAktifMi { get; set; } = false;
+        public bool PaytrTestModu { get; set; } = true;
+        public string PaytrMerchantId { get; set; } = string.Empty;
+        public string PaytrMerchantKeyProtected { get; set; } = string.Empty;
+        public string PaytrMerchantSaltProtected { get; set; } = string.Empty;
+        public string PaytrCallbackUrl { get; set; } = string.Empty;
+        public string PaytrBasariliDonusUrl { get; set; } = string.Empty;
+        public string PaytrBasarisizDonusUrl { get; set; } = string.Empty;
+
         public string KargoFirmasi { get; set; } = "Aras Kargo";
         public string KargoTakipUrl { get; set; } = string.Empty;
         public int SiparisTeslimSuresiGun { get; set; } = 5;

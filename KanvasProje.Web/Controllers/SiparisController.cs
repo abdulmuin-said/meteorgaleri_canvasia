@@ -1,7 +1,6 @@
 using KanvasProje.Core.Interfaces;
 using KanvasProje.Core.Varliklar;
 using KanvasProje.Data;
-using KanvasProje.Service.Interfaces;
 using KanvasProje.Service.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
@@ -13,13 +12,10 @@ namespace KanvasProje.Web.Controllers
 {
     public class SiparisController : Controller
     {
-        private const string PendingPaymentOrderSessionKey = "PendingPaymentOrderId";
-
         private readonly UserManager<AppUser> _userManager;
         private readonly IService<Adres> _adresService;
         private readonly KanvasDbContext _context;
         private readonly IEmailService _emailService;
-        private readonly IPaymentService _paymentService;
         private readonly ISepetService _sepetService;
         private readonly ISiteSettingsService _siteSettingsService;
         private readonly ILogger<SiparisController> _logger;
@@ -30,7 +26,6 @@ namespace KanvasProje.Web.Controllers
             IService<Adres> adresService,
             KanvasDbContext context,
             IEmailService emailService,
-            IPaymentService paymentService,
             ISepetService sepetService,
             ISiteSettingsService siteSettingsService,
             ILogger<SiparisController> logger,
@@ -40,7 +35,6 @@ namespace KanvasProje.Web.Controllers
             _adresService = adresService;
             _context = context;
             _emailService = emailService;
-            _paymentService = paymentService;
             _sepetService = sepetService;
             _siteSettingsService = siteSettingsService;
             _logger = logger;
@@ -112,6 +106,7 @@ namespace KanvasProje.Web.Controllers
             siparis.SilindiMi = false;
             siparis.AppUserId = userId;
             siparis.KargoTakipNo ??= string.Empty;
+            siparis.Aciklama = "Ödeme/onay bekliyor. PayTR ödeme entegrasyonu tamamlanana kadar sipariş beklemede oluşturuldu.";
             siparis.ToplamTutar = hamTutar;
             siparis.IndirimTutari = 0;
             siparis.KuponKodu = null;
@@ -174,6 +169,16 @@ namespace KanvasProje.Web.Controllers
                     });
                 }
 
+                if (!string.IsNullOrWhiteSpace(siparis.KuponKodu))
+                {
+                    var kupon = await _context.Kuponlar.FirstOrDefaultAsync(x => x.Kod == siparis.KuponKodu);
+                    if (kupon != null)
+                    {
+                        kupon.KullanilanMiktar++;
+                    }
+                }
+
+                await ClearOrderCartAsync(siparis);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
@@ -183,190 +188,23 @@ namespace KanvasProje.Web.Controllers
                 throw;
             }
 
-            HttpContext.Session.SetInt32(PendingPaymentOrderSessionKey, siparis.Id);
-
-            return RedirectToAction(nameof(IyzicoOdemeBaslat), new { id = siparis.Id });
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> IyzicoOdemeBaslat(int id)
-        {
-            var siparis = await _context.Siparisler.FindAsync(id);
-            if (siparis == null)
-            {
-                return NotFound();
-            }
-
-            if (!CanAccessPaymentOrder(siparis))
-            {
-                return Forbid();
-            }
-
-            if (siparis.Durum != 0)
-            {
-                return siparis.Durum >= 1
-                    ? RedirectToAction(nameof(Basarili), new { siparisNo = siparis.SiparisNo })
-                    : RedirectToAction(nameof(Basarisiz));
-            }
-
-            var userIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
-            if (userIp == "::1")
-            {
-                userIp = "127.0.0.1";
-            }
-
-            var adSoyad = string.IsNullOrWhiteSpace(siparis.MusteriAdSoyad) ? "Misafir Soyad" : siparis.MusteriAdSoyad.Trim();
-            var nameParts = adSoyad.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
-            var firstName = nameParts.Length > 0 ? nameParts[0] : "Misafir";
-            var lastName = nameParts.Length > 1 ? nameParts[1] : "Soyad";
-
-            var request = new PaymentInitRequest
-            {
-                OrderId = siparis.SiparisNo,
-                TotalPrice = siparis.ToplamTutar,
-                PaidPrice = siparis.ToplamTutar,
-                CallbackUrl = $"{Request.Scheme}://{Request.Host}/Siparis/IyzicoCallback",
-                BuyerId = siparis.AppUserId ?? "GuestUser",
-                BuyerName = firstName,
-                BuyerSurname = lastName,
-                BuyerEmail = siparis.Eposta,
-                BuyerPhone = siparis.Telefon,
-                BuyerAddress = $"{siparis.AcikAdres} {siparis.Ilce}/{siparis.Sehir}",
-                BuyerIp = userIp,
-                BuyerCity = siparis.Sehir
-            };
-
-            var detaylar = await _context.SiparisDetaylari
-                .Include(x => x.Urun)
-                    .ThenInclude(x => x.Kategori)
-                .Include(x => x.UrunSecenek)
-                .Where(x => x.SiparisId == id)
-                .ToListAsync();
-
-            foreach (var item in detaylar)
-            {
-                var detayMetni = BuildOrderLineDetail(item);
-                var itemName = item.Urun?.Baslik ?? "Urun";
-                if (!string.IsNullOrWhiteSpace(detayMetni))
-                {
-                    itemName = $"{itemName} - {detayMetni}";
-                }
-
-                request.BasketItems.Add(new PaymentBasketItem
-                {
-                    Id = item.UrunId.ToString(),
-                    Name = itemName,
-                    Category = item.Urun?.Kategori?.Ad ?? "Genel",
-                    Price = item.BirimFiyat * item.Adet
-                });
-            }
-
-            var result = await _paymentService.InitializeCheckoutAsync(request);
-
-            if (result.Success)
-            {
-                HttpContext.Session.SetInt32(PendingPaymentOrderSessionKey, siparis.Id);
-                ViewBag.IyzicoContent = result.CheckoutFormContent;
-                return View("IyzicoOdemeSayfasi");
-            }
-
-            _logger.LogWarning(
-                "Odeme baslatilamadi. SiparisNo={SiparisNo}, Hata={Error}",
-                siparis.SiparisNo,
-                result.ErrorMessage);
-
-            ViewBag.Hata = result.ErrorMessage;
-            return View("Basarisiz");
-        }
-
-        [HttpPost]
-        [IgnoreAntiforgeryToken]
-        public async Task<IActionResult> IyzicoCallback([FromForm] string token)
-        {
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                ViewBag.Hata = "Odeme dogrulama token bilgisi eksik.";
-                return View("Basarisiz");
-            }
-
-            var result = await _paymentService.VerifyPaymentAsync(token);
-            if (!result.Success)
-            {
-                _logger.LogWarning("Odeme dogrulama basarisiz. Token={Token}, Hata={Error}", token, result.ErrorMessage);
-                ViewBag.Hata = result.ErrorMessage ?? "Odeme islemi basarisiz veya iptal edildi.";
-                return View("Basarisiz");
-            }
-
-            if (string.IsNullOrWhiteSpace(result.ConversationId))
-            {
-                _logger.LogError("Odeme basarili fakat ConversationId bos dondu. PaymentId={PaymentId}", result.PaymentId);
-                ViewBag.Hata = "Odeme dogrulandi ancak siparis eslestirilemedi.";
-                return View("Basarisiz");
-            }
-
-            var siparis = await _context.Siparisler
-                .FirstOrDefaultAsync(x => x.SiparisNo == result.ConversationId && !x.SilindiMi);
-
-            if (siparis == null)
-            {
-                _logger.LogError(
-                    "Odeme basarili fakat eslesen siparis bulunamadi. ConversationId={ConversationId}, PaymentId={PaymentId}",
-                    result.ConversationId,
-                    result.PaymentId);
-
-                ViewBag.Hata = "Odeme onaylandi ancak siparis bulunamadi.";
-                return View("Basarisiz");
-            }
-
-            if (siparis.Durum >= 1)
-            {
-                return RedirectToAction(nameof(Basarili), new { siparisNo = siparis.SiparisNo });
-            }
-
-            if (result.PaidPrice <= 0 || Math.Abs(result.PaidPrice - siparis.ToplamTutar) > 0.01m)
-            {
-                _logger.LogError(
-                    "Odeme tutari uyusmazligi. SiparisNo={SiparisNo}, Beklenen={Beklenen}, Gelen={Gelen}, PaymentId={PaymentId}",
-                    siparis.SiparisNo,
-                    siparis.ToplamTutar,
-                    result.PaidPrice,
-                    result.PaymentId);
-
-                ViewBag.Hata = "Odeme tutari dogrulanamadi. Lutfen destek ile iletisime gecin.";
-                return View("Basarisiz");
-            }
-
-            await using var transaction = await _context.Database.BeginTransactionAsync();
-
-            siparis.Durum = 1;
-            siparis.Aciklama = $"Odeme basarili - PaymentId: {result.PaymentId}, Kart: {result.CardFamily} ****{result.LastFourDigits}, Taksit: {result.Installment}";
-
-            if (!string.IsNullOrWhiteSpace(siparis.KuponKodu))
-            {
-                var kupon = await _context.Kuponlar.FirstOrDefaultAsync(x => x.Kod == siparis.KuponKodu);
-                if (kupon != null)
-                {
-                    kupon.KullanilanMiktar++;
-                }
-            }
-
-            await ClearOrderCartAsync(siparis);
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-
             HttpContext.Session.Remove("UygulananKupon");
-            HttpContext.Session.Remove(PendingPaymentOrderSessionKey);
 
             _logger.LogInformation(
-                "Odeme onaylandi. SiparisNo={SiparisNo}, PaymentId={PaymentId}, Tutar={PaidPrice}",
+                "Siparis odeme bekliyor durumunda olusturuldu. SiparisNo={SiparisNo}, Tutar={Tutar}",
                 siparis.SiparisNo,
-                result.PaymentId,
-                result.PaidPrice);
+                siparis.ToplamTutar);
 
             await SendAdminOrderNotificationEmailAsync(siparis);
             await SendCustomerOrderConfirmationEmailAsync(siparis);
 
-            return RedirectToAction(nameof(Basarili), new { siparisNo = siparis.SiparisNo });
+            return RedirectToAction(nameof(Beklemede), new { siparisNo = siparis.SiparisNo });
+        }
+
+        public IActionResult Beklemede(string siparisNo)
+        {
+            ViewBag.SiparisNo = siparisNo;
+            return View();
         }
 
         public IActionResult Basarili(string siparisNo)
@@ -592,10 +430,11 @@ namespace KanvasProje.Web.Controllers
             var orderItemsHtml = await BuildOrderItemsTableRowsAsync(siparis.Id);
 
             var body = $@"
-                <h3>Yeni onaylanan sipari&#351;</h3>
+                <h3>Yeni sipari&#351; al&#305;nd&#305;</h3>
                 <p><strong>Sipari&#351; No:</strong> {orderNumber}</p>
                 <p><strong>M&uuml;&#351;teri:</strong> {customerName}</p>
                 <p><strong>E-posta:</strong> {customerEmail}</p>
+                <p><strong>&Ouml;deme Durumu:</strong> Beklemede</p>
                 <p><strong>Tutar:</strong> {siparis.ToplamTutar:N2} TL</p>
                 <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='border:1px solid #e5e2dc; border-radius:10px; background:#fff; margin:16px 0;'>
                     <thead>
@@ -671,7 +510,7 @@ namespace KanvasProje.Web.Controllers
 
             var content = $@"
                 <p style='margin-bottom:20px;'>Merhaba <strong>{musteriAdSoyad}</strong>,</p>
-                <p style='margin-bottom:20px;'>Sipari&#351;inizi ba&#351;ar&#305;yla ald&#305;k. A&#351;a&#287;&#305;da sipari&#351; &ouml;zeti yer almaktad&#305;r:</p>
+                <p style='margin-bottom:20px;'>Sipari&#351;inizi ald&#305;k. &Ouml;deme/onay s&uuml;reci tamamland&#305;&#287;&#305;nda sizi bilgilendirece&#287;iz.</p>
                 
                 <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='border:1px solid #e5e2dc; border-radius:12px; background:#fff; margin:20px 0;'>
                     <thead>
@@ -785,17 +624,6 @@ namespace KanvasProje.Web.Controllers
             }
 
             return string.Join(" | ", details);
-        }
-
-        private bool CanAccessPaymentOrder(Siparis siparis)
-        {
-            var userId = User.Identity?.IsAuthenticated == true ? _userManager.GetUserId(User) : null;
-            if (!string.IsNullOrWhiteSpace(siparis.AppUserId))
-            {
-                return string.Equals(siparis.AppUserId, userId, StringComparison.Ordinal);
-            }
-
-            return HttpContext.Session.GetInt32(PendingPaymentOrderSessionKey) == siparis.Id;
         }
 
         private async Task ClearOrderCartAsync(Siparis siparis)

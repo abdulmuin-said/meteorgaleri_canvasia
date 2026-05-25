@@ -27,7 +27,18 @@
       "Bash(kill 32000)",
       "Bash(taskkill.exe /PID 32000 /F)",
       "Bash(powershell.exe -NoProfile -Command \"Stop-Process -Id 32000 -Force\")",
-      "Bash(docker-compose up *)"
+      "Bash(docker-compose up *)",
+      "Bash(powershell.exe *)",
+      "Bash(git *)",
+      "mcp__docker__list_containers",
+      "Bash(ConnectionStrings__DefaultConnection='Host=localhost;Port=5433;Database=kanvasdb;Username=kanvasuser;Password=changeme_in_production;Timeout=15;CommandTimeout=30' dotnet run *)",
+      "mcp__playwright__browser_wait_for",
+      "Bash(DOTNET_RUNNING_IN_CONTAINER=true ConnectionStrings__DefaultConnection='Host=localhost;Port=5433;Database=kanvasdb;Username=kanvasuser;Password=changeme_in_production;Timeout=30;CommandTimeout=60;Pooling=false' dotnet run *)",
+      "mcp__playwright__browser_resize",
+      "mcp__playwright__browser_press_key",
+      "mcp__playwright__browser_hover",
+      "WebSearch",
+      "WebFetch(domain:dev.paytr.com)"
     ]
   }
 }

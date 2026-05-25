@@ -3,6 +3,7 @@ using System;
 using KanvasProje.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace KanvasProje.Data.Migrations
 {
     [DbContext(typeof(KanvasDbContext))]
-    partial class KanvasDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260524165022_AddPaytrSettings")]
+    partial class AddPaytrSettings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
