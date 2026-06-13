@@ -397,7 +397,12 @@
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <a href="/Admin/Siparis" class="ca-btn ca-btn-outline"><i class="fas fa-arrow-left"></i> Listeye Dön</a>
-            <button type="button" onclick="printShippingLabel()" class="ca-btn ca-btn-outline"><i class="fas fa-tag"></i> Kargo Etiketi Yazdır</button>
+            @if (Model.Durum == SiparisDurumHelper.SiparisAlindi || 
+                 Model.Durum == SiparisDurumHelper.UretimHazirlaniyor || 
+                 Model.Durum == SiparisDurumHelper.Paketleniyor)
+            {
+                <button type="button" onclick="printShippingLabel()" class="ca-btn ca-btn-outline"><i class="fas fa-tag"></i> Kargo Etiketi Yazdır</button>
+            }
         </div>
     </div>
 
@@ -498,15 +503,19 @@
                 </div>
                 <div class="ca-card-body">
                     <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="small text-muted">Ara Toplam</div>
-                            <div class="ca-fw-bold">@Model.ToplamTutar.ToString("N2") TL</div>
+                        <div class="col-md-3">
+                            <div class="small text-muted">Ara Toplam (Ürünler)</div>
+                            <div class="ca-fw-bold">@((Model.ToplamTutar + Model.IndirimTutari - Model.KargoUcreti).ToString("N2")) TL</div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="small text-muted">İndirim</div>
                             <div class="ca-fw-bold">@Model.IndirimTutari.ToString("N2") TL</div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <div class="small text-muted">Kargo Ücreti</div>
+                            <div class="ca-fw-bold">@Model.KargoUcreti.ToString("N2") TL</div>
+                        </div>
+                        <div class="col-md-3">
                             <div class="small text-muted">Genel Toplam</div>
                             <div class="ca-fw-bold ca-text-primary" style="font-size:1.2rem;">@Model.ToplamTutar.ToString("N2") TL</div>
                         </div>

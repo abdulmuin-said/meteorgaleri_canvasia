@@ -283,6 +283,12 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            var validDurumlar = new[] { 
+                SiparisDurumHelper.SiparisAlindi, 
+                SiparisDurumHelper.UretimHazirlaniyor, 
+                SiparisDurumHelper.Paketleniyor 
+            };
+
             var siralama = siparisIds
                 .Select((id, index) => new { id, index })
                 .ToDictionary(x => x.id, x => x.index);
@@ -293,8 +299,15 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
                     .ThenInclude(x => x.Urun)
                 .Include(x => x.SiparisDetaylari)
                     .ThenInclude(x => x.UrunSecenek)
-                .Where(x => siparisIds.Contains(x.Id))
+                .Where(x => siparisIds.Contains(x.Id) && validDurumlar.Contains(x.Durum))
                 .ToListAsync();
+
+            if (!siparisler.Any())
+            {
+                TempData["Mesaj"] = "Seçilen siparişler arasında etiket yazdırılabilecek (Yeni, Hazırlanıyor veya Paketleniyor durumunda) sipariş bulunamadı.";
+                TempData["Durum"] = "warning";
+                return RedirectToAction(nameof(Index));
+            }
 
             siparisler = siparisler
                 .OrderBy(x => siralama.TryGetValue(x.Id, out var index) ? index : int.MaxValue)

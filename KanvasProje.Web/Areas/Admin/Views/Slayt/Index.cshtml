@@ -125,6 +125,12 @@
                                         }
                                     </td>
                                     <td>
+                                        <form method="post" action="@Url.Action("AktiflikDegistir", "Slayt", new { id = item.Id })" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-@(item.AktifMi ? "warning" : "success")" title="@(item.AktifMi ? "Pasif Yap" : "Aktif Yap")">
+                                                <i class="fas @(item.AktifMi ? "fa-eye-slash" : "fa-eye")"></i>
+                                            </button>
+                                        </form>
                                         <a href="@Url.Action("Duzenle", "Slayt", new { id = item.Id })" class="btn btn-sm btn-outline-primary" title="Düzenle">
                                             <i class="fas fa-edit"></i>
                                         </a>
@@ -166,7 +172,9 @@
 <script>
 (function() {
     let silId = null;
-    var silModal = new bootstrap.Modal(document.getElementById('silModal'));
+    var modalEl = document.getElementById('silModal');
+    if (modalEl) { document.body.appendChild(modalEl); }
+    var silModal = new bootstrap.Modal(modalEl);
 
     document.querySelectorAll('.btn-sil').forEach(function(btn) {
         btn.addEventListener('click', function() {

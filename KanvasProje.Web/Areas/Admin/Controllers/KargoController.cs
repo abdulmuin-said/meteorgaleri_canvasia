@@ -78,6 +78,7 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
                     firma.GondericiTelefon = model.GondericiTelefon;
                     firma.AktifMi = model.AktifMi;
                     firma.VarsayilanMi = model.VarsayilanMi;
+                    firma.Fiyat = model.Fiyat;
                     TempData["Mesaj"] = $"{model.Ad} kargo firması güncellendi.";
                 }
 

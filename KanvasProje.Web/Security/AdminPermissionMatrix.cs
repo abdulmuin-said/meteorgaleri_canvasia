@@ -98,6 +98,13 @@ namespace KanvasProje.Web.Security
                     AdminSecurityRoles.Yonetici,
                     AdminSecurityRoles.IcerikYoneticisi
                 },
+                ["Slayt"] = new[]
+                {
+                    AdminSecurityRoles.LegacyAdmin,
+                    AdminSecurityRoles.SuperAdmin,
+                    AdminSecurityRoles.Yonetici,
+                    AdminSecurityRoles.IcerikYoneticisi
+                },
                 ["AnaSayfa"] = new[]
                 {
                     AdminSecurityRoles.LegacyAdmin,

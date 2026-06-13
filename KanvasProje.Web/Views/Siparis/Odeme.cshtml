@@ -1,4 +1,5 @@
 @model KanvasProje.Core.Varliklar.Siparis
+@using KanvasProje.Core.Varliklar
 @{
     ViewData["Title"] = "Güvenli Ödeme";
 
@@ -156,6 +157,48 @@
                         }
                     </div>
 
+                    <!-- Kargo Firması Seçimi -->
+                    <div class="mt-12">
+                        <h2 class="font-serif text-2xl text-[#313511] mb-6 flex items-center gap-3 border-b border-[#e5e2dc] pb-4">
+                            <i class="fas fa-truck-fast text-[#b58735]"></i> Kargo Firması Seçiniz
+                        </h2>
+                        
+                        @{
+                            var kargoFirmalari = ViewBag.KargoFirmalari as List<KargoFirmasi> ?? new List<KargoFirmasi>();
+                            var ucretsizKargoLimiti = (decimal)(ViewBag.UcretsizKargoLimiti ?? 500);
+                            var isFreeShipping = (araToplam - indirim) >= ucretsizKargoLimiti;
+                        }
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            @foreach (var kargo in kargoFirmalari)
+                            {
+                                var kargoFiyat = isFreeShipping ? 0 : kargo.Fiyat;
+                                var isChecked = Model.KargoFirmasiId > 0 ? (kargo.Id == Model.KargoFirmasiId) : kargo.VarsayilanMi;
+                                var checkedAttr = isChecked ? "checked" : null;
+                                
+                                <label class="group relative cursor-pointer border border-[#e5e2dc] rounded-lg p-4 bg-white flex items-center justify-between gap-4 transition-all hover:border-[#b58735] has-[:checked]:border-[#313511] has-[:checked]:bg-[#fcf9f3]">
+                                    <div class="flex items-center gap-3">
+                                        <input type="radio" name="KargoFirmasiId" value="@kargo.Id" class="kargo-radio w-4 h-4 text-[#313511] border-[#e5e2dc] focus:ring-[#313511]" checked="@checkedAttr" data-price="@kargoFiyat" data-name="@kargo.Ad" />
+                                        <div>
+                                            <div class="text-sm font-semibold text-[#1c1c18]">@kargo.Ad</div>
+                                            <div class="text-[11px] text-[#6f6a5e]">@kargo.Telefon</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        @if (kargoFiyat == 0)
+                                        {
+                                            <span class="text-xs font-bold text-green-600 uppercase">Ücretsiz</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-sm font-semibold text-[#1c1c18]">₺@kargoFiyat.ToString("N2")</span>
+                                        }
+                                    </div>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
                     <div class="mt-12">
                         <h2 class="font-serif text-2xl text-[#313511] mb-6 flex items-center gap-3 border-b border-[#e5e2dc] pb-4">
                             <i class="fas fa-credit-card text-[#b58735]"></i> Ödeme Yöntemi
@@ -187,7 +230,7 @@
                     </div>
 
                     <button type="submit" class="w-full mt-8 bg-[#313511] text-white text-sm font-medium tracking-widest uppercase py-4 rounded hover:bg-[#1c2001] transition-colors flex items-center justify-center gap-3">
-                        <i class="fas fa-check"></i> Siparişi Oluştur - @genelToplam.ToString("N2") TL
+                        <i class="fas fa-check"></i> Siparişi Oluştur - <span id="checkoutBtnTotal">@genelToplam.ToString("N2")</span> TL
                     </button>
                 </form>
             </section>
@@ -239,13 +282,13 @@
 
                     <div class="flex justify-between text-[#47473d]">
                         <span>Kargo Ücreti</span>
-                        <span class="text-[#313511] font-medium">Ücretsiz</span>
+                        <span id="checkoutKargoUcreti" class="text-[#313511] font-medium">@((ViewBag.GosterilecekKargoBedeli == 0) ? "Ücretsiz" : $"₺{((decimal)ViewBag.GosterilecekKargoBedeli).ToString("N2")}")</span>
                     </div>
                 </div>
 
                 <div class="flex justify-between items-end border-t border-[#e5e2dc] pt-6 mb-8">
                     <span class="text-sm text-[#47473d] uppercase tracking-wider font-medium">Genel Toplam</span>
-                    <span class="text-4xl font-bold text-[#313511] tracking-tight">@genelToplam.ToString("N0") <span class="text-lg font-normal text-[#47473d]">TL</span></span>
+                    <span id="checkoutGenelToplam" class="text-4xl font-bold text-[#313511] tracking-tight">@genelToplam.ToString("N2") <span class="text-lg font-normal text-[#47473d]">TL</span></span>
                 </div>
 
                 <div class="space-y-4 pt-6 border-t border-[#e5e2dc]">
@@ -350,5 +393,46 @@
                 container.classList.add('opacity-100', 'scale-100');
             }
         });
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const kargoRadios = document.querySelectorAll(".kargo-radio");
+        const kargoDisplay = document.getElementById("checkoutKargoUcreti");
+        const totalDisplay = document.getElementById("checkoutGenelToplam");
+        const btnTotalDisplay = document.getElementById("checkoutBtnTotal");
+
+        const subtotal = parseFloat("@((araToplam - indirim).ToString(System.Globalization.CultureInfo.InvariantCulture))");
+
+        function updateCheckoutTotals() {
+            const selectedRadio = document.querySelector(".kargo-radio:checked");
+            if (!selectedRadio) return;
+
+            const kargoPrice = parseFloat(selectedRadio.getAttribute("data-price")) || 0;
+            const genelToplamVal = subtotal + kargoPrice;
+
+            if (kargoDisplay) {
+                if (kargoPrice === 0) {
+                    kargoDisplay.textContent = "Ücretsiz";
+                    kargoDisplay.className = "text-green-600 font-bold uppercase";
+                } else {
+                    kargoDisplay.textContent = "₺" + kargoPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    kargoDisplay.className = "text-[#313511] font-medium";
+                }
+            }
+
+            if (totalDisplay) {
+                totalDisplay.innerHTML = genelToplamVal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' <span class="text-lg font-normal text-[#47473d]">TL</span>';
+            }
+
+            if (btnTotalDisplay) {
+                btnTotalDisplay.textContent = genelToplamVal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+        }
+
+        kargoRadios.forEach(radio => {
+            radio.addEventListener("change", updateCheckoutTotals);
+        });
+
+        updateCheckoutTotals();
     });
 </script>

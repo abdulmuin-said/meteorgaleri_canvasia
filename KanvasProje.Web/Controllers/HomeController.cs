@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System.Collections.Generic; // cache-invalidation comment to trigger dotnet watch reload
 using System.Diagnostics;
 using KanvasProje.Core.Interfaces;
 using KanvasProje.Core.Varliklar;

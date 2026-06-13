@@ -43,6 +43,13 @@
 
     <form method="post" enctype="multipart/form-data" autocomplete="off">
         @Html.AntiForgeryToken()
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                <strong><i class="fas fa-exclamation-triangle me-2"></i> Lütfen aşağıdaki hataları düzeltin:</strong>
+                @Html.ValidationSummary(false, "", new { @class = "mb-0 mt-2" })
+            </div>
+        }
 
         <div class="row g-4">
             <div class="col-lg-8">
@@ -85,6 +92,7 @@
                         <div id="resimYukleme" class="mb-3">
                             <label class="form-label">Görsel Yükle</label>
                             <input type="file" name="Resim" id="resimInput" class="form-control" accept="image/*" onchange="previewResim(this)" />
+                            @Html.ValidationMessage("Resim", "", new { @class = "text-danger small" })
                             <div class="form-text">Desteklenen formatlar: JPG, PNG, WEBP. Maksimum dosya boyutu: 10MB.</div>
                             <div id="resimOnizleme" class="mt-2 @(string.IsNullOrEmpty(Model.ResimUrl) ? "d-none" : "")">
                                 <img src="@Model.ResimUrl" id="resimPreviewImg" class="img-thumbnail" style="max-height:200px;" alt="Önizleme" />
@@ -94,6 +102,7 @@
                         <div id="videoYukleme" class="@(isVideoTur ? "" : "d-none") mb-3">
                             <label class="form-label">Video Dosyası Yükle</label>
                             <input type="file" name="Video" id="videoInput" class="form-control" accept="video/mp4,video/webm" onchange="previewVideo(this)" />
+                            @Html.ValidationMessage("Video", "", new { @class = "text-danger small" })
                             <div class="form-text">Desteklenen formatlar: MP4, WebM. Maksimum dosya boyutu: 50MB.</div>
                             <div id="videoOnizleme" class="mt-2 @(string.IsNullOrEmpty(Model.VideoUrl) ? "d-none" : "")">
                                 <video src="@Model.VideoUrl" id="videoPreviewTag" controls style="max-height:200px;border-radius:8px;"></video>

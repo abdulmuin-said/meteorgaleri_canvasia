@@ -44,6 +44,14 @@
     <form method="post" enctype="multipart/form-data" autocomplete="off">
         @Html.AntiForgeryToken()
         <input type="hidden" name="Id" value="@Model.Id" />
+        
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                <strong><i class="fas fa-exclamation-triangle me-2"></i> Lütfen aşağıdaki hataları düzeltin:</strong>
+                @Html.ValidationSummary(false, "", new { @class = "mb-0 mt-2" })
+            </div>
+        }
 
         <div class="row g-4">
             <div class="col-lg-8">

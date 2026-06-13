@@ -44,7 +44,7 @@
             {
                 var urun = favori.Urun;
                 if (urun == null) continue;
-                var urlSlug = string.IsNullOrEmpty(urun.Slug) ? urun.Id.ToString() : $"{urun.Slug}-{urun.Id}";
+                var urlSlug = string.IsNullOrEmpty(urun.Slug) ? $"{KanvasProje.Core.Helpers.SlugHelper.GenerateSlug(urun.Baslik)}-{urun.Id}" : $"{urun.Slug}-{urun.Id}";
                 var bildirimAktif = favori.FiyatDustugundaBildir;
                 <div class="favori-item group relative flex flex-col bg-white border border-[#e5e2dc] hover:border-[#b58735] transition-colors rounded-lg overflow-hidden">
                     <div class="relative aspect-[4/5] bg-[#fcf9f3] overflow-hidden">

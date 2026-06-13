@@ -309,11 +309,16 @@
                                                 <i class="fas fa-eye me-2"></i> Detayı Aç
                                             </a>
                                         </li>
-                                        <li>
-                                            <a class="dropdown-item" href="/Admin/Siparis/Detay/@item.Id#printableLabel">
-                                                <i class="fas fa-tag me-2"></i> Kargo Etiketi
-                                            </a>
-                                        </li>
+                                        @if (item.Durum == SiparisDurumHelper.SiparisAlindi || 
+                                             item.Durum == SiparisDurumHelper.UretimHazirlaniyor || 
+                                             item.Durum == SiparisDurumHelper.Paketleniyor)
+                                        {
+                                            <li>
+                                                <a class="dropdown-item" href="/Admin/Siparis/Detay/@item.Id#printableLabel">
+                                                    <i class="fas fa-tag me-2"></i> Kargo Etiketi
+                                                </a>
+                                            </li>
+                                        }
                                         <li><hr class="dropdown-divider"></li>
                                         @if (item.Durum == SiparisDurumHelper.UretimHazirlaniyor || item.Durum == SiparisDurumHelper.Paketleniyor)
                                         {
@@ -348,6 +353,7 @@
                                 <input type="checkbox"
                                        class="form-check-input order-select"
                                        value="@item.Id"
+                                       data-status="@item.Durum"
                                        aria-label="@siparisNo siparişini seç">
                             </td>
                         </tr>
@@ -552,7 +558,51 @@
     });
 
     function updateSelectedCount() {
-        var count = document.querySelectorAll('.order-select:checked').length;
+        var checkboxes = document.querySelectorAll('.order-select:checked');
+        var count = checkboxes.length;
         document.getElementById('selectedOrderCount').textContent = count > 0 ? count + ' sipariş seçildi.' : 'Seçili sipariş yok.';
+
+        // Etiket basılabilecek durumlar: 0 (Sipariş Alındı), 1 (Hazırlanıyor), 8 (Paketleniyor)
+        var validLabelStatuses = [0, 1, 8];
+        var validLabelCount = 0;
+
+        var labelContainer = document.getElementById('bulkLabelInputs');
+        if (labelContainer) {
+            labelContainer.innerHTML = '';
+            checkboxes.forEach(function(cb) {
+                var status = parseInt(cb.getAttribute('data-status'));
+                if (validLabelStatuses.includes(status)) {
+                    validLabelCount++;
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'siparisIds';
+                    input.value = cb.value;
+                    labelContainer.appendChild(input);
+                }
+            });
+        }
+
+        var bulkLabelBtn = document.getElementById('bulkLabelButton');
+        if (bulkLabelBtn) {
+            bulkLabelBtn.disabled = (validLabelCount === 0);
+        }
+
+        var bulkConfirmBtn = document.getElementById('bulkConfirmButton');
+        if (bulkConfirmBtn) {
+            bulkConfirmBtn.disabled = (count === 0);
+        }
+
+        // Populate bulkConfirmInputs
+        var confirmContainer = document.getElementById('bulkConfirmInputs');
+        if (confirmContainer) {
+            confirmContainer.innerHTML = '';
+            checkboxes.forEach(function(cb) {
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'siparisIds';
+                input.value = cb.value;
+                confirmContainer.appendChild(input);
+            });
+        }
     }
 </script>

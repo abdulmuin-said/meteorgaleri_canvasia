@@ -12,5 +12,6 @@ namespace KanvasProje.Core.Varliklar
         public string GondericiTelefon { get; set; } = string.Empty;
         public bool AktifMi { get; set; } = true;
         public bool VarsayilanMi { get; set; }
+        public decimal Fiyat { get; set; } = 0;
     }
 }

@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
+
 
 namespace KanvasProje.Web.Controllers
 {
@@ -56,6 +58,12 @@ namespace KanvasProje.Web.Controllers
             await PrepareCheckoutViewDataAsync(userId, sessionId, sepetItems);
 
             var model = new Siparis();
+            
+            int? secilenKargoId = HttpContext.Session.GetInt32("SecilenKargoId");
+            if (secilenKargoId.HasValue)
+            {
+                model.KargoFirmasiId = secilenKargoId.Value;
+            }
 
             if (User.Identity?.IsAuthenticated == true)
             {
@@ -127,6 +135,33 @@ namespace KanvasProje.Web.Controllers
                     siparis.ToplamTutar = Math.Max(0, siparis.ToplamTutar - indirim);
                 }
             }
+
+            // --- KARGO HESAPLAMA VE KAYDETME ---
+            var settings = _siteSettingsService.GetSettings();
+            var secilenKargo = await _context.KargoFirmalari
+                .FirstOrDefaultAsync(x => x.Id == siparis.KargoFirmasiId && !x.SilindiMi && x.AktifMi);
+            
+            if (secilenKargo == null)
+            {
+                secilenKargo = await _context.KargoFirmalari
+                    .FirstOrDefaultAsync(x => x.VarsayilanMi && !x.SilindiMi && x.AktifMi)
+                    ?? await _context.KargoFirmalari.FirstOrDefaultAsync(x => !x.SilindiMi && x.AktifMi);
+            }
+
+            if (secilenKargo != null)
+            {
+                siparis.KargoFirmasiId = secilenKargo.Id;
+                siparis.KargoFirmasi = secilenKargo.Ad;
+            }
+
+            decimal kargoUcreti = 0;
+            if (siparis.ToplamTutar < settings.UcretsizKargoLimiti)
+            {
+                kargoUcreti = secilenKargo?.Fiyat ?? settings.KargoBedeli;
+            }
+
+            siparis.KargoUcreti = kargoUcreti;
+            siparis.ToplamTutar = siparis.ToplamTutar + kargoUcreti;
 
             await using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -280,11 +315,30 @@ namespace KanvasProje.Web.Controllers
                 }
             }
 
+            var settings = _siteSettingsService.GetSettings();
+            var kargoFirmalari = await _context.KargoFirmalari
+                .Where(x => !x.SilindiMi && x.AktifMi)
+                .OrderByDescending(x => x.VarsayilanMi)
+                .ThenBy(x => x.Ad)
+                .ToListAsync();
+
+            int? secilenKargoId = HttpContext.Session.GetInt32("SecilenKargoId");
+            var varsayilanKargo = kargoFirmalari.FirstOrDefault(x => x.Id == secilenKargoId)
+                ?? kargoFirmalari.FirstOrDefault(x => x.VarsayilanMi) 
+                ?? kargoFirmalari.FirstOrDefault();
+            decimal varsayilanKargoUcreti = varsayilanKargo?.Fiyat ?? settings.KargoBedeli;
+
+            decimal sepetToplamiIndirimli = araToplam - indirimTutari;
+            decimal gosterilecekKargoBedeli = sepetToplamiIndirimli >= settings.UcretsizKargoLimiti ? 0 : varsayilanKargoUcreti;
+
             ViewBag.AraToplam = araToplam;
             ViewBag.IndirimTutari = indirimTutari;
             ViewBag.KuponKodu = kuponKodu;
-            ViewBag.ToplamTutar = Math.Max(0, araToplam - indirimTutari);
+            ViewBag.UcretsizKargoLimiti = settings.UcretsizKargoLimiti;
+            ViewBag.GosterilecekKargoBedeli = gosterilecekKargoBedeli;
+            ViewBag.ToplamTutar = Math.Max(0, sepetToplamiIndirimli + gosterilecekKargoBedeli);
             ViewBag.SepetItems = sepetItems;
+            ViewBag.KargoFirmalari = kargoFirmalari;
 
             if (!string.IsNullOrWhiteSpace(userId))
             {

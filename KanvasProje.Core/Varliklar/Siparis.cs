@@ -34,6 +34,7 @@ namespace KanvasProje.Core.Varliklar
         public string? KargoTakipNo { get; set; } 
         public int? KargoFirmasiId { get; set; }
         public string? KargoFirmasi { get; set; }
+        public decimal KargoUcreti { get; set; } = 0;
         public string? Aciklama { get; set; }
         
         // GUEST CHECKOUT: Email ile sipariş takibi için hash kodu

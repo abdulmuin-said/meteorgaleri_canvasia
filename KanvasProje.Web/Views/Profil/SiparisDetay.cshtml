@@ -6,7 +6,7 @@
     var statusStep = Model.Durum;
     var isCancelled = Model.Durum == 4;
     var isReturn = Model.Durum >= 5;
-    var araToplam = Model.ToplamTutar + Model.IndirimTutari;
+    var araToplam = Model.ToplamTutar + Model.IndirimTutari - Model.KargoUcreti;
 }
 
 <!-- Breadcrumb -->
@@ -187,11 +187,11 @@
                                             <div class="flex items-center gap-4">
                                             <img src="@item.Resim" alt="@item.Baslik" class="w-16 h-16 object-cover rounded border border-[#e5e2dc]" loading="lazy" decoding="async" />
                                                 <div>
-                                                    <a href="/Urun/Detay/@item.UrunId" class="font-semibold text-[#1c1c18] hover:text-[#b58735] transition-colors block mb-1">@item.Baslik</a>
+                                                    <a href="/Urun/Detay/@(KanvasProje.Core.Helpers.SlugHelper.GenerateSlug(item.Baslik))-@item.UrunId" class="font-semibold text-[#1c1c18] hover:text-[#b58735] transition-colors block mb-1">@item.Baslik</a>
                                                     <div class="text-xs text-[#47473d]">Birim: @item.Fiyat.ToString("N2") TL</div>
                                                     @if (Model.Durum == 3)
                                                     {
-                                                        <a href="/Urun/Detay/@item.UrunId#reviews-section" class="text-[10px] text-[#b58735] hover:text-[#313511] uppercase tracking-wider mt-2 inline-block">
+                                                        <a href="/Urun/Detay/@(KanvasProje.Core.Helpers.SlugHelper.GenerateSlug(item.Baslik))-@item.UrunId#reviews-section" class="text-[10px] text-[#b58735] hover:text-[#313511] uppercase tracking-wider mt-2 inline-block">
                                                             <i class="fas fa-star mr-1"></i>Değerlendir
                                                         </a>
                                                     }
@@ -232,7 +232,7 @@
                                             <i class="fas fa-tag mr-1"></i>İndirim (@Model.KuponKodu): -@Model.IndirimTutari.ToString("N2") TL
                                         </div>
                                     }
-                                    <div class="text-xs mt-2">Kargo: 0.00 TL</div>
+                                    <div class="text-xs mt-2">Kargo: @(Model.KargoUcreti == 0 ? "Ücretsiz" : $"{Model.KargoUcreti.ToString("N2")} TL")</div>
                                 </td>
                                 <td class="px-6 py-4 text-right border-l border-[#e5e2dc]">
                                     <div class="text-[10px] uppercase tracking-widest text-[#47473d] mb-1">Genel Toplam</div>

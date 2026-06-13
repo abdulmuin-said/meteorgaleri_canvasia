@@ -38,11 +38,15 @@
                                 <label class="ca-label">Logo URL</label>
                                 <input name="LogoUrl" class="ca-input" placeholder="/img/kargo/aras-kargo.svg" />
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="ca-label">Telefon</label>
                                 <input name="Telefon" class="ca-input" placeholder="444 25 52" />
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <label class="ca-label">Kargo Ücreti (₺)</label>
+                                <input name="Fiyat" class="ca-input" type="number" step="0.01" min="0" value="0.00" required />
+                            </div>
+                            <div class="col-md-4">
                                 <label class="ca-label">Varsayılan</label>
                                 <select name="VarsayilanMi" class="ca-select">
                                     <option value="false">Hayır</option>
@@ -85,6 +89,7 @@
                             <tr>
                                 <th class="ps-4">Firma</th>
                                 <th>Takip</th>
+                                <th>Kargo Ücreti</th>
                                 <th>Durum</th>
                                 <th class="text-end pe-4">İşlem</th>
                             </tr>
@@ -108,6 +113,9 @@
                                     <td>
                                         <div class="small">@firma.Telefon</div>
                                         <div class="small text-muted text-truncate" style="max-width:240px;">@firma.TakipUrl</div>
+                                    </td>
+                                    <td class="ca-fw-bold">
+                                        @firma.Fiyat.ToString("N2") TL
                                     </td>
                                     <td>
                                         <span class="ca-badge @(firma.AktifMi ? "ca-badge-success" : "ca-badge-neutral")">@(firma.AktifMi ? "Aktif" : "Pasif")</span>
@@ -140,15 +148,16 @@
                                     </td>
                                 </tr>
                                 <tr class="collapse" id="firma-@firma.Id">
-                                    <td colspan="4" class="p-4" style="background:var(--ca-bg);">
+                                    <td colspan="5" class="p-4" style="background:var(--ca-bg);">
                                         <form method="post" action="/Admin/Kargo/Kaydet">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="Id" value="@firma.Id" />
                                             <div class="row g-3">
-                                                <div class="col-md-4"><input name="Ad" value="@firma.Ad" class="ca-input" /></div>
-                                                <div class="col-md-3"><input name="Kod" value="@firma.Kod" class="ca-input" /></div>
-                                                <div class="col-md-3"><input name="Telefon" value="@firma.Telefon" class="ca-input" /></div>
-                                                <div class="col-md-2">
+                                                <div class="col-md-3"><input name="Ad" value="@firma.Ad" class="ca-input" placeholder="Firma Adı" /></div>
+                                                <div class="col-md-2"><input name="Kod" value="@firma.Kod" class="ca-input" placeholder="Kod" /></div>
+                                                <div class="col-md-2"><input name="Telefon" value="@firma.Telefon" class="ca-input" placeholder="Telefon" /></div>
+                                                <div class="col-md-2"><input name="Fiyat" value="@firma.Fiyat.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)" class="ca-input" type="number" step="0.01" min="0" placeholder="Kargo Ücreti" required /></div>
+                                                <div class="col-md-3">
                                                     <select name="AktifMi" class="ca-select">
                                                         <option value="true" selected="@firma.AktifMi">Aktif</option>
                                                         <option value="false" selected="@(!firma.AktifMi)">Pasif</option>

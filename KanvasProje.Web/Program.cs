@@ -1,4 +1,4 @@
-﻿global using KanvasProje.Core.Helpers;
+global using KanvasProje.Core.Helpers;
 global using KanvasProje.Service.Helpers;
 global using KanvasProje.Core.Models;
 global using KanvasProje.Service.Interfaces;
@@ -431,6 +431,12 @@ using (var scope = app.Services.CreateScope())
         {
             var logger = services.GetRequiredService<ILogger<Program>>();
             await EnsureKnownSchemaDriftAsync(context, logger);
+            
+            // 3. DbSeeder sÄ±nÄ±fÄ± iÃ§in eksik katalog ÅŸemasÄ±nÄ± Ã¶nceden ekle (EF Migrations'ın ihtiyaÃ§ duyduÄŸu Slug/CerceveModeli vb. kolonları garanti eder)
+            await EnsureMissingMarch2026SchemaAsync(
+                context,
+                logger);
+
             // 2. OTOMATÄ°K MIGRATION (Sihirli Kod BurasÄ±) ğŸš€
             // EÄŸer veritabanÄ± yoksa oluÅŸturur, varsa ve yeni migrationlar eklenmiÅŸse onlarÄ± uygular.
             
@@ -454,10 +460,6 @@ using (var scope = app.Services.CreateScope())
                 // Migration hatasÄ± olursa logla ama devam et
             }
 
-            // 3. DbSeeder sÄ±nÄ±fÄ±nÄ± Ã§aÄŸÄ±r (Tablolar oluÅŸtuktan sonra veri bas)
-            await EnsureMissingMarch2026SchemaAsync(
-                context,
-                logger);
             await KanvasProje.Web.Data.DbSeeder.VerileriYukle(app);
         }
         else
@@ -579,14 +581,20 @@ BEGIN
         ALTER TABLE "BultenAbonelikleri" ADD COLUMN IF NOT EXISTS "IpAdresi" text NULL;
     END IF;
 
-    IF to_regclass('public."Urunler"') IS NOT NULL THEN
+    IF to_regclass('public."Urunler"') IS NOT NULL AND EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'Urunler' AND column_name = 'Slug'
+    ) THEN
         ALTER TABLE "Urunler" ADD COLUMN IF NOT EXISTS "SeoTitle" text NOT NULL DEFAULT '';
         ALTER TABLE "Urunler" ADD COLUMN IF NOT EXISTS "SeoDescription" text NOT NULL DEFAULT '';
         ALTER TABLE "Urunler" ADD COLUMN IF NOT EXISTS "SeoKeywords" text NOT NULL DEFAULT '';
         EXECUTE 'CREATE INDEX IF NOT EXISTS "IX_Urunler_Slug" ON "Urunler" ("Slug") WHERE "Slug" IS NOT NULL AND "Slug" <> ''''';
     END IF;
 
-    IF to_regclass('public."Kategoriler"') IS NOT NULL THEN
+    IF to_regclass('public."Kategoriler"') IS NOT NULL AND EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'Kategoriler' AND column_name = 'Slug'
+    ) THEN
         EXECUTE 'CREATE INDEX IF NOT EXISTS "IX_Kategoriler_Slug" ON "Kategoriler" ("Slug") WHERE "Slug" IS NOT NULL AND "Slug" <> ''''';
     END IF;
 

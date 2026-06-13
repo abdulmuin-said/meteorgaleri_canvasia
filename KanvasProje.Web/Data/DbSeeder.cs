@@ -157,6 +157,51 @@ namespace KanvasProje.Web.Data
                 }
                 await context.SaveChangesAsync();
             }
+
+            var existingSlaytlar = await context.Slaytlar.IgnoreQueryFilters().ToListAsync();
+            if (!existingSlaytlar.Any())
+            {
+                context.Slaytlar.AddRange(new List<Slayt>
+                {
+                    new Slayt
+                    {
+                        Baslik = "Yaşam Alanınıza Sanat Katın",
+                        AltBaslik = "Seçkin Tablo Koleksiyonları",
+                        Aciklama = "Evinizin ve ofisinizin havasını değiştirecek kanvas ve cam tablolar.",
+                        ResimUrl = "/img/banner/slider-1.webp",
+                        VideoUrl = "/video/slider1.mp4",
+                        Tur = "Video",
+                        Sira = 1,
+                        AktifMi = true,
+                        OlusturmaTarihi = DateTime.UtcNow
+                    },
+                    new Slayt
+                    {
+                        Baslik = "Modern ve Minimalist Çizgiler",
+                        AltBaslik = "Yeni Nesil Duvar Sanatı",
+                        Aciklama = "Göz alıcı detaylar ve yüksek kaliteli baskı teknolojisi.",
+                        ResimUrl = "/img/banner/slider-2.webp",
+                        VideoUrl = "/video/slider2.mp4",
+                        Tur = "Video",
+                        Sira = 2,
+                        AktifMi = true,
+                        OlusturmaTarihi = DateTime.UtcNow
+                    },
+                    new Slayt
+                    {
+                        Baslik = "Doğanın Canlı Renkleri",
+                        AltBaslik = "Manzara Eserleri",
+                        Aciklama = "Doğanın en güzel anlarını yansıtan tablolar.",
+                        ResimUrl = "/img/banner/slider-3.webp",
+                        VideoUrl = null,
+                        Tur = "Görsel",
+                        Sira = 3,
+                        AktifMi = true,
+                        OlusturmaTarihi = DateTime.UtcNow
+                    }
+                });
+                await context.SaveChangesAsync();
+            }
         }
     }
 }

@@ -142,7 +142,7 @@
     // --- SCHEMA.ORG Ã„Â°Ãƒâ€¡Ã„Â°N URL VE GÃƒâ€“RSEL ---
     var request = HttpContextAccessor.HttpContext?.Request;
     string baseUrl = request != null ? SiteSettingsService.BuildAbsoluteUrl(string.Empty) : "";
-    string detaySlug = string.IsNullOrWhiteSpace(Model.Slug) ? Model.Id.ToString() : $"{Model.Slug}-{Model.Id}";
+    string detaySlug = string.IsNullOrWhiteSpace(Model.Slug) ? $"{KanvasProje.Core.Helpers.SlugHelper.GenerateSlug(Model.Baslik)}-{Model.Id}" : $"{Model.Slug}-{Model.Id}";
     string productUrl = $"{baseUrl}/Urun/Detay/{detaySlug}";
     var encodedProductUrl = Uri.EscapeDataString(productUrl);
     var encodedProductTitle = Uri.EscapeDataString(Model.Baslik);
@@ -292,8 +292,8 @@ ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTit
         
         <!-- Left: Image Gallery -->
         <div class="space-y-4">
-            <div class="relative bg-[#f1ede7] aspect-square rounded-lg overflow-hidden group cursor-zoom-in" onclick="openProductLightbox()">
-                                    <img id="mainProductImage" src="@varsayilanGaleriGorseli" data-default-src="@(varsayilanMedya?.ResimYolu ?? Model.AnaGorselUrl)" data-default-alt="@varsayilanGaleriAltMetni" data-product-name="@Model.Baslik" class="w-full h-full object-contain transition-transform duration-700 ease-out group-hover:scale-110 main-product-image" alt="@varsayilanGaleriAltMetni" decoding="async" fetchpriority="high">
+            <div id="mainProductImageContainer" class="relative bg-[#f1ede7] aspect-square rounded-lg overflow-hidden group cursor-zoom-in flex items-center justify-center p-4" onclick="openProductLightbox()">
+                <img id="mainProductImage" src="@varsayilanGaleriGorseli" data-default-src="@(varsayilanMedya?.ResimYolu ?? Model.AnaGorselUrl)" data-default-alt="@varsayilanGaleriAltMetni" data-product-name="@Model.Baslik" class="w-full h-full object-contain transition-transform duration-700 ease-out group-hover:scale-[2] main-product-image" alt="@varsayilanGaleriAltMetni" decoding="async" fetchpriority="high">
                 
                 <button type="button" class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm w-10 h-10 rounded-full shadow-sm text-[#313511] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white z-10" onclick="navigateGallery('prev', event)">
                     <i class="fas fa-chevron-left"></i>
@@ -456,7 +456,7 @@ ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTit
                         <input type="hidden" name="UrunId" value="@Model.Id" />
                         <input type="hidden" id="selectedVariantId" name="SecenekId" value="@varsayilanSecenek?.Id" />
                         <input type="hidden" id="selectedQuantity" name="Adet" value="@minSiparisAdedi" />
-                        <input type="hidden" id="selectedFrameModel" name="CerceveModeli" value="" />
+                        <input type="hidden" id="selectedFrameModel" name="CerceveModeli" value="@(cerceveSecimiGerekli ? "" : "Çerçevesiz")" />
                         <input type="hidden" id="selectedFrameFarki" name="CerceveFarki" value="0" />
 
                         <button type="button" id="ajaxSepetBtn" class="w-full h-12 bg-[#313511] text-white text-xs uppercase tracking-widest rounded hover:bg-[#1c2001] transition-colors flex items-center justify-center gap-2">
@@ -474,10 +474,13 @@ ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTit
                             <i class="fas fa-ruler-combined hidden sm:inline text-[#b58735] text-sm sm:text-lg"></i>
                             <span id="summaryOlcu" class="whitespace-nowrap text-sm sm:text-lg font-bold text-[#1c1c18]">-</span>
                         </div>
-                        <span class="shrink-0 text-[#b58735] text-sm sm:text-lg font-light">|</span>
-                        <div class="min-w-0 max-w-[42%] sm:max-w-none">
-                            <span id="summaryCerceve" class="block truncate text-sm sm:text-lg font-bold text-[#313511]">Çerçeve seçiniz</span>
-                        </div>
+                        @if (cerceveSecimiGerekli)
+                        {
+                            <span class="shrink-0 text-[#b58735] text-sm sm:text-lg font-light">|</span>
+                            <div class="min-w-0 max-w-[42%] sm:max-w-none">
+                                <span id="summaryCerceve" class="block truncate text-sm sm:text-lg font-bold text-[#313511]">Çerçeve seçiniz</span>
+                            </div>
+                        }
                         <span class="shrink-0 text-[#b58735] text-sm sm:text-lg font-light">|</span>
                         <div class="flex shrink-0 items-center">
                             <span id="summaryFiyat" class="whitespace-nowrap text-sm sm:text-xl font-extrabold text-[#313511]">0 @currencySymbol</span>
@@ -725,7 +728,7 @@ ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTit
                 {
                     decimal itemFiyat = item.IndirimliFiyat ?? item.Fiyat;
                     decimal? bEskiFiyat = (item.IndirimliFiyat != null && item.IndirimliFiyat < item.Fiyat) ? item.Fiyat : null;
-                    string bProductUrl = !string.IsNullOrEmpty(item.Slug) ? $"/Urun/Detay/{item.Slug}-{item.Id}" : $"/Urun/Detay/{item.Id}";
+                    string bProductUrl = !string.IsNullOrEmpty(item.Slug) ? $"/Urun/Detay/{item.Slug}-{item.Id}" : $"/Urun/Detay/{KanvasProje.Core.Helpers.SlugHelper.GenerateSlug(item.Baslik)}-{item.Id}";
                     string gorsel = !string.IsNullOrEmpty(item.AnaGorselUrl) ? item.AnaGorselUrl : "/img/products/placeholder.webp";
                     <a href="@bProductUrl" class="group block">
                         <div class="relative overflow-hidden mb-3 aspect-square bg-[#f1ede7] rounded">
@@ -745,6 +748,7 @@ ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTit
         </div>
     </section>
 }
+
 
 
 <script>
@@ -958,6 +962,7 @@ function changeProductImage(imageUrl, thumbnailElement, altText) {
         thumbnailElement.classList.add('border-[#313511]');
         thumbnailElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
+
 }
 
 const FRAME_PRICE_PER_METER = 250;
@@ -999,10 +1004,23 @@ function updateSelectionSummary() {
     var toplamBirim = temelFiyat + cerceveFarki;
     var toplam = toplamBirim * adet;
 
-    document.getElementById('summaryOlcu').textContent = olcu;
-    document.getElementById('summaryCerceve').textContent = cerceve || 'Çerçeve seçiniz';
-    document.getElementById('summaryFiyat').textContent = toplam.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' @currencySymbol';
-    document.getElementById('summaryBirimFiyat').textContent = adet > 1 ? `(birim: ${toplamBirim.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} @currencySymbol)` : '';
+    var summaryOlcuEl = document.getElementById('summaryOlcu');
+    if (summaryOlcuEl) summaryOlcuEl.textContent = olcu;
+
+    var summaryCerceveEl = document.getElementById('summaryCerceve');
+    if (summaryCerceveEl) {
+        summaryCerceveEl.textContent = cerceve || 'Çerçeve seçiniz';
+    }
+
+    var summaryFiyatEl = document.getElementById('summaryFiyat');
+    if (summaryFiyatEl) {
+        summaryFiyatEl.textContent = toplam.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' @currencySymbol';
+    }
+
+    var summaryBirimFiyatEl = document.getElementById('summaryBirimFiyat');
+    if (summaryBirimFiyatEl) {
+        summaryBirimFiyatEl.textContent = adet > 1 ? `(birim: ${toplamBirim.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} @currencySymbol)` : '';
+    }
 
     summary.classList.remove('hidden');
 }
@@ -1333,4 +1351,22 @@ function selectFrameOption(label, value) {
         radio.dispatchEvent(new Event('change', { bubbles: true }));
     }
 }
+
+// Masaüstü fare koordinatlarına göre pürüzsüz zoom (transform-origin)
+document.addEventListener("DOMContentLoaded", function () {
+    const container = document.getElementById('mainProductImageContainer');
+    const img = document.getElementById('mainProductImage');
+    
+    if (container && img) {
+        container.addEventListener('mousemove', function (e) {
+            const rect = container.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            img.style.transformOrigin = x + '% ' + y + '%';
+        });
+        container.addEventListener('mouseleave', function () {
+            img.style.transformOrigin = 'center center';
+        });
+    }
+});
 </script>

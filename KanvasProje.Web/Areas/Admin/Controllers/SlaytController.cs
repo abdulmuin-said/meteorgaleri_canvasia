@@ -35,6 +35,8 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [RequestSizeLimit(209_715_200)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 209_715_200)]
         public async Task<IActionResult> Ekle(Slayt model, IFormFile? Resim, IFormFile? Video)
         {
             if (!ModelState.IsValid)
@@ -46,9 +48,9 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
                 return View(model);
             }
 
-            if ((model.Tur == "Resim" || model.Tur == "Video") && Resim == null && string.IsNullOrWhiteSpace(model.ResimUrl))
+            if (model.Tur == "Resim" && Resim == null && string.IsNullOrWhiteSpace(model.ResimUrl))
             {
-                ModelState.AddModelError("Resim", "Slayt için görsel yüklemeniz veya görsel URL'si girmeniz gerekir.");
+                ModelState.AddModelError("Resim", "Resim tipinde slayt için görsel yüklemeniz veya görsel URL'si girmeniz gerekir.");
                 return View(model);
             }
 
@@ -88,6 +90,8 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [RequestSizeLimit(209_715_200)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 209_715_200)]
         public async Task<IActionResult> Duzenle(int id, Slayt model, IFormFile? Resim, IFormFile? Video, bool? ResimSil, bool? VideoSil)
         {
             var slayt = await _db.Slaytlar.FindAsync(id);
@@ -146,6 +150,20 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
             await _db.SaveChangesAsync();
 
             TempData["Basari"] = "Slayt başarıyla güncellendi.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AktiflikDegistir(int id)
+        {
+            var slayt = await _db.Slaytlar.FindAsync(id);
+            if (slayt != null)
+            {
+                slayt.AktifMi = !slayt.AktifMi;
+                await _db.SaveChangesAsync();
+                TempData["Basari"] = slayt.AktifMi ? "Slayt aktif edildi." : "Slayt pasif edildi.";
+            }
             return RedirectToAction(nameof(Index));
         }
 
