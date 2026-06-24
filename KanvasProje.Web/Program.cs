@@ -193,6 +193,11 @@ builder.Services.AddScoped<ISiteSettingsService, SiteSettingsService>();
 builder.Services.AddScoped<IHomePageSettingsService, HomePageSettingsService>();
 builder.Services.AddScoped<IHomePageSectionService, HomePageSectionService>();
 builder.Services.AddScoped<IFavoriService, FavoriService>();
+builder.Services.AddScoped<IPaymentService, PaytrPaymentService>();
+builder.Services.AddHttpClient("Paytr", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 builder.Services.AddSingleton<IAdminSecurityAuditService, AdminSecurityAuditService>();
 builder.Services.AddSingleton<IAdminSessionStateService, AdminSessionStateService>();
 // Health Checks (Docker / Load Balancer / Monitoring)

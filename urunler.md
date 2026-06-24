@@ -1,0 +1,117 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: 
+      - text: 500 TL ÜZERİ ÜCRETSİZ KARGO
+    - generic [ref=e6]:
+      - generic [ref=e7]: 
+      - text: VADE FARKSIZ 3 TAKSİT
+    - generic [ref=e8]:
+      - generic [ref=e9]: 
+      - text: GÜVENLİ ÖDEME
+    - generic [ref=e10]:
+      - generic [ref=e11]: 
+      - text: KREDİ KARTI İLE ÖDEME
+    - generic [ref=e12]:
+      - generic [ref=e13]: 
+      - text: HIZLI ÜRETİM
+    - generic [ref=e14]:
+      - generic [ref=e15]: 
+      - text: ÖZENLİ PAKETLEME
+    - generic [ref=e16]:
+      - generic [ref=e17]: 
+      - text: TÜRKİYE GENELİ KARGO
+    - generic [ref=e18]:
+      - generic [ref=e19]: 
+      - text: 14 GÜN KOLAY İADE
+    - generic [ref=e20]:
+      - generic [ref=e21]: 
+      - text: ÜRETİCİ FİRMA GÜVENCESİ
+    - generic [ref=e22]:
+      - generic [ref=e23]: 
+      - text: WHATSAPP DESTEK
+    - generic [ref=e24]:
+      - generic [ref=e25]: 
+      - text: 500 TL ÜZERİ ÜCRETSİZ KARGO
+    - generic [ref=e26]:
+      - generic [ref=e27]: 
+      - text: VADE FARKSIZ 3 TAKSİT
+    - generic [ref=e28]:
+      - generic [ref=e29]: 
+      - text: GÜVENLİ ÖDEME
+    - generic [ref=e30]:
+      - generic [ref=e31]: 
+      - text: KREDİ KARTI İLE ÖDEME
+    - generic [ref=e32]:
+      - generic [ref=e33]: 
+      - text: HIZLI ÜRETİM
+    - generic [ref=e34]:
+      - generic [ref=e35]: 
+      - text: ÖZENLİ PAKETLEME
+    - generic [ref=e36]:
+      - generic [ref=e37]: 
+      - text: TÜRKİYE GENELİ KARGO
+    - generic [ref=e38]:
+      - generic [ref=e39]: 
+      - text: 14 GÜN KOLAY İADE
+    - generic [ref=e40]:
+      - generic [ref=e41]: 
+      - text: ÜRETİCİ FİRMA GÜVENCESİ
+    - generic [ref=e42]:
+      - generic [ref=e43]: 
+      - text: WHATSAPP DESTEK
+  - banner [ref=e44]:
+    - generic [ref=e45]:
+      - link "Canvasia" [ref=e46] [cursor=pointer]:
+        - /url: /
+        - img "Canvasia" [ref=e47]
+      - generic [ref=e48]:
+        - button "Arama" [ref=e49] [cursor=pointer]
+        - link "Giriş Yap" [ref=e52] [cursor=pointer]:
+          - /url: /Hesap/GirisYap
+        - link "Favoriler" [ref=e55] [cursor=pointer]:
+          - /url: /Favori
+        - link "Sepet" [ref=e58] [cursor=pointer]:
+          - /url: /Sepet
+      - navigation [ref=e62]:
+        - list [ref=e63]
+    - text:    
+  - main [ref=e96]:
+    - generic [ref=e98]:
+      - link "Ana Sayfa" [ref=e99] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e100]: /
+      - generic [ref=e101]: Tüm Koleksiyonlar
+    - generic [ref=e103]:
+      - complementary [ref=e104]:
+        - heading "Kategoriler" [level=3] [ref=e105]
+        - list [ref=e106]
+        - heading "Fiyat Aralığı" [level=3] [ref=e155]
+        - generic [ref=e156]
+      - main [ref=e162]:
+        - generic [ref=e163]
+        - generic [ref=e169]
+        - generic [ref=e461]
+  - contentinfo [ref=e467]:
+    - generic [ref=e469]:
+      - generic [ref=e470]:
+        - generic [ref=e472]: 
+        - generic [ref=e473]
+      - generic [ref=e476]:
+        - generic [ref=e478]: 
+        - generic [ref=e479]
+      - generic [ref=e482]:
+        - generic [ref=e484]: 
+        - generic [ref=e485]
+    - generic [ref=e488]:
+      - generic [ref=e489]:
+        - generic [ref=e490]
+        - generic [ref=e496]
+      - generic [ref=e514]:
+        - paragraph [ref=e516]: © 2026 CANVASİA — Tüm hakları saklıdır.
+        - generic [ref=e517]
+    - img "Ödeme Yöntemleri" [ref=e523]
+  - link "WhatsApp ile iletişim" [ref=e524] [cursor=pointer]:
+    - /url: https://wa.me/905432212320
+    - img [ref=e525]
+    - generic [ref=e527]: WhatsApp

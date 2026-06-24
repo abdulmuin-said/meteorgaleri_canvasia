@@ -1,6 +1,7 @@
 using KanvasProje.Core.Interfaces;
 using KanvasProje.Core.Varliklar;
 using KanvasProje.Data;
+using KanvasProje.Service.Interfaces;
 using KanvasProje.Service.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
@@ -20,6 +21,7 @@ namespace KanvasProje.Web.Controllers
         private readonly IEmailService _emailService;
         private readonly ISepetService _sepetService;
         private readonly ISiteSettingsService _siteSettingsService;
+        private readonly IPaymentService _paymentService;
         private readonly ILogger<SiparisController> _logger;
         private readonly IWebHostEnvironment _env;
 
@@ -30,6 +32,7 @@ namespace KanvasProje.Web.Controllers
             IEmailService emailService,
             ISepetService sepetService,
             ISiteSettingsService siteSettingsService,
+            IPaymentService paymentService,
             ILogger<SiparisController> logger,
             IWebHostEnvironment env)
         {
@@ -39,6 +42,7 @@ namespace KanvasProje.Web.Controllers
             _emailService = emailService;
             _sepetService = sepetService;
             _siteSettingsService = siteSettingsService;
+            _paymentService = paymentService;
             _logger = logger;
             _env = env;
         }
@@ -226,14 +230,224 @@ namespace KanvasProje.Web.Controllers
             HttpContext.Session.Remove("UygulananKupon");
 
             _logger.LogInformation(
-                "Siparis odeme bekliyor durumunda olusturuldu. SiparisNo={SiparisNo}, Tutar={Tutar}",
+                "Siparis olusturuldu, PayTR odemesine yonlendiriliyor. SiparisNo={SiparisNo}, Tutar={Tutar}",
                 siparis.SiparisNo,
                 siparis.ToplamTutar);
+
+            // PayTR aktifse ödeme sayfasına yönlendir, değilse beklemede bırak
+            if (_siteSettingsService.GetSettings().PaytrAktifMi)
+            {
+                return RedirectToAction(nameof(PaytrOdeme), new { siparisNo = siparis.SiparisNo });
+            }
 
             await SendAdminOrderNotificationEmailAsync(siparis);
             await SendCustomerOrderConfirmationEmailAsync(siparis);
 
             return RedirectToAction(nameof(Beklemede), new { siparisNo = siparis.SiparisNo });
+        }
+
+        /// <summary>
+        /// PayTR ödeme sayfası — iframe'i gösterir.
+        /// Sipariş oluşturulduktan sonra buraya yönlenir.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> PaytrOdeme(string siparisNo)
+        {
+            var siparis = await _context.Siparisler
+                .Include(x => x.SiparisDetaylari)
+                    .ThenInclude(x => x.Urun)
+                .FirstOrDefaultAsync(x => x.SiparisNo == siparisNo && !x.SilindiMi);
+
+            if (siparis == null)
+            {
+                return RedirectToAction("Index", "Sepet");
+            }
+
+            // Zaten ödeme yapılmış / onaylanmış / iptal edilmiş
+            if (siparis.Durum != 0)
+            {
+                return RedirectToAction(nameof(PaytrBasarili), new { siparisNo = siparis.SiparisNo });
+            }
+
+            var settings = _siteSettingsService.GetSettings();
+            var request = HttpContext.Request;
+            var baseUrl = $"{request.Scheme}://{request.Host}";
+
+            var sepetItems = siparis.SiparisDetaylari
+                .Where(x => !x.SilindiMi)
+                .Select(x => new PaymentBasketItem
+                {
+                    Name = x.Urun?.Baslik ?? $"Ürün #{x.UrunId}",
+                    Price = x.BirimFiyat,
+                    Quantity = x.Adet
+                })
+                .ToList();
+
+            var initRequest = new PaymentInitRequest
+            {
+                OrderId = siparis.SiparisNo,
+                TotalPrice = siparis.ToplamTutar,
+                BasketPrice = siparis.ToplamTutar,
+                CallbackUrl = settings.PaytrCallbackUrl,
+                OkUrl = $"{baseUrl}/Siparis/PaytrBasarili?siparisNo={siparis.SiparisNo}",
+                FailUrl = $"{baseUrl}/Siparis/PaytrBasarisiz",
+                BuyerName = siparis.MusteriAdSoyad,
+                BuyerEmail = siparis.Eposta,
+                BuyerPhone = siparis.Telefon,
+                BuyerAddress = $"{siparis.AcikAdres}, {siparis.Ilce}/{siparis.Sehir}",
+                BuyerCity = siparis.Sehir,
+                BuyerIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
+                BasketItems = sepetItems
+            };
+
+            var result = await _paymentService.InitializeCheckoutAsync(initRequest);
+
+            if (!result.Success || string.IsNullOrWhiteSpace(result.Token))
+            {
+                _logger.LogWarning(
+                    "PayTR baslatilamadi. SiparisNo={SiparisNo}, Hata={Hata}",
+                    siparisNo, result.ErrorMessage);
+
+                ViewBag.Hata = result.ErrorMessage ?? "Ödeme sayfası başlatılamadı.";
+                return View("PaytrOdeme");
+            }
+
+            ViewBag.PaytrToken = result.Token;
+            ViewBag.SiparisNo = siparis.SiparisNo;
+            ViewBag.ToplamTutar = siparis.ToplamTutar;
+
+            return View();
+        }
+
+        /// <summary>
+        /// PayTR bildirim URL'i — Ödeme sonucunu PayTR arka plandan POST eder.
+        /// Bu metoda müsteri uğramaz, session kullanilamaz.
+        /// Sadece düz metin "OK" dönülmeli.
+        /// </summary>
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        [AllowAnonymous]
+        public async Task<IActionResult> PaytrBildirim()
+        {
+            var merchantOid = HttpContext.Request.Form["merchant_oid"].FirstOrDefault() ?? string.Empty;
+            var status = HttpContext.Request.Form["status"].FirstOrDefault() ?? string.Empty;
+            var totalAmount = HttpContext.Request.Form["total_amount"].FirstOrDefault() ?? string.Empty;
+            var hash = HttpContext.Request.Form["hash"].FirstOrDefault() ?? string.Empty;
+            var testMode = HttpContext.Request.Form["test_mode"].FirstOrDefault();
+
+            _logger.LogInformation(
+                "PayTR bildirim alindi. merchant_oid={Oid}, status={Status}, total_amount={Amount}",
+                merchantOid, status, totalAmount);
+
+            if (string.IsNullOrWhiteSpace(merchantOid) || string.IsNullOrWhiteSpace(hash))
+            {
+                _logger.LogWarning("PayTR bildirimde zorunlu alanlar eksik.");
+                return Content("OK");
+            }
+
+            // Hash doğrulama
+            var verifyRequest = new PaymentVerifyRequest
+            {
+                MerchantOid = merchantOid,
+                Status = status,
+                TotalAmount = totalAmount,
+                Hash = hash
+            };
+
+            var verifyResult = await _paymentService.VerifyPaymentAsync(verifyRequest);
+
+            if (!verifyResult.Success)
+            {
+                _logger.LogWarning(
+                    "PayTR bildirim hash dogrulama basarisiz. merchant_oid={Oid}", merchantOid);
+                return Content("OK");
+            }
+
+            // Siparişi bul ve güncelle
+            var siparis = await _context.Siparisler
+                .FirstOrDefaultAsync(x => x.SiparisNo == merchantOid && !x.SilindiMi);
+
+            if (siparis == null)
+            {
+                _logger.LogWarning(
+                    "PayTR bildirim: Siparis bulunamadi. merchant_oid={Oid}", merchantOid);
+                return Content("OK");
+            }
+
+            // Daha önce işlenmiş mi? (PayTR aynı bildirimi birden fazla gönderebilir)
+            if (siparis.Durum != 0)
+            {
+                _logger.LogInformation(
+                    "PayTR bildirim: Siparis zaten islenmis. merchant_oid={Oid}, mevcutDurum={Durum}",
+                    merchantOid, siparis.Durum);
+                return Content("OK");
+            }
+
+            if (status == "success")
+            {
+                // Ödeme başarılı — siparişi onayla
+                siparis.Durum = 1; // Hazırlanıyor
+                siparis.Aciklama = "PayTR ile ödeme başarıyla tamamlandı.";
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "PayTR odeme basarili. SiparisNo={SiparisNo}, Tutar={Tutar}",
+                    siparis.SiparisNo, verifyResult.PaidPrice);
+
+                // Bildirim e-postalarını gönder
+                await SendAdminOrderNotificationEmailAsync(siparis);
+                await SendCustomerOrderConfirmationEmailAsync(siparis);
+            }
+            else
+            {
+                // Ödeme başarısız — siparişi iptal et (durum 5 = İptal)
+                siparis.Durum = 5;
+                siparis.Aciklama = $"PayTR ödemesi başarısız: {totalAmount} TL tutarında ödeme alınamadı.";
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "PayTR odeme basarisiz. SiparisNo={SiparisNo}", siparis.SiparisNo);
+            }
+
+            return Content("OK");
+        }
+
+        /// <summary>
+        /// PayTR ödeme başarılı sayfası — Müşteri buraya yönlenir.
+        /// UYARI: Sadece yönlendirme sayfasıdır! Gerçek onay Bildirim URL'dendir.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> PaytrBasarili(string siparisNo)
+        {
+            var siparis = await _context.Siparisler
+                .FirstOrDefaultAsync(x => x.SiparisNo == siparisNo && !x.SilindiMi);
+
+            if (siparis == null)
+            {
+                return RedirectToAction("Index", "Sepet");
+            }
+
+            ViewBag.SiparisNo = siparisNo;
+            ViewBag.SiparisId = siparis.Id;
+
+            // Ödeme başarılı mı kontrol et
+            if (siparis.Durum == 0)
+            {
+                ViewBag.OdemeBekliyor = true;
+            }
+
+            return View();
+        }
+
+        /// <summary>
+        /// PayTR ödeme başarısız sayfası
+        /// </summary>
+        [HttpGet]
+        public IActionResult PaytrBasarisiz()
+        {
+            return View();
         }
 
         public IActionResult Beklemede(string siparisNo)
