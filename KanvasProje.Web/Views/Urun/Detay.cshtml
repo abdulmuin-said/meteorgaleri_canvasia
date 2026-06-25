@@ -688,7 +688,7 @@ ViewData["SeoTitle"] = !string.IsNullOrWhiteSpace(Model.SeoTitle) ? Model.SeoTit
                                             </div>
                                         </div>
                                     </div>
-                                    <span class="text-[10px] text-[#47473d]">@yorum.OlusturulmaTarihi.ToString("dd MMM yyyy")</span>
+                                    <span class="text-[10px] text-[#47473d]">@yorum.OlusturulmaTarihi.ToTurkeyString("dd MMM yyyy")</span>
                                 </div>
                                 <p class="text-sm text-[#47473d] mt-2">@yorum.YorumMetni</p>
                             </div>

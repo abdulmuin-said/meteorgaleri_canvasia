@@ -40,7 +40,7 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
                 ipLogCount = ipLogs.Count;
                 logs.AddRange(ipLogs.Select(e => new LogEntry
                 {
-                    Tarih = e.OlusturulmaTarihi.ToString("yyyy-MM-dd HH:mm:ss"),
+                    Tarih = e.OlusturulmaTarihi.ToTurkeyString("yyyy-MM-dd HH:mm:ss"),
                     Tip = "IP",
                     Kullanci = e.KullaniciAdi ?? "-",
                     Ip = e.IpAdresi ?? "-",

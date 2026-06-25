@@ -82,7 +82,7 @@ namespace KanvasProje.Web.Areas.Admin.Controllers
                 worksheet.Cells[row, 4].Value = yorum.AdSoyad;
                 worksheet.Cells[row, 5].Value = yorum.Puan;
                 worksheet.Cells[row, 6].Value = yorum.YorumMetni;
-                worksheet.Cells[row, 7].Value = yorum.OlusturulmaTarihi.ToString("dd.MM.yyyy HH:mm");
+                worksheet.Cells[row, 7].Value = yorum.OlusturulmaTarihi.ToTurkeyString();
             }
 
             worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();

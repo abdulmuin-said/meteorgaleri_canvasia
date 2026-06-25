@@ -457,8 +457,8 @@
                                     <span class="text-muted small" title="@item.ReferansUrl">@(!string.IsNullOrWhiteSpace(item.ReferansUrl) ? item.ReferansUrl : "Direkt / Bilinmiyor")</span>
                                 </td>
                                 <td>
-                                    <strong>@item.OlusturulmaTarihi.ToString("HH:mm:ss")</strong><br>
-                                    <small class="text-muted">@item.OlusturulmaTarihi.ToString("dd.MM.yyyy")</small>
+                                    <strong>@item.OlusturulmaTarihi.ToTurkeyString("HH:mm:ss")</strong><br>
+                                    <small class="text-muted">@item.OlusturulmaTarihi.ToTurkeyString("dd.MM.yyyy")</small>
                                 </td>
                             </tr>
                         }

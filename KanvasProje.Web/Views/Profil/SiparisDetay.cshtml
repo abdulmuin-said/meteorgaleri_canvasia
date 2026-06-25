@@ -61,7 +61,7 @@
                 <div>
                     <span class="text-xs uppercase tracking-widest text-[#b58735] font-medium block mb-1">Sipariş Detayı</span>
                     <h1 class="font-serif text-3xl text-[#313511]">Sipariş #@Model.Id</h1>
-                    <p class="text-xs text-[#47473d] mt-2">@Model.OlusturulmaTarihi.ToString("dd.MM.yyyy HH:mm") tarihinde oluşturuldu.</p>
+                    <p class="text-xs text-[#47473d] mt-2">@Model.OlusturulmaTarihi.ToTurkeyString() tarihinde oluşturuldu.</p>
                 </div>
                 <div class="flex gap-3">
                     @if (Model.Durum == 3)

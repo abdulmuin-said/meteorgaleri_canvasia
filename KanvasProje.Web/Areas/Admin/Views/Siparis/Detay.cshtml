@@ -229,7 +229,7 @@
     </div>
 
     <h2 class="label-title">KARGO ETİKETİ</h2>
-    <div class="label-meta">Sipariş No: <strong>@siparisNo</strong> | Tarih: @Model.OlusturulmaTarihi.ToString("dd.MM.yyyy HH:mm")</div>
+    <div class="label-meta">Sipariş No: <strong>@siparisNo</strong> | Tarih: @Model.OlusturulmaTarihi.ToTurkeyString()</div>
 
     <div class="ca-label-row">
         <div class="ca-label-box">
@@ -393,7 +393,7 @@
     <div class="ca-page-header">
         <div>
             <h1 class="ca-page-title">Sipariş Detayı <span class="ca-text-muted">@siparisNo</span></h1>
-            <p class="ca-page-subtitle">@Model.OlusturulmaTarihi.ToString("dd MMMM yyyy HH:mm") tarihinde oluşturuldu. Durum: @statusText</p>
+            <p class="ca-page-subtitle">@Model.OlusturulmaTarihi.ToTurkeyString("dd MMMM yyyy HH:mm") tarihinde oluşturuldu. Durum: @statusText</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <a href="/Admin/Siparis" class="ca-btn ca-btn-outline"><i class="fas fa-arrow-left"></i> Listeye Dön</a>

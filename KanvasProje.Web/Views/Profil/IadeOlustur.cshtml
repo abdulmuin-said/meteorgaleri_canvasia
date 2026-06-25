@@ -21,7 +21,7 @@
     <div class="bg-white border border-[#e5e2dc] rounded-lg p-6 mb-8">
         <h3 class="font-bold text-[#1c1c18] mb-4 border-b border-[#e5e2dc] pb-2">Sipariş Bilgileri</h3>
         <p class="text-sm text-[#47473d] mb-2"><strong>Sipariş No:</strong> @Model.SiparisNo</p>
-        <p class="text-sm text-[#47473d] mb-2"><strong>Tarih:</strong> @Model.OlusturulmaTarihi.ToString("dd.MM.yyyy")</p>
+        <p class="text-sm text-[#47473d] mb-2"><strong>Tarih:</strong> @Model.OlusturulmaTarihi.ToTurkeyString("dd.MM.yyyy")</p>
         <p class="text-sm text-[#47473d]"><strong>Tutar:</strong> @Model.ToplamTutar.ToString("N2") TL</p>
     </div>
 
