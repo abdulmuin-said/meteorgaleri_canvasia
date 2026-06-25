@@ -490,3 +490,20 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# CANVASIA local/runtime generated files
+*.dump
+*.sql
+!SQL_Dosyalari/**/*.sql
+!update_*.sql
+!before_update_backup.sql
+KanvasProje.Web/logs/
+KanvasProje.Web/App_Data/
+KanvasProje.Web/wwwroot/img/products/
+KanvasProje.Web/wwwroot/media/products/
+KanvasProje.Web/wwwroot/uploads/invoices/
+KanvasProje.Web/wwwroot/uploads/tmp/
+KanvasProje.Web/wwwroot/uploads/temp/
+
+# Slider seed files may be intentionally committed for Railway first boot.
+# Do not ignore KanvasProje.Web/wwwroot/uploads/slider/ here unless the files are moved to a volume-only workflow.
