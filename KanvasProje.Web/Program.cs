@@ -291,6 +291,32 @@ foreach (var startupWarning in startupWarnings)
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
+}
+
+// Cloudflare proxy vs. ForwardedHeaders - PIPELINE'IN BASINDA OLMALI!
+// Cloudflare HTTPS ile alip HTTP ile uygulamaya iletir.
+// X-Forwarded-Proto header'ina guvenerek HTTPS oldugunu anlariz.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    // Cloudflare IP'leri icin KnownNetworks'i temizle (her IP'ye guven)
+    KnownNetworks = { },
+    KnownProxies = { }
+});
+
+// Container'da (Railway) Cloudflare proxy ile HTTPS zorla
+app.Use(async (context, next) =>
+{
+    if (runningInContainer)
+    {
+        // Railway'de her zaman HTTPS (Cloudflare proxy ile)
+        context.Request.Scheme = "https";
+    }
+    await next();
+});
+
+if (!app.Environment.IsDevelopment())
+{
     app.UseHsts(); // HTTPS zorunluluÄŸu (production)
 }
 
@@ -303,17 +329,6 @@ app.Use(async (context, next) =>
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
     context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
     await next();
-});
-
-// Cloudflare proxy vs. ForwardedHeaders
-// Cloudflare HTTPS ile alip HTTP ile uygulamaya iletir.
-// X-Forwarded-Proto header'ina guvenerek HTTPS oldugunu anlariz.
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
-    // Cloudflare IP'leri icin KnownNetworks'i temizle (her IP'ye guven)
-    KnownNetworks = { },
-    KnownProxies = { }
 });
 
 // HttpsRedirection container icinde pasif:
