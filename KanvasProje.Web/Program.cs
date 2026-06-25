@@ -20,6 +20,7 @@ using KanvasProje.Web.Security;
 using System.Net;
 using System.Threading.RateLimiting;
 using Serilog;
+using Microsoft.AspNetCore.HttpOverrides;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Npgsql;
@@ -163,8 +164,12 @@ builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepositor
 builder.Services.AddScoped(typeof(IService<>), typeof(Service<>));
 
 
-// Email Servisini TanÄ±tÄ±yoruz
-builder.Services.AddScoped<KanvasProje.Core.Interfaces.IEmailService, KanvasProje.Service.Services.SmtpEmailService>();
+// Email Servisini Tanıtıyoruz — Railway'de SMTP portlari bloke oldugu icin HTTPS API kullanilir
+builder.Services.AddHttpClient("BrevoApi", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+builder.Services.AddScoped<KanvasProje.Core.Interfaces.IEmailService, KanvasProje.Service.Services.BrevoApiEmailService>();
 
 
 // 5. Session AyarlarÄ± - SADECE BÄ°R KERE EKLEYÄ°N!
@@ -300,6 +305,21 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// Cloudflare proxy vs. ForwardedHeaders
+// Cloudflare HTTPS ile alip HTTP ile uygulamaya iletir.
+// X-Forwarded-Proto header'ina guvenerek HTTPS oldugunu anlariz.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    // Cloudflare IP'leri icin KnownNetworks'i temizle (her IP'ye guven)
+    KnownNetworks = { },
+    KnownProxies = { }
+});
+
+// HttpsRedirection container icinde pasif:
+// - Container'da: calismaz (runningInContainer=true)
+// - Lokalde: calisir
+// Cloudflare proxy ile calisirken ForwardedHeaders sayesinde HTTPS gorulur
 if (!runningInContainer)
 {
     app.UseHttpsRedirection();
